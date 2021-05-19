@@ -168,3 +168,5 @@ TBD
 ## Desarrolladores
 * Amin Arriaga *(16-10075)*
 * Manuel Faria *(15-10463)*
+* Orlando Chaparro *(12-11499)*    
+
