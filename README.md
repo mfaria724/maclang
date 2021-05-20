@@ -1,169 +1,250 @@
-# MACLang
+# **MACLang**
 
-*MACLang* será un lenguaje de programación desarrollado como requisito para el 
-curso **CI4721 - Lenguajes de Programación II** dictado en la Universidad Simón
-Bolívar en el período Mayo-Julio 2021.
+*MACLang* será un lenguaje de programación desarrollado como proyecto para el curso
+**CI4721 - Lenguajes de Programación II** dictado en la Universidad Simón Bolívar en 
+el período Abril-Julio 2021 por el profesor Ricardo Monascal.
 
-## Especificación del Lenguaje
+## **Especificacion del Lenguaje**
 
-### Comentarios
+### **Comentarios**
 
-Las líneas comentadas comenzarán por el caracter `&` y los bloques de 
-comentarios serán inciadosy finalizados por `${` y `}&`, repectivamente.
-
-Por ejemplo:
+Los comentarios de linea iniciaran con el caracter `#`, mientras que los comentarios
+multilinea seran iniciados y finalizados por `${` y `}$` respectivamente. Por ejemplo
 
 ```
-& comentario de línea
+# Comentario de linea.
 ${
-  comentario 
+  Comentario
   multi
-  línea
-}&
+  linea
+}$
 ```
 
-### Tipos Primitivos
+### **Tipos Primitivos**
 
-El lenguaje contará con 4 tipos primitivos: Enteros, Caracteres, Booleanos y 
-Número de punto flotante (float).
-
-Para la incialización de cada uno de ellos se usará la siguiente sintaxis:
-```
-Int i = 1; & entero
-Char c = '1'; & caracter
-Bool b = true; & booleano
-Float f = 1.0; & flotante
-```
-
-Adicionalmente, se definirá el tipo de datos nulo como:
+El lenguaje contara con 4 tipos primitivos: enteros, caracteres, booleanos y 
+numeros de punto flotante. Para la inicializacion de cada uno de ellos se usara la 
+siguiente sintaxis:
 
 ```
-Int i = None;
+Int i;          # Entero inicializado pero sin valor asignado.
+Int j = 1;      # Entero inicializado y con valor asignado.
+Char c = '1';   # Caracter
+Bool b;         # Booleano
+Float f = 1.0;  # Flotante
 ```
 
-### Tipos de Datos Compuestos
+Adicionalmente se definira el tipo de dato `Unit` que sera el equivalente al tipo 
+`void` en `C/C++`. Todos estos tipos soportan la operacion de asignacion `=`.
 
-#### Arreglos
+Las operaciones entre booleanos son
 
-Para la declaración de arreglos se debe definir el tipo de datos primitivo al
-cuál pertenecerán. Adicionalmente, existirán dos formas para indicar la cantidad
-de elementos que poseerá el arreglo.
+  * And: `&&`
+  * Or: `||`
+  * Not: `!`
+  * Equiv: `==`
 
-1. **No incializado**: Cómo la estructura no se encuentra inicializada, deberá 
-indicarse la cantidad de elementos que poseerá la estructura de manera que se 
-pueda reservar el espacio para los mismos. 
+Las operaciones entre el resto de tipos de datos primitivos son
 
-2. **Incializado**: Al inicializarse explícitamente el arreglo, podemos usar el
-comodín `*` para que el deduzca la cantidad de elementos a través de la 
-inicialización.
+  * Suma: `+`
+  * Resta: `-`
+  * Multiplicacion: `*`
+  * Division (no entera solo para los flotantes): `/`
+  * Modulo (excepto para los flotantes): `%`
 
-A continuación se muestran ejemplos para arreglos *inicializados* y *no inicializados*:
+Con los caracteres sera equivalente a operar sobre su representacion en ASCII.
 
-```
-Int*10 array;
-Int*? array2 = [0,1,2,42];
-```
+### **Tipos de Datos Compuestos**
 
-#### String
+#### **Arreglos**
 
-Las cadenas de caracteres serán definidad simplemente como un arreglo de 
-caracteres. Sim embargo, el lenguaje incluirá el azúcar sintáctico para 
-declararlo como un *String* directamente. Por ejemplo:
-
-```
-String hello = "world";  
-Char*? hello = ['w', 'o', 'r', 'l', 'd'];
-Char*5 hello = ['w', 'o', 'r', 'l', 'd'];
-```
-
-Es importante notar que para los caracteres se usarán comillas simples (`'`) 
-mientras que los strings serán incializados con comillas dobles (`"`).
-
-#### Registros
-
-Los registros tendrán la siguiente estructura:
+Todos los arreglos en el lenguaje son dinámicos, por lo que no hay que indicar su
+longitud al momento de inicializarlo, pero si el tipo de los elementos que contiene.
+Para ello, usamos la sintaxis `TYPE[]` donde `TYPE` es el tipo de dichos elementos, el
+cual debe ser distinto de `Unit`. Por ejemplo:
 
 ```
-register <NAME> { 
-  <TYPE> <FIELD> [= <DEFAULT>]; 
-  ... 
+Bool[] array;
+Int[] integers = [1, 1, 2, 42, 69];
+```
+
+Las operaciones definidas sobre arreglos son:
+
+  * Asignación `=`
+  * Indexación: `[]`
+  * Asignación indexada: `[]=`
+  * Función longitud: `len()`
+  * Función para agregar un elemento al final de la lista: `insert()`
+  * Función para sacar un elemento del final de la lista: `pop()`
+
+#### **Cadena de caracteres**
+
+Las cadenas de caracteres serán definidas como arreglos de caracteres. Sin embargo, 
+el lenguaje incluira azúcar sintáctico para declararlo como un tipo `String`, que 
+sería equivalente al tipo `Char[]`. Por ejemplo:
+
+```
+String hello = "world";
+String aja = ['a', 'y', ' ', 'n', 'o'];
+Char[] ohno = "ohwell";
+Char[] press = ['F'];
+```
+
+Por lo tanto, el tipo `String` tiene definidas las mismas operaciones que los arreglos.
+Es importante notar que para los caracteres se usarán comillas simples ('), 
+mientras que para las cadenas de caracteres se usarán comillas dobles (").
+
+#### **Registros**
+
+La definición de registros seguirá la siguiente estructura:
+
+```
+register <NAME> {
+  <TYPE> <FIELD> [= <DEFAULT>];
+  ...
 }
 ```
 
-Los valores por defecto deberán ser declarados en las útlimas posiciones para su
-correcto funcionamiento. 
-
-A continuación se muestran algunos ejemplos para el uso de estos registros:
+Los valores por defecto deberan ser declarados en las últimas posiciones del registro
+para su correcto funcionamiento. Una vez definidos se pueden usar como un tipo mas del
+lenguaje. Las unicas operaciones definidas sobre los registros son el acceso a campo 
+(`.`) y la asignación. Por ejemplo:
 
 ```
 register alo {
-  Char F;
-  String a =  "a";
+  Char mander;
+  Bool[] basaur;
+  String erThings = "a";
 }
-
 alo ok;
-alo.F = 'f';
-
-alo fine = {'f'};
-alo mmm = {'f', "a"};
-
-alo*? wtf = [{'f', "a"}, mmm, fine]
+ok.a = "sua";
 ```
 
-#### Uniones
+Intentar realizar otra operacion a parte de la asignación sobre un campo no definido
+producira un error de ejecución.
 
-Las uniones tendrán la siguiente estructura, similar a la de los registros:
+#### **Uniones**
+
+La definición de uniones seguirá la siguiente estructura:
 
 ```
-union <NAME> { 
-  <TYPE> <FIELD>; 
-  ... 
+union <NAME> {
+  <TYPE> <FIELD>;
+  ...
 }
 ```
 
-Algunos ejemplo de posibles usos de uniones:
+Una vez definidos se pueden usar como un tipo mas del lenguaje. Las unicas operaciones 
+definidas sobre las uniones son el acceso a campo (`.`) y la asignación. Asignarle
+un valor a un campo causa la indefinición del resto. Intentar realizar otra operación 
+a parte de la asignación sobre un campo no definido producira un error de ejecucion.
+Ejemplo de una unión:
 
 ```
-union aja { Char F; Int x; }
-aja ayno;
-ayno~F = '2';
+union frag {
+  Bool Kevin;
+  Char Dennis;
+  Int Patricia;
+  Float Hedwig;
+  String Bestia
+
+}
+frag F;
+F.Patricia = -1;
 ```
 
-#### Apuntadores
+#### **Apuntadores**
 
-TBD
+Los apuntadores se definen como `^TYPE`, lo que significa que es un apuntador a una
+variable de tipo `TYPE`. Cumplen las siguientes características:
+
+  * Las únicas operaciones que soportan los apuntadores son la asignación `=` y la 
+  desreferenciación `^`. 
+  * Al indicar un tipo, las referencias `^` tienen más precedencia que los arreglos 
+  `[]`, es decir, `^TYPE[]` es equivalente a `(^TYPE)[]`.
+  * Inversamente, la desrefenciación tiene menor precedencia que la indexación o 
+  la asignación indexada. Es decir, `^VAR[i]` es equivalente a  `^(VAR[i])`.
+  * Como ya vimos, se puede modificar esta precedencia usando paréntesis. Por ejemplo 
+  `^(TYPE[])` indica el tipo apuntador a un arreglo de variables tipo `TYPE`.
+  * Para crear una referencia de un tipo se usa la palabra clave `new`, por ejemplo:
+
+```
+^Int ref = new Int;
+```
+  * El tipo `^Unit` es equivalente a `void*` de  *C/C++*, es decir, se puede usar como
+  un apuntador a cualquier tipo.
 
 ### Instrucciones de Control de Flujo
 
-#### Selección
+#### **Selección**
 
-Para la selección estará presente una instrucción clásica de tipo `if-then-elsif-else` 
-como la que se muestra a continuación:
-
+Sintáxis:
 ```
-if <CONDITION1> then 
-  <INSTRUCTION1>
+if <CONDITION1> then
+  <INSTRUCTION>
+  ...
+[
 elsif <CONDITION2> then
-  <INSTRUCTION2>
-else 
-  <INSTRUCTION3>
+  <INSTRUCTION>
+  ...
+]
+[
+else
+  <INSTRUCTION>
+  ...
+]
 fi
 ```
 
-#### Bucle No Determinado
+#### **Bucle No Determinado**
 
-Para la selección estará presente una instrucción clásica de tipo `while-do-done` 
-como la que se muestra a continuación:
+Sintaxis:
 
-while <CONDITION> 
-do 
-  <INSTRUCTION> 
-  ...
+```
+while <CONDITION> do
+  <INSTRUCTIONS>
 done
+```
 
-#### Bucle Determinado
+#### **Bucle Determinado**
 
-TBD
+Sintaxis:
+
+```
+for (<INT_VAR>; <BEGIN>; <END> [; <STEP>]) do
+  <INSTRUCTIONS>
+done
+```
+
+#### **Funciones**
+
+Sintaxis:
+
+```
+<NAME>(<TYPE> [@]<ARG>, ...) => <TYPE> {
+  <INSTRUCTIONS>
+}
+
+<NAME>(<PARAM>, ...);
+```
+
+Colocarle `@` como prefijo al nombre del argumento indica que se pasará como 
+referencia. En caso de no usarlo se pasara por valor.
+
+#### **Procedimientos**
+
+Sintaxis:
+
+```
+<NAME>(<TYPE> [@]<ARG>, ...) {
+  <INSTRUCTIONS>
+}
+
+<NAME>(<PARAM>, ...);
+```
+
+Colocarle `@` como prefijo al nombre del argumento indica que se pasará como 
+referencia. En caso de no usarlo se pasara por valor.
 
 ## Desarrolladores
 * Amin Arriaga *(16-10075)*
