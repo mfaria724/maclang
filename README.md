@@ -52,7 +52,20 @@ Las operaciones entre el resto de tipos de datos primitivos son
   * Division (no entera solo para los flotantes): `/`
   * Modulo (excepto para los flotantes): `%`
 
-Con los caracteres sera equivalente a operar sobre su representacion en ASCII.
+Con los caracteres será equivalente a operar sobre su representación en ASCII.
+
+#### **Casteo Automático**
+
+Adicionalmente, se definirá el casteo automático entre tipos primitivos de la 
+siguiente manera:
+
+* El número `0` representará al booleano `False` y viceversa (`0 <=> False`). En
+contraste, cualquier otro número será casteado como el booleano `True`. 
+(`(n != 0) => True`)
+* Análogamente, el arreglo vacío será interpretado como el booleano `False` y cualquier
+otra lista será casteada como el booleano `True`. (`[] => False` y 
+`len(<lista>) != 0 => True`).
+* El booleano `True` será interpretado como el número entero `1`. (`True => 1`).
 
 ### **Tipos de Datos Compuestos**
 
@@ -173,6 +186,12 @@ variable de tipo `TYPE`. Cumplen las siguientes características:
 ```
   * El tipo `^Unit` es equivalente a `void*` de  *C/C++*, es decir, se puede usar como
   un apuntador a cualquier tipo.
+  * Como contraparte del `new`, existirá la palabra reservada `forget` para liberar
+  la memoria ocupada por una referencia. Por ejemplo:
+
+```
+forget ref;
+```
 
 ### Instrucciones de Control de Flujo
 
