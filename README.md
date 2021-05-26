@@ -9,7 +9,7 @@ el período Abril-Julio 2021 por el profesor Ricardo Monascal.
 ### **Comentarios**
 
 Los comentarios de linea iniciaran con el caracter `#`, mientras que los comentarios
-multilinea seran iniciados y finalizados por `${` y `}$` respectivamente. Por ejemplo
+multilinea serán iniciados y finalizados por `${` y `}$` respectivamente. Por ejemplo
 
 ```
 # Comentario de linea.
@@ -22,8 +22,8 @@ ${
 
 ### **Tipos Primitivos**
 
-El lenguaje contara con 4 tipos primitivos: enteros, caracteres, booleanos y 
-numeros de punto flotante. Para la inicializacion de cada uno de ellos se usara la 
+El lenguaje contará con 4 tipos primitivos: enteros, caracteres, booleanos y 
+números de punto flotante. Para la inicialización de cada uno de ellos se usará la 
 siguiente sintaxis:
 
 ```
@@ -34,8 +34,8 @@ Bool b;         # Booleano
 Float f = 1.0;  # Flotante
 ```
 
-Adicionalmente se definira el tipo de dato `Unit` que sera el equivalente al tipo 
-`void` en `C/C++`. Todos estos tipos soportan la operacion de asignacion `=`.
+Adicionalmente se definirá el tipo de dato `Unit` que sera el equivalente al tipo 
+`void` en `C/C++`. Todos estos tipos soportan la operación de asignación `=`.
 
 Las operaciones entre booleanos son
 
@@ -48,9 +48,9 @@ Las operaciones entre el resto de tipos de datos primitivos son
 
   * Suma: `+`
   * Resta: `-`
-  * Multiplicacion: `*`
-  * Division (no entera solo para los flotantes): `/`
-  * Modulo (excepto para los flotantes): `%`
+  * Multiplicación: `*`
+  * División (no entera solo para los flotantes): `/`
+  * Módulo (excepto para los flotantes): `%`
 
 Con los caracteres será equivalente a operar sobre su representación en ASCII.
 
@@ -104,8 +104,8 @@ Char[] press = ['F'];
 ```
 
 Por lo tanto, el tipo `String` tiene definidas las mismas operaciones que los arreglos.
-Es importante notar que para los caracteres se usarán comillas simples ('), 
-mientras que para las cadenas de caracteres se usarán comillas dobles (").
+Es importante notar que para los caracteres se usarán comillas simples (`'`), 
+mientras que para las cadenas de caracteres se usarán comillas dobles (`"`).
 
 #### **Registros**
 
@@ -120,7 +120,7 @@ register <NAME> {
 
 Los valores por defecto deberan ser declarados en las últimas posiciones del registro
 para su correcto funcionamiento. Una vez definidos se pueden usar como un tipo mas del
-lenguaje. Las unicas operaciones definidas sobre los registros son el acceso a campo 
+lenguaje. Las únicas operaciones definidas sobre los registros son el acceso a campo 
 (`.`) y la asignación. Por ejemplo:
 
 ```
@@ -133,7 +133,7 @@ alo ok;
 ok.a = "sua";
 ```
 
-Intentar realizar otra operacion a parte de la asignación sobre un campo no definido
+Intentar realizar otra operación a parte de la asignación sobre un campo no definido
 producira un error de ejecución.
 
 #### **Uniones**
@@ -147,10 +147,10 @@ union <NAME> {
 }
 ```
 
-Una vez definidos se pueden usar como un tipo mas del lenguaje. Las unicas operaciones 
+Una vez definidos se pueden usar como un tipo mas del lenguaje. Las únicas operaciones 
 definidas sobre las uniones son el acceso a campo (`.`) y la asignación. Asignarle
 un valor a un campo causa la indefinición del resto. Intentar realizar otra operación 
-a parte de la asignación sobre un campo no definido producira un error de ejecucion.
+a parte de la asignación sobre un campo no definido producira un error de ejecución.
 Ejemplo de una unión:
 
 ```
@@ -241,14 +241,16 @@ Sintaxis:
 
 ```
 <NAME>(<TYPE> [@]<ARG>, ...) => <TYPE> {
-  <INSTRUCTIONS>
+  <INSTRUCTIONS>;
+  ...
+  return <TYPE_RESULT>;
 }
 
 <NAME>(<PARAM>, ...);
 ```
 
 Colocarle `@` como prefijo al nombre del argumento indica que se pasará como 
-referencia. En caso de no usarlo se pasara por valor.
+referencia. En caso de no usarlo se pasará por valor.
 
 #### **Procedimientos**
 
@@ -263,7 +265,7 @@ Sintaxis:
 ```
 
 Colocarle `@` como prefijo al nombre del argumento indica que se pasará como 
-referencia. En caso de no usarlo se pasara por valor.
+referencia. En caso de no usarlo se pasará por valor.
 
 ## Desarrolladores
 * Amin Arriaga *(16-10075)*
