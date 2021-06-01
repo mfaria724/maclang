@@ -22,9 +22,14 @@ ${
 
 ### **Tipos Primitivos**
 
-El lenguaje contará con 4 tipos primitivos: enteros, caracteres, booleanos y 
-números de punto flotante. Para la inicialización de cada uno de ellos se usará la 
-siguiente sintaxis:
+El lenguaje contará con 4 tipos primitivos: 
+* Enteros (Complemento a 2) 
+* Caracteres (Unicode) 
+* Booleanos (`True` y `False`) 
+* Números de punto flotante (IEEE 754) 
+* Unit (Equivalente al tipo `void` en `C/C++`)
+
+Para la inicialización de cada uno de ellos se usará la siguiente sintáxis:
 
 ```
 Int i;          # Entero inicializado pero sin valor asignado.
@@ -34,8 +39,7 @@ Bool b;         # Booleano
 Float f = 1.0;  # Flotante
 ```
 
-Adicionalmente se definirá el tipo de dato `Unit` que sera el equivalente al tipo 
-`void` en `C/C++`. Todos estos tipos soportan la operación de asignación `=`.
+Todos estos tipos soportan la operación de asignación `=`, excepto `Unit`.
 
 Las operaciones entre booleanos son
 
@@ -212,7 +216,7 @@ else
   <INSTRUCTION>
   ...
 ]
-fi
+done
 ```
 
 #### **Bucle No Determinado**
@@ -266,6 +270,12 @@ Sintaxis:
 
 Colocarle `@` como prefijo al nombre del argumento indica que se pasará como 
 referencia. En caso de no usarlo se pasará por valor.
+
+### Entrada y Salida
+
+Se definirán las siguientes funciones:
+* `Char readchar(Unit)`: Lee un caracter de la entrada.
+* `Unit print(String)`: Imprime un string en la salida estándar. 
 
 ## Desarrolladores
 * Amin Arriaga *(16-10075)*
