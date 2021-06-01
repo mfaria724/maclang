@@ -1,0 +1,32 @@
+# Comentario de linea.
+${
+  Comentario
+  multi
+  linea
+}$
+
+
+# tipos primitivos
+
+Int i;          # Entero inicializado pero sin valor asignado.
+Int j = 1;      # Entero inicializado y con valor asignado.
+Char c = '1';   # Caracter
+Bool b;         # Booleano
+Float f = 1.0;  # Flotante
+
+# tipos complejos
+## arreglos
+Bool[] array;
+Int[] integers = [1, 1, 2, 42, 69];
+
+## strings
+String hello = "world";
+String aja = ['a', 'y', ' ', 'n', 'o'];
+Char[] ohno = "ohwell";
+Char[] press = ['F'];
+
+## registros
+register registro {
+  Int numero = 15;
+}
+

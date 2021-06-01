@@ -1,0 +1,160 @@
+S       ->  I
+        |   lambda
+I       ->  I Inst 
+        |   Inst 
+Inst    ->  Action 
+        |   Def
+Action  ->  VarInst ;
+        |   FuncCall ;
+        |   Conditional
+        |   LoopWhile
+        |   LoopFor
+Def     ->  UnionDef
+        |   RegisterDef
+        |   RutineDef
+
+# ======= INSTRUCCIONES SOBRE VARIABLES ======= #
+VarInst     ->  Def
+            |   Assign
+VarDef      ->  let VarDef    
+VarDefBody  ->  TypeExp id OptAssign   
+OptAssign   ->  lambda
+            |   = RValue 
+Assign      ->  LValueExp = RValue
+RValue      ->  LValueExp 
+            |   Expression 
+Expression  ->  NumberExp 
+            |   BoolExp 
+            |   Array
+            |   string
+            |   char 
+
+# ======= EXPRESIONES NUMERICAS ======= #
+NumberExp   ->  NumberT 
+            |   NumberExp + NumberT 
+            |   NumberExp - NumberT 
+NumberT     ->  NumberP
+            |   NumberT * NumberP
+            |   NumberT / NumberP
+            |   NumberT // NumberP
+            |   NumberT % NumberP
+NumberP     ->  NumberQ
+            |   - NumberP
+NumberQ     ->  NumberAtom
+            |   NumberAtom ** NumberQ 
+NumberAtom  ->  float
+            |   int
+            |   LValue
+            |   ( NumberT )
+
+# ======= EXPRESIONES BOOLEANAS ======= #
+BoolExp     ->  BoolT
+            |   BoolExp == BoolT 
+            |   BoolExp != BoolT 
+BoolT       ->  BoolP
+            |   BoolT && BoolP 
+            |   BoolT || BoolP 
+BoolP       ->  BoolAtom 
+            |   ! BoolP 
+BoolAtom    ->  true 
+            |   false 
+            |   LValue 
+            |   NumberExp NumberComp NumberExp
+            |   ( BoolExp )
+NumberComp  ->  < 
+            |   <= 
+            |   ==
+            |   !=  
+            |   >=
+            |   >
+
+# ======= ARREGLOS ======= #
+Array       ->  [ ArrExt ]
+ArrExt      ->  lambda 
+            |   RValue ArrElements
+ArrElements ->  lambda 
+            |   , RValue ArrElements
+
+# ======= TIPOS ======= #
+TypeExp     ->  TypePointer ArrAccess 
+ArrAccess   ->  lambda
+            |   ArrAccess [ IntExp ]
+TypePointer ->  Pointer TypeAtom    
+Pointer     ->  lambda 
+            |   Pointer ^
+TypeAtom    ->  t 
+            |   ( TypeExp )
+
+# ======= EXPRESIONES ENTERAS ======= #
+IntExp  ->  IntT 
+        |   IntExp + IntT 
+        |   IntExp - IntT 
+IntT    ->  IntP
+        |   IntT * IntP
+        |   IntT / IntP
+        |   IntT // IntP
+        |   IntT % IntP
+IntP    ->  IntQ
+        |   - IntP
+IntQ    ->  IntAtom
+        |   IntAtom ** IntQ 
+IntAtom ->  int
+        |   LValue
+        |   ( IntT )
+
+# ======= LVALUES ======= #
+LValueExp     ->  LValuePointer ArrAccess
+LValuePointer ->  Pointer LValueAccess 
+LValueAccess  ->  lambda 
+              |   . id LValueAccess
+LValueAtom    ->  id
+              |   ( LValueExp )
+
+# ======= LLAMADAS A FUNCIONES ======= #
+FuncCall  ->  id ( ArgsExp )
+ArgsExp   ->  lambda
+          |   RValue Args
+Args      ->  lambda 
+          |   , RValue Args
+
+# ======= DEFINICION DE UNIONES ====== #
+UnionDef    ->  union id { UnionBody }
+UnionBody   ->  TypeExp id ; UnionFields
+UnionFields ->  lambda 
+            |   UnionFields TypeExp id ;
+
+# ======= DEFINICION DE REGISTROS ====== #
+RegisterDef     ->  register id { RegisterBody }
+RegisterBody    ->  Def ; RegisterFields
+RegisterFields  ->  lambda 
+                |   RegisterFields Def ;
+
+# ======= CONDICIONALES ====== #
+Conditional ->  if BoolExp then I OptElsif OptElse end
+OptElsif    ->  lambda 
+            |   elsif BoolExp then I Elsifs
+Elsifs      ->  lambda 
+            |   Elsifs elsif BoolExp then I 
+OptElse     ->  lambda 
+            |   else I 
+
+# ======= BUCLES WHILE ====== #
+LoopWhile ->  while BoolExp do I done
+
+# ======= BUCLES FOR ====== #
+LoopFor ->  for ( id ; NumberExp ; NumberExp OptStep ) do I done 
+OptStep ->  lambda 
+        |   ; NumberExp
+
+# ======= DEFINICION DE SUBRUTINAS ====== #
+RutineDef   ->  id ( RutineArgs ) OptReturn { Actions }
+RutineArgs  ->  lambda 
+            |   TypeExp OptRef id OptAssign ArgsDef 
+ArgsDef     ->  lambda 
+            |   ArgsDef TypeExp OptRef id OptAssign
+OptRef      ->  lambda 
+            |   @
+OptReturn   ->  lambda 
+            |   => TypeExp
+Actions     ->  Action 
+            |   Actions Action
