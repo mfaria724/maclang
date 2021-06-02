@@ -275,7 +275,7 @@ Se definirán las siguientes funciones:
 * `Unit print(String)`: Imprime un string en la salida estándar. 
 
 ## Desarrolladores
-* Amin Arriaga *(16-10075)*
+* Amin Arriaga *(16-10072)*
 * Manuel Faria *(15-10463)*
 * Orlando Chaparro *(12-11499)*    
 
