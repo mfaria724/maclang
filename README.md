@@ -26,7 +26,7 @@ El lenguaje contará con 4 tipos primitivos:
 * Enteros (Complemento a 2) 
 * Caracteres (Unicode) 
 * Booleanos (`True` y `False`) 
-* Números de punto flotante (IEEE 754) 
+* Números de punto flotante (IEEE 754, de precisión simple) 
 * Unit (Equivalente al tipo `void` en `C/C++`)
 
 Para la inicialización de cada uno de ellos se usará la siguiente sintáxis:
@@ -41,12 +41,25 @@ Float f = 1.0;  # Flotante
 
 Todos estos tipos soportan la operación de asignación `=`, excepto `Unit`.
 
-Las operaciones entre booleanos son
+Las relaciones de comparación entre los tipos primitivos serán las siguientes:
 
-  * And: `&&`
-  * Or: `||`
-  * Not: `!`
-  * Equiv: `==`
+Las operaciones entre booleanos se definen de la siguiente manera:
+
+  * Conjunción: `&&`
+  * Disyunción: `||`
+  * Negación: `!`
+  
+Las operaciones de comparación entre todos los datos primitivos se definen de la
+siguiente manera:  
+  * Equivalencia: `==`
+  * Inequivalencia: `!=`
+
+Las operaciones de comparación entre enteros, flotantes y caracteres se definen
+de la siguiente manera:
+  * Mayor que: `>`
+  * Menor que: `<`
+  * Mayor o igual que: `>=`
+  * Menor o igual que: `<=`
 
 Las operaciones entre el resto de tipos de datos primitivos son
 
@@ -56,33 +69,19 @@ Las operaciones entre el resto de tipos de datos primitivos son
   * División (no entera solo para los flotantes): `/`
   * Módulo (excepto para los flotantes): `%`
 
-Con los caracteres será equivalente a operar sobre su representación en ASCII.
-
-#### **Casteo Automático**
-
-Adicionalmente, se definirá el casteo automático entre tipos primitivos de la 
-siguiente manera:
-
-* El número `0` representará al booleano `False` y viceversa (`0 <=> False`). En
-contraste, cualquier otro número será casteado como el booleano `True`. 
-(`(n != 0) => True`)
-* Análogamente, el arreglo vacío será interpretado como el booleano `False` y cualquier
-otra lista será casteada como el booleano `True`. (`[] => False` y 
-`len(<lista>) != 0 => True`).
-* El booleano `True` será interpretado como el número entero `1`. (`True => 1`).
-
 ### **Tipos de Datos Compuestos**
 
 #### **Arreglos**
 
-Todos los arreglos en el lenguaje son dinámicos, por lo que no hay que indicar su
-longitud al momento de inicializarlo, pero si el tipo de los elementos que contiene.
-Para ello, usamos la sintaxis `TYPE[]` donde `TYPE` es el tipo de dichos elementos, el
-cual debe ser distinto de `Unit`. Por ejemplo:
+Todos los arreglos en el lenguaje son estáticos, por lo que hay que indicar su
+longitud al momento de inicializarlo.
+Para ello, usamos la sintaxis `TYPE[N]` donde `TYPE` es el tipo de dichos elementos, 
+el cual debe ser distinto de `Unit`, y `N` el número de elementos que tendrá
+el arreglo. Por ejemplo:
 
 ```
-Bool[] array;
-Int[] integers = [1, 1, 2, 42, 69];
+Bool[3] array;
+Int[5] integers = [1, 1, 2, 42, 69];
 ```
 
 Las operaciones definidas sobre arreglos son:
@@ -91,8 +90,6 @@ Las operaciones definidas sobre arreglos son:
   * Indexación: `[]`
   * Asignación indexada: `[]=`
   * Función longitud: `len()`
-  * Función para agregar un elemento al final de la lista: `insert()`
-  * Función para sacar un elemento del final de la lista: `pop()`
 
 #### **Cadena de caracteres**
 

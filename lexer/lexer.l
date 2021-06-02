@@ -15,15 +15,18 @@
     POWER,
     AND,
     OR,
+    NOT_EQUIV,
     NOT,
     EQUIV,
+    GREATER_EQUAL_THAN,
+    LESS_EQUAL_THAN,
+    GREATER_THAN,
+    LESS_THAN,
     PLUS,
     MINUS,
     MODULE,
     DIV,
     ASTERISK,
-    OPEN_COMMENT,
-    CLOSE_COMMENT,
     ASSIGNMENT,
     INT,
     CHAR,
@@ -96,15 +99,18 @@
 "**"                      { return POWER; }
 "&&"                      { return AND; }
 "||"                      { return OR; }
+"!="                      { return NOT_EQUIV; }
 "!"                       { return NOT; }
 "=="                      { return EQUIV; }
+">="                      { return GREATER_EQUAL_THAN; }
+"<="                      { return LESS_EQUAL_THAN; }
+">"                       { return GREATER_THAN; }
+"<"                       { return LESS_THAN; }
 "+"                       { return PLUS; }
 "-"                       { return MINUS; }
 "%"                       { return MODULE; }
 "/"                       { return DIV; }
 "*"                       { return ASTERISK; }
-"${"                      { return OPEN_COMMENT; } 
-"}$"                      { return CLOSE_COMMENT; } 
 "="                       { return ASSIGNMENT; } 
 "Int"                     { return INT; }
 "Char"                    { return CHAR; }
