@@ -53,6 +53,7 @@ Number	->	Number + Number
 				|		Number / Number
 				|		Number % Number
 				|		- Number
+        |   Number ** Number
 				|		( Number )
 				|		int 
 				|		float 
@@ -94,6 +95,7 @@ Integer	->	Integer + Integer
 				|		Integer / Integer
 				|		Integer % Integer
 				|		- Integer
+        |   Integer ** Integer
 				|		( Integer )
 				|		int 
 				|		float 
