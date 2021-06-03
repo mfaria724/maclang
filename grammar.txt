@@ -1,160 +1,149 @@
 S       ->  I
-        |   lambda
+				|   lambda
 I       ->  I Inst 
-        |   Inst 
+				|   Inst 
 Inst    ->  Action 
-        |   Def
+				|   Def
 Action  ->  VarInst ;
-        |   FuncCall ;
-        |   Conditional
-        |   LoopWhile
-        |   LoopFor
+				|   FuncCall ;
+				|   Conditional
+				|   LoopWhile
+				|   LoopFor
 Def     ->  UnionDef
-        |   RegisterDef
-        |   RutineDef
+				|   RegisterDef
+				|   RutineDef
 
 # ======= INSTRUCCIONES SOBRE VARIABLES ======= #
-VarInst     ->  Def
-            |   Assign
-VarDef      ->  let VarDef    
-VarDefBody  ->  TypeExp id OptAssign   
+VarInst     ->  VarDef
+						|   Assign
+VarDef      ->  let VarDefBody  
+VarDefBody  ->  Type id OptAssign   
 OptAssign   ->  lambda
-            |   = RValue 
+						|   = RValue 
 Assign      ->  LValueExp = RValue
 RValue      ->  LValueExp 
-            |   Expression 
-Expression  ->  NumberExp 
-            |   BoolExp 
-            |   Array
-            |   string
-            |   char 
-
-# ======= EXPRESIONES NUMERICAS ======= #
-NumberExp   ->  NumberT 
-            |   NumberExp + NumberT 
-            |   NumberExp - NumberT 
-NumberT     ->  NumberP
-            |   NumberT * NumberP
-            |   NumberT / NumberP
-            |   NumberT // NumberP
-            |   NumberT % NumberP
-NumberP     ->  NumberQ
-            |   - NumberP
-NumberQ     ->  NumberAtom
-            |   NumberAtom ** NumberQ 
-NumberAtom  ->  float
-            |   int
-            |   LValue
-            |   ( NumberT )
-
-# ======= EXPRESIONES BOOLEANAS ======= #
-BoolExp     ->  BoolT
-            |   BoolExp == BoolT 
-            |   BoolExp != BoolT 
-BoolT       ->  BoolP
-            |   BoolT && BoolP 
-            |   BoolT || BoolP 
-BoolP       ->  BoolAtom 
-            |   ! BoolP 
-BoolAtom    ->  true 
-            |   false 
-            |   LValue 
-            |   NumberExp NumberComp NumberExp
-            |   ( BoolExp )
-NumberComp  ->  < 
-            |   <= 
-            |   ==
-            |   !=  
-            |   >=
-            |   >
-
-# ======= ARREGLOS ======= #
-Array       ->  [ ArrExt ]
-ArrExt      ->  lambda 
-            |   RValue ArrElements
-ArrElements ->  lambda 
-            |   , RValue ArrElements
+						|   Expression 
+						|		FuncCall
+Expression  ->  Number 
+						|   BoolExp 
+						|   Array
+						|   string
+						|   char 
 
 # ======= TIPOS ======= #
-TypeExp     ->  TypePointer ArrAccess 
-ArrAccess   ->  lambda
-            |   ArrAccess [ IntExp ]
-TypePointer ->  Pointer TypeAtom    
-Pointer     ->  lambda 
-            |   Pointer ^
-TypeAtom    ->  t 
-            |   ( TypeExp )
-
-# ======= EXPRESIONES ENTERAS ======= #
-IntExp  ->  IntT 
-        |   IntExp + IntT 
-        |   IntExp - IntT 
-IntT    ->  IntP
-        |   IntT * IntP
-        |   IntT / IntP
-        |   IntT // IntP
-        |   IntT % IntP
-IntP    ->  IntQ
-        |   - IntP
-IntQ    ->  IntAtom
-        |   IntAtom ** IntQ 
-IntAtom ->  int
-        |   LValue
-        |   ( IntT )
+# Los colocaremos en orden de menor a mayor precedencia
+Type	-> 	Type [ Integer ]
+			|		^ Type 	
+			|		( Type )
+			| 	t
 
 # ======= LVALUES ======= #
-LValueExp     ->  LValuePointer ArrAccess
-LValuePointer ->  Pointer LValueAccess 
-LValueAccess  ->  lambda 
-              |   . id LValueAccess
-LValueAtom    ->  id
-              |   ( LValueExp )
+# Los colocaremos en orden de menor a mayor precedencia
+LValue	->	LValue [ Integer ]
+				|		^ LValue 
+				|		LValue . id 
+				| 	( LValue )
+				|		id
+
+# ======= EXPRESIONES NUMERICAS ======= #
+# Los colocaremos en orden de menor a mayor precedencia
+Number	->	Number + Number
+				|		Number - Number
+				|		Number * Number
+				|		Number / Number
+				|		Number % Number
+				|		- Number
+				|		( Number )
+				|		int 
+				|		float 
+				|		LValue
+				|		FuncCall
+
+
+# ======= EXPRESIONES BOOLEANAS ======= #
+# Los colocaremos en orden de menor a mayor precedencia
+Bool	->	Bool == Bool 
+			|		Bool != Bool 
+			|		Bool || Bool 
+			|		Bool && Bool 
+			|		! Bool 
+			|		( Bool )
+			|		Number Comp Number 
+			|		true 
+			|		false 
+			|		LValue
+			|		FuncCall
+Comp  ->  < 
+			|   <= 
+			|   ==
+			|   !=  
+			|   >=
+			|   >
+
+# ======= ARREGLOS ======= #
+Array     ->  [ ArrExp ]
+ArrExp    ->  lambda 
+					|   ArrElems RValue 
+ArrElems	->  lambda 
+					|   ArrElems RValue ,
+
+# ======= EXPRESIONES ENTERAS ======= #
+# Los colocaremos en orden de menor a mayor precedencia
+Integer	->	Integer + Integer
+				|		Integer - Integer
+				|		Integer * Integer
+				|		Integer / Integer
+				|		Integer % Integer
+				|		- Integer
+				|		( Integer )
+				|		int 
+				|		float 
+				|		LValue
+				|		FuncCall
 
 # ======= LLAMADAS A FUNCIONES ======= #
 FuncCall  ->  id ( ArgsExp )
 ArgsExp   ->  lambda
-          |   RValue Args
+					|   Args RValue
 Args      ->  lambda 
-          |   , RValue Args
+					|   Args RValue ,
 
 # ======= DEFINICION DE UNIONES ====== #
 UnionDef    ->  union id { UnionBody }
-UnionBody   ->  TypeExp id ; UnionFields
-UnionFields ->  lambda 
-            |   UnionFields TypeExp id ;
+UnionBody	->	Type id ;
+					|		UnionBody Type id ;
 
 # ======= DEFINICION DE REGISTROS ====== #
-RegisterDef     ->  register id { RegisterBody }
-RegisterBody    ->  Def ; RegisterFields
-RegisterFields  ->  lambda 
-                |   RegisterFields Def ;
+RegisterDef   ->  register id { RegisterBody }
+RegisterBody	->  VarDef ; 
+							|		RegisterBody VarDef ;
 
 # ======= CONDICIONALES ====== #
 Conditional ->  if BoolExp then I OptElsif OptElse end
 OptElsif    ->  lambda 
-            |   elsif BoolExp then I Elsifs
+						|   Elsifs elsif BoolExp then I
 Elsifs      ->  lambda 
-            |   Elsifs elsif BoolExp then I 
+						|   Elsifs elsif BoolExp then I 
 OptElse     ->  lambda 
-            |   else I 
+						|   else I 
 
 # ======= BUCLES WHILE ====== #
 LoopWhile ->  while BoolExp do I done
 
 # ======= BUCLES FOR ====== #
-LoopFor ->  for ( id ; NumberExp ; NumberExp OptStep ) do I done 
+LoopFor ->  for ( id ; Number ; Number OptStep ) do I done 
 OptStep ->  lambda 
-        |   ; NumberExp
+				|   ; Number
 
 # ======= DEFINICION DE SUBRUTINAS ====== #
 RutineDef   ->  id ( RutineArgs ) OptReturn { Actions }
 RutineArgs  ->  lambda 
-            |   TypeExp OptRef id OptAssign ArgsDef 
+						|   ArgsDef Type OptRef id OptAssign
 ArgsDef     ->  lambda 
-            |   ArgsDef TypeExp OptRef id OptAssign
+						|   ArgsDef Type OptRef id OptAssign
 OptRef      ->  lambda 
-            |   @
+						|   @
 OptReturn   ->  lambda 
-            |   => TypeExp
+						|   => Type
 Actions     ->  Action 
-            |   Actions Action
+						|   Actions Action
