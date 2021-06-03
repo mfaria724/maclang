@@ -1,7 +1,7 @@
 # este archivo contiene tokens no identificados
-
+~
 Int i;          # Entero inicializado pero sin valor asignado.
 Int j = 1;      # Entero inicializado y con valor asignado.
 Char c = '1';   # Caracter
 Bool b;         # Booleano
-Float f = ~.0;  # Flotante
+Float f =   ~.0;  # Flotante

@@ -1,82 +1,21 @@
 /* recognizes the tokens and prints them out */
 %option noyywrap
+%option yylineno
 
 %{
-  #include <iostream>
-  #include <queue>
-  #include <string>
+  #include "parser.tab.h"
 
   using namespace std;
-
-  enum yytokentype {
-    SEMICOLON = 1,
-    OPEN_PAR,
-    CLOSE_PAR,
-    POWER,
-    AND,
-    OR,
-    NOT_EQUIV,
-    NOT,
-    EQUIV,
-    GREATER_EQUAL_THAN,
-    LESS_EQUAL_THAN,
-    GREATER_THAN,
-    LESS_THAN,
-    PLUS,
-    MINUS,
-    MODULE,
-    DIV,
-    ASTERISK,
-    ASSIGNMENT,
-    INT,
-    CHAR,
-    BOOL,
-    FLOAT,
-    UNIT,
-    FALSE,
-    TRUE,
-    OPEN_BRACKET,
-    CLOSE_BRACKET,
-    OPEN_C_BRACE,
-    CLOSE_C_BRACE,
-    COMMA,
-    REGISTER,
-    DOT,
-    UNION,
-    POINTER,
-    NEW,
-    FORGET,
-    IF,
-    THEN,
-    ELSIF,
-    ELSE,
-    END,
-    WHILE,
-    DO,
-    DONE,
-    FOR,
-    LET,
-    AT,
-    RIGHT_ARROW,
-    NUMBER,
-    ID,
-    SINGLE_QUOTE,
-    DOUBLE_QUOTE
-  };
 
   string yylval;
   
   // count rows and columns to identify errors
-  int row = 1; 
-  int col = 1;
+  int yycolumn = 1;
 
-  // queues for tokens and errors
-  queue<string> tokens;
-  queue<string> errors;
-
-  string temp;
-
-  void setMultiLineOffset(char* text);
+  #define YY_USER_ACTION yylloc.first_line = yylloc.last_line = yylineno; \
+    yylloc.first_column = yycolumn; yylloc.last_column = yycolumn + yyleng - 1; \
+    yycolumn += yyleng; \
+    yylval.str = strdup(yytext);
 %}
 
 %%
@@ -89,9 +28,8 @@
 #.*\n                     { 
                             /* ignore single line comment */ 
                             
-                            // reset the counters for rows and cols
-                            row++;
-                            col = 1;
+                            // reset the counter for cols
+                            yycolumn = 1;
                           }
 ";"      		              { return SEMICOLON; }
 "("                       { return OPEN_PAR; }
@@ -142,106 +80,18 @@
 "let"                     { return LET; }
 "@"                       { return AT; }
 "=>"                      { return RIGHT_ARROW; }
-[0-9]+                    { yylval = strdup(yytext); return NUMBER; }
-[ \t]                     { col++; /* ignore whitespace */ }
+[0-9]+\.[0-9]+            { yylval =strdup(yytext); return FLOAT; }
+[0-9]+                    { yylval = strdup(yytext); return INT; }
+[\t]                      { yycolumn++; /* ignore tab */ }
+[ ]                       { /* ignore whitespace */ }
 [[:alpha:]_][[:alnum:]_]* { yylval = strdup(yytext); return ID; }
 \'.\'                     { yylval = strdup(yytext); return SINGLE_QUOTE; }
 \"(?:[^"\\\n]|\\.)*\"     { yylval = strdup(yytext); return DOUBLE_QUOTE; }
-\n                        { 
-                            /* ignore new line characters */
-                            
-                            // reset the counter for colums
-                            col = 1; 
-                            row++;
-                            cout << row << endl;
-                          } 
+\n                        { /* ignore new line characters */ } 
 .                         { 
                             // duplicate the value of yytext
                             temp = strdup(yytext);
                             errors.push("Unexpected character " + temp + 
-                                        " at position " + "[" + to_string(row) 
-                                        + "," + to_string(col) + "]. \n");
+                                        " at position " + "[" + to_string(yylineno) 
+                                        + "," + to_string(yycolumn) + "]. \n");
                           }
-
-%%
-
-/*
-  offsets the columns and the rows for multiline comments, as could be the case
-  that after a multiline comment could be a valid code statement.
-*/
-void setMultiLineOffset(char* text)
-{ 
-  for (int i=0; i < strlen(text); i++)
-  {
-    char x = text[i];
-
-    // If there is a line break, reset the column and increment the row.
-    if(x == '\n')
-    {
-      row++;
-      col = 0;
-    } else {
-      col++;
-    }
-  }
-}
-
-/*
-  Prints the queue to std.
-*/
-void printQueue(queue<string> queueToPrint)
-{
-  while (!queueToPrint.empty()) {
-    cout << queueToPrint.front();
-    queueToPrint.pop();
-  }
-}
-
-/*
-  Starts lexer execution
-*/
-int main(int argc, char **argv)
-{
-  // Look for input line
-  if(argc < 2) 
-  {
-    cout << "No input file" << endl;
-    return -1;
-  }
-
-  // open file to extract the tokens
-  FILE *file = fopen(argv[1], "r");
-    
-  // check if file was succesfully opened.
-  if (!file) 
-  {
-    cout << "There was an error opening the file" << endl;
-    return -1;
-  }
-
-  // insert tokens into the lexer
-  yyin = file;
-
-  // iterate while there are new tokens
-  int tok;
-  while(tok = yylex()) 
-  {
-    // if token can have multiple values, also print the value of the token
-    if(tok == NUMBER || tok == ID || tok == SINGLE_QUOTE || tok == DOUBLE_QUOTE)
-    {
-      tokens.push(to_string(tok) + " = " + yylval + "\n");
-    }
-    else 
-      tokens.push(to_string(tok) + "\n");
-    col += strlen(yytext);
-  }
-
-  fclose(file);
-
-  if(errors.empty())
-    printQueue(tokens);
-  else
-    printQueue(errors);
-
-  return 0;
-}
