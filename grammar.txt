@@ -57,8 +57,7 @@ Number	->	Number + Number
 				|		int 
 				|		float 
 				|		LValue
-				|		FuncCall
-
+        |   FuncCall
 
 # ======= EXPRESIONES BOOLEANAS ======= #
 # Los colocaremos en orden de menor a mayor precedencia
