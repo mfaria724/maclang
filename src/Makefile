@@ -1,7 +1,7 @@
 default: parser.y lexer.l
 	bison -d parser.y 
 	flex lexer.l 
-	g++ parser.tab.c lex.yy.c -g -o parser.out
+	g++ ast.cpp parser.tab.c lex.yy.c -g -o parser.out
 	make clean
 
 clean:

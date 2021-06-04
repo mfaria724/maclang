@@ -6,8 +6,9 @@
   #include <string>
   #include <vector>
   #include <queue>
-  #include "parser.tab.h"
   #include <iostream>
+  #include "ast.hpp"
+  #include "parser.tab.h"
 
   using namespace std;
 

@@ -3,6 +3,7 @@
   #include <queue>
   #include <cstring>
   #include <string>
+  #include "ast.hpp"
 
   using namespace std;
 
@@ -33,6 +34,7 @@
   bool  boolean;
   char  *str;
   char  ch;
+  node *ast;
 }
 
 %locations
@@ -71,7 +73,6 @@
 %token DIV
 %token ASTERISK
 %token ASSIGNMENT
-%token T_INT
 %token T_CHAR 
 %token T_BOOL 
 %token T_FLOAT
@@ -105,24 +106,27 @@
 
 %token <integer>  INT
 %token <flot>     FLOAT
-%token <id>       ID
+%token <str>      ID
 %token <chr>      CHAR
 %token <str>      STRING
 %token <boolean>  TRUE FALSE
+%token <str> T_INT
 
-%%
+%type <ast> S I Inst Action VarInst VarDef VarDefBody OptAssign Type
+
+%% 
 
 /* =================== GLOBAL RULES =================== */
-S       : I                   { ; }
+S       : I                   { $$ = (node*) new node_S($1); }
         | /* lambda */ 
         ;
-I       : Inst                { ; }
-        | I Inst              { ; }
+I       : Inst                { $$ = new node_I($1); }
+        | I Inst              { $$ = new node_I($1, $2); }
         ;
-Inst    : Action              { ; }
+Inst    : Action              { $$ = $1; }
 				| Def                 { ; }
         ;
-Action  : VarInst SEMICOLON   { ; }
+Action  : VarInst SEMICOLON   { $$ = $1; }
 				| FuncCall SEMICOLON  { ; }
 				| Conditional         { ; }
 				| LoopWhile           { ; }
@@ -134,14 +138,14 @@ Def     : UnionDef            { ; }
         ;
 
 /* ============ VARIABLES DEFINITION ============ */
-VarInst     : VarDef                    { ; }
+VarInst     : VarDef                    { $$ = $1; }
 						| Assign                    { ; }
             ;
-VarDef      : LET VarDefBody            { ; }  
+VarDef      : LET VarDefBody            { $$ = $2; }  
             ;
-VarDefBody  : Type ID OptAssign         { ; }
+VarDefBody  : Type ID OptAssign         { $$ = new node_VarDef($1, $2, $3); }
             ;   
-OptAssign   : /* lambda */
+OptAssign   : /* lambda */              { $$ = NULL; }
 						| ASSIGNMENT RValue         { ; }
             ;
 Assign      : LValue ASSIGNMENT RValue  { ; }
@@ -152,15 +156,15 @@ RValue      : Exp                       { ; }
             ;
 
 /* ======================== TYPES ======================== */
-Type	: Type OPEN_BRACKET Exp CLOSE_BRACKET       { ; }
-			| POINTER Type 	                            { ; }
-			| OPEN_PAR Type CLOSE_PAR                   { ; }
-      | T_UNIT                                    { ; }
-			| T_BOOL                                    { ; }
-      | T_CHAR                                    { ; }
-      | T_INT                                     { ; }
-      | T_FLOAT                                   { ; }
-      | T_STRING                                  { ; }
+Type	: Type OPEN_BRACKET Exp CLOSE_BRACKET { ; }
+			| POINTER Type 	                      { ; }
+			| OPEN_PAR Type CLOSE_PAR             { ; }
+      | T_UNIT                              { ; }
+			| T_BOOL                              { ; }
+      | T_CHAR                              { ; }
+      | T_INT                               { $$ = new node_TypePrimitiveDef($1); }
+      | T_FLOAT                             { ; }
+      | T_STRING                            { ; }
       ;
 
 /* ======================= LVALUES ======================= */
