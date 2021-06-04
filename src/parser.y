@@ -88,10 +88,12 @@
 %locations
 %start S
 
-
-%left PLUS MINUS
-%left ASTERISK DIV MODULE
-%right POWER
+%left   DOT
+%right  POINTER
+%left   OPEN_BRACKET CLOSE_BRACKET
+%left   PLUS MINUS
+%left   ASTERISK DIV MODULE
+%right  POWER
 
 %token SEMICOLON
 %token OPEN_PAR
@@ -142,8 +144,6 @@
 %token AT
 %token RIGHT_ARROW
 
-%token EOL
-
 %token <integer>  INT
 %token <flot>     FLOAT
 %token <id>       ID
@@ -155,26 +155,220 @@
 
 %%
 
-S       : Integer EOL                 { cout << $1 << "\n"; }
+/* =================== REGLAS GLOBALES =================== */
+S       : I                   { ; }
         | /* lambda */ 
         ;
-
-Integer	:	Integer PLUS Integer        { $$ = $1 + $3; }
-				|	Integer MINUS Integer       { $$ = $1 - $3; }
-				|	Integer ASTERISK Integer    { $$ = $1 * $3; }
-				|	Integer DIV Integer         { $$ = $1 / $3; }         
-				|	Integer MODULE Integer      { $$ = $1 % $3; }
-				|	MINUS Integer               { $$ = -$2; }
-				|	PLUS Integer                { $$ = $2; }
-        | Integer POWER Integer       { $$ = $1 * $3; }
-				|	OPEN_PAR Integer CLOSE_PAR  { $$ = $2; }
-				|	INT                         { $$ = $1; }
+I       : Inst                { ; }
+        | I Inst              { ; }
         ;
+Inst    : Action              { ; }
+				| Def                 { ; }
+        ;
+Action  : VarInst SEMICOLON   { ; }
+				| FuncCall SEMICOLON  { ; }
+				| Conditional         { ; }
+				| LoopWhile           { ; }
+				| LoopFor             { ; }
+        ;
+Def     : UnionDef            { ; }
+				| RegisterDef         { ; }
+				| RutineDef           { ; }
+        ;
+
+/* ============ INSTRUCCIONES SOBRE VARIABLES ============ */
+VarInst     : VarDef                    { ; }
+						| Assign                    { ; }
+            ;
+VarDef      : LET VarDefBody            { ; }  
+            ;
+VarDefBody  : Type ID OptAssign         { ; }
+            ;   
+OptAssign   : /* lambda */
+						| ASSIGNMENT RValue         { ; }
+            ;
+Assign      : LValue ASSIGNMENT RValue  { ; }
+            ;
+RValue      : LValue                    { ; }
+						| Expression                { ; }
+						| FuncCall                  { ; }
+            ;
+Expression  : Number                        { ; }
+						| Bool                          { ; }
+						| Array                         { ; }
+						| STRING                        { ; }
+						| CHAR                          { ; }
+            ;
+
+/* ======================== TIPOS ======================== */
+Type	: Type OPEN_BRACKET Integer CLOSE_BRACKET   { ; }
+			| POINTER Type 	                            { ; }
+			| OPEN_PAR Type CLOSE_PAR                   { ; }
+      | T_UNIT                                    { ; }
+			| T_BOOL                                    { ; }
+      | T_CHAR                                    { ; }
+      | T_INT                                     { ; }
+      | T_FLOAT                                   { ; }
+      | T_STRING                                  { ; }
+      ;
+
+/* ======================= LVALUES ======================= */
+LValue	:	LValue OPEN_BRACKET Integer CLOSE_BRACKET   { ; }
+				|	POINTER LValue                              { ; }
+				|	LValue DOT ID                               { ; }
+				| OPEN_PAR LValue CLOSE_PAR                   { ; }
+				|	ID                                          { ; }
+        ;
+
+/* ================ EXPRESIONES NUMERICAS ================ */
+Number	:	Number PLUS Number          { ; }
+				|	Number MINUS Number         { ; }
+				|	Number ASTERISK Number      { ; }
+				|	Number DIV Number           { ; }
+				|	Number MODULE Number        { ; }
+				|	MINUS Number                { ; }
+        | PLUS Number                 { ; }
+        | Number POWER Number         { ; }
+				| OPEN_PAR Number CLOSE_PAR   { ; }
+        | LValue                      { ; }
+        | FuncCall                    { ; }
+				|	INT                         { ; }
+				|	FLOAT                       { ; }
+        ;
+
+/* ================ EXPRESIONES BOOLEANAS ================ */
+Bool	:	Bool EQUIV Bool               { ; }
+			|	Bool NOT_EQUIV Bool           { ; }
+			|	Bool OR Bool                  { ; }
+			|	Bool AND Bool                 { ; }
+			|	NOT Bool                      { ; }
+			|	OPEN_PAR Bool CLOSE_PAR       { ; }
+			|	Number Comp Number            { ; }
+			|	TRUE                          { ; }
+			|	FALSE                         { ; }
+			|	LValue                        { ; }
+			|	FuncCall                      { ; }
+      ;
+Comp  : LESS_THAN                     { ; }
+			| LESS_EQUAL_THAN               { ; }
+			| EQUIV                         { ; }
+			| NOT_EQUIV                     { ; }
+			| GREATER_EQUAL_THAN            { ; }
+			| GREATER_THAN                  { ; }
+      ;
+
+/* ====================== ARREGLOS ====================== */
+Array     : OPEN_BRACKET ArrExp CLOSE_BRACKET
+          ;
+ArrExp    : /* lambda */
+					| ArrElems RValue 
+          ;
+ArrElems	: /* lambda */ 
+					| ArrElems RValue COMMA
+          ;
+
+/* ================= EXPRESIONES ENTERAS ================= */
+Integer	:	Integer PLUS Integer        { ; }
+				|	Integer MINUS Integer       { ; }
+				|	Integer ASTERISK Integer    { ; }
+				|	Integer DIV Integer         { ; }         
+				|	Integer MODULE Integer      { ; }
+				|	MINUS Integer               { ; }
+				|	PLUS Integer                { ; }
+        | Integer POWER Integer       { ; }
+				|	OPEN_PAR Integer CLOSE_PAR  { ; }
+        | LValue                      { ; }
+        | FuncCall                    { ; }
+				|	INT                         { ; }
+        ;
+
+/* ================= LLAMADAS A FUNCIONES ================= */
+FuncCall  : ID OPEN_PAR ArgsExp CLOSE_PAR   { ; }
+          ;
+ArgsExp   : /* lambda */
+					| Args RValue                     { ; }
+          ;
+Args      : /* lambda */ 
+					| Args RValue COMMA               { ; }
+          ;
+
+/* ================= DEFINICION DE UNIONES ================= */
+UnionDef  : UNION ID OPEN_C_BRACE UnionBody CLOSE_C_BRACE   { ; }
+          ; 
+UnionBody	: Type ID SEMICOLON                               { ; }
+					| UnionBody Type ID SEMICOLON                     { ; }
+          ;
+
+/* ================ DEFINICION DE REGISTROS ================ */
+RegisterDef   : REGISTER ID OPEN_C_BRACE RegisterBody CLOSE_C_BRACE   { ; }
+              ;
+RegisterBody	: VarDef SEMICOLON                                      { ; }
+							|	RegisterBody VarDef SEMICOLON                         { ; }
+              ;
+
+/* ===================== CONDICIONALES ===================== */
+Conditional : IF Bool THEN I OptElsif OptElse END   { ; }
+            ;
+OptElsif    : /* lambda */ 
+						| Elsifs                                { ; }
+            ;
+Elsifs      : ELSIF Bool THEN I                     { ; }
+						| Elsifs ELSIF Bool THEN I              { ; }
+            ;
+OptElse     : /* lambda */ 
+						| ELSE I                                { ; }
+            ;
+
+/* ======================== BUCLES ======================== */
+LoopWhile : WHILE Bool DO I DONE                                                            { ; }
+          ; 
+LoopFor   : FOR OPEN_PAR ID SEMICOLON Number SEMICOLON Number OptStep CLOSE_PAR DO I DONE   { ; }
+          ;
+OptStep   : /* lambda */ 
+				  | SEMICOLON Number                                                                { ; }
+          ;
+
+/* =============== DEFINICION DE SUBRUTINAS =============== */
+RutineDef   : ID OPEN_PAR RutineArgs CLOSE_PAR OptReturn OPEN_C_BRACE Actions CLOSE_C_BRACE { ; }
+            ; 
+RutineArgs  : /* lambda */ 
+						| ArgsDef                                                                       { ; }
+            ;
+ArgsDef     : Type OptRef ID OptAssign                                                      { ; }
+						| ArgsDef Type OptRef ID OptAssign                                              { ; }
+            ;
+OptRef      : /* lambda */
+						| AT                                                                            { ; }
+            ;
+OptReturn   : /* lambda */ 
+						| RIGHT_ARROW Type                                                              { ; }
+            ;
+Actions     : Action                                                                        { ; }
+						| Actions Action                                                                { ; }
+            ;
 
 %%
 
 int main(int argc, char **argv)
 {
+  // Look for input line
+  if(argc != 2) 
+  {
+    cout << "No input file" << endl;
+    return -1;
+  }
+
+  // open file to extract the tokens
+  extern FILE *yyin;
+  yyin = fopen(argv[1], "r");
+    
+  // check if file was succesfully opened.
+  if (!yyin) 
+  {
+    cout << "There was an error opening the file" << endl;
+    return -1;
+  }
+
   yyparse();
   return 0;
 }

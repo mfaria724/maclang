@@ -20,7 +20,7 @@
     yylloc.first_line = yylloc.last_line = yylineno; \
     yylloc.first_column = yycolumn; yylloc.last_column = yycolumn + yyleng - 1; \
     yycolumn += yyleng; \
-    yylval.str = strdup(yytext);
+    yylval.str = strdup(yytext); 
 %}
 
 %%
@@ -83,7 +83,7 @@
 [[:alpha:]_][[:alnum:]_]* { return ID; }
 \'.\'                     { yylval.ch = yytext[1]; return CHAR; }
 \"(?:[^"\\\n]|\\.)*\"     { return STRING; }
-\n                        { return EOL; } 
+\n                        { /* ignore new line characters */ } 
 .                         { 
                             // duplicate the value of yytext
                             string temp = strdup(yytext);
