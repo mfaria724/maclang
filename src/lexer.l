@@ -3,34 +3,29 @@
 %option yylineno
 
 %{
+  #include <string>
+  #include <vector>
+  #include <queue>
   #include "parser.tab.h"
 
   using namespace std;
 
-  string yylval;
+  // queues for tokens and errors
+  extern queue<string> errors;
   
   // count rows and columns to identify errors
   int yycolumn = 1;
 
-  #define YY_USER_ACTION yylloc.first_line = yylloc.last_line = yylineno; \
+  #define YY_USER_ACTION \
+    yylloc.first_line = yylloc.last_line = yylineno; \
     yylloc.first_column = yycolumn; yylloc.last_column = yycolumn + yyleng - 1; \
     yycolumn += yyleng; \
     yylval.str = strdup(yytext);
 %}
 
 %%
-\$\{[^(\$\})]*\}\$        {  
-                            /* ignore multiline line comment */
-
-                            // count the lines of the comment 
-                            setMultiLineOffset(yytext);
-                          }
-#.*\n                     { 
-                            /* ignore single line comment */ 
-                            
-                            // reset the counter for cols
-                            yycolumn = 1;
-                          }
+\$\{[^(\$\})]*\}\$        { /* ignore multiline line comment */ }
+#.*\n                     { /* ignore single line comment */ }
 ";"      		              { return SEMICOLON; }
 "("                       { return OPEN_PAR; }
 ")"                       { return CLOSE_PAR; }
@@ -50,11 +45,12 @@
 "/"                       { return DIV; }
 "*"                       { return ASTERISK; }
 "="                       { return ASSIGNMENT; } 
-"Int"                     { return INT; }
-"Char"                    { return CHAR; }
-"Bool"                    { return BOOL; }
-"Float"                   { return FLOAT; }
-"Unit"                    { return UNIT; }
+"Int"                     { return T_INT; }
+"Char"                    { return T_CHAR; }
+"Bool"                    { return T_BOOL; }
+"Float"                   { return T_FLOAT; }
+"Unit"                    { return T_UNIT; }
+"String"                  { return T_STRING; }
 "False"                   { return FALSE; }
 "True"                    { return TRUE; }
 "["                       { return OPEN_BRACKET; }
@@ -80,18 +76,18 @@
 "let"                     { return LET; }
 "@"                       { return AT; }
 "=>"                      { return RIGHT_ARROW; }
-[0-9]+\.[0-9]+            { yylval =strdup(yytext); return FLOAT; }
-[0-9]+                    { yylval = strdup(yytext); return INT; }
+[0-9]+\.[0-9]+            { yylval.flot = atof(yytext); return FLOAT; }
+[0-9]+                    { yylval.integer = atoi(yytext); return INT; }
 [\t]                      { yycolumn++; /* ignore tab */ }
 [ ]                       { /* ignore whitespace */ }
-[[:alpha:]_][[:alnum:]_]* { yylval = strdup(yytext); return ID; }
-\'.\'                     { yylval = strdup(yytext); return SINGLE_QUOTE; }
-\"(?:[^"\\\n]|\\.)*\"     { yylval = strdup(yytext); return DOUBLE_QUOTE; }
-\n                        { /* ignore new line characters */ } 
+[[:alpha:]_][[:alnum:]_]* { return ID; }
+\'.\'                     { yylval.ch = yytext[1]; return CHAR; }
+\"(?:[^"\\\n]|\\.)*\"     { return STRING; }
+\n                        { return EOL; } 
 .                         { 
                             // duplicate the value of yytext
-                            temp = strdup(yytext);
-                            errors.push("Unexpected character " + temp + 
-                                        " at position " + "[" + to_string(yylineno) 
-                                        + "," + to_string(yycolumn) + "]. \n");
+                            string temp = strdup(yytext);
+                            // errors.push("Unexpected character " + temp + 
+                            //             " at position " + "[" + to_string(yylineno) 
+                            //             + "," + to_string(yycolumn) + "]. \n");
                           }

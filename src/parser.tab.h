@@ -68,37 +68,43 @@ extern int yydebug;
     GREATER_THAN = 274,
     LESS_THAN = 275,
     ASSIGNMENT = 276,
-    UNIT = 277,
-    OPEN_BRACKET = 278,
-    CLOSE_BRACKET = 279,
-    OPEN_C_BRACE = 280,
-    CLOSE_C_BRACE = 281,
-    COMMA = 282,
-    REGISTER = 283,
-    DOT = 284,
-    UNION = 285,
-    POINTER = 286,
-    NEW = 287,
-    FORGET = 288,
-    IF = 289,
-    THEN = 290,
-    ELSIF = 291,
-    ELSE = 292,
-    END = 293,
-    WHILE = 294,
-    DO = 295,
-    DONE = 296,
-    FOR = 297,
-    LET = 298,
-    AT = 299,
-    RIGHT_ARROW = 300,
-    INT = 301,
-    FLOAT = 302,
-    ID = 303,
-    SINGLE_QUOTE = 304,
-    DOUBLE_QUOTE = 305,
-    TRUE = 306,
-    FALSE = 307
+    T_INT = 277,
+    T_CHAR = 278,
+    T_BOOL = 279,
+    T_FLOAT = 280,
+    T_UNIT = 281,
+    T_STRING = 282,
+    OPEN_BRACKET = 283,
+    CLOSE_BRACKET = 284,
+    OPEN_C_BRACE = 285,
+    CLOSE_C_BRACE = 286,
+    COMMA = 287,
+    REGISTER = 288,
+    DOT = 289,
+    UNION = 290,
+    POINTER = 291,
+    NEW = 292,
+    FORGET = 293,
+    IF = 294,
+    THEN = 295,
+    ELSIF = 296,
+    ELSE = 297,
+    END = 298,
+    WHILE = 299,
+    DO = 300,
+    DONE = 301,
+    FOR = 302,
+    LET = 303,
+    AT = 304,
+    RIGHT_ARROW = 305,
+    EOL = 306,
+    INT = 307,
+    FLOAT = 308,
+    ID = 309,
+    CHAR = 310,
+    STRING = 311,
+    TRUE = 312,
+    FALSE = 313
   };
 #endif
 
@@ -107,17 +113,15 @@ extern int yydebug;
 
 union YYSTYPE
 {
-#line 102 "parser.y" /* yacc.c:1921  */
+#line 80 "parser.y" /* yacc.c:1921  */
 	
-			int num; 
-			float flot;
-			bool boolean;
-			char * str;
-			char ch;
-			ArbolSintactico * arb;
-		
+  int   integer;
+  float flot;
+  bool  boolean;
+  char  *str;
+  char  ch;
 
-#line 121 "parser.tab.h" /* yacc.c:1921  */
+#line 125 "parser.tab.h" /* yacc.c:1921  */
 };
 
 typedef union YYSTYPE YYSTYPE;
