@@ -160,7 +160,7 @@
 
 %%
 
-/* =================== REGLAS GLOBALES =================== */
+/* =================== GLOBAL RULES =================== */
 S       : I                   { ; }
         | /* lambda */ 
         ;
@@ -181,7 +181,7 @@ Def     : UnionDef            { ; }
 				| RutineDef           { ; }
         ;
 
-/* ============ INSTRUCCIONES SOBRE VARIABLES ============ */
+/* ============ VARIABLES DEFINITION ============ */
 VarInst     : VarDef                    { ; }
 						| Assign                    { ; }
             ;
@@ -199,7 +199,7 @@ RValue      : Exp                       { ; }
             | STRING                    { ; }
             ;
 
-/* ======================== TIPOS ======================== */
+/* ======================== TYPES ======================== */
 Type	: Type OPEN_BRACKET Exp CLOSE_BRACKET       { ; }
 			| POINTER Type 	                            { ; }
 			| OPEN_PAR Type CLOSE_PAR                   { ; }
@@ -247,7 +247,7 @@ Exp   : Exp EQUIV Exp               { ; }
       | FLOAT                       { ; }
       ;
 
-/* ====================== ARREGLOS ====================== */
+/* ====================== ARRAYS ====================== */
 Array     : OPEN_BRACKET ArrExp CLOSE_BRACKET
           ;
 ArrExp    : /* lambda */
@@ -257,7 +257,7 @@ ArrElems	: /* lambda */
 					| ArrElems RValue COMMA
           ;
 
-/* ================= LLAMADAS A FUNCIONES ================= */
+/* ================= FUNCTION CALLS ================= */
 FuncCall  : ID OPEN_PAR ArgsExp CLOSE_PAR   { ; }
           ;
 ArgsExp   : /* lambda */
@@ -267,21 +267,21 @@ Args      : /* lambda */
 					| Args RValue COMMA               { ; }
           ;
 
-/* ================= DEFINICION DE UNIONES ================= */
+/* ================= UNION DEFINITION ================= */
 UnionDef  : UNION ID OPEN_C_BRACE UnionBody CLOSE_C_BRACE   { ; }
           ; 
 UnionBody	: Type ID SEMICOLON                               { ; }
 					| UnionBody Type ID SEMICOLON                     { ; }
           ;
 
-/* ================ DEFINICION DE REGISTROS ================ */
+/* ================ REGISTER DEFINITION ================ */
 RegisterDef   : REGISTER ID OPEN_C_BRACE RegisterBody CLOSE_C_BRACE   { ; }
               ;
 RegisterBody	: VarDef SEMICOLON                                      { ; }
 							|	RegisterBody VarDef SEMICOLON                         { ; }
               ;
 
-/* ===================== CONDICIONALES ===================== */
+/* ===================== CONDITIONALS ===================== */
 Conditional : IF Exp THEN I OptElsif OptElse END   { ; }
             ;
 OptElsif    : /* lambda */ 
@@ -294,7 +294,7 @@ OptElse     : /* lambda */
 						| ELSE I                                { ; }
             ;
 
-/* ======================== BUCLES ======================== */
+/* ======================== LOOPS ======================== */
 LoopWhile : WHILE Exp DO I DONE                                                            { ; }
           ; 
 LoopFor   : FOR OPEN_PAR ID SEMICOLON Exp SEMICOLON Exp OptStep CLOSE_PAR DO I DONE   { ; }
@@ -303,8 +303,9 @@ OptStep   : /* lambda */
 				  | SEMICOLON Exp                                                                { ; }
           ;
 
-/* =============== DEFINICION DE SUBRUTINAS =============== */
-RutineDef   : DEF ID OPEN_PAR RutineArgs CLOSE_PAR OptReturn OPEN_C_BRACE Actions CLOSE_C_BRACE { ; }
+/* =============== SUBROUTINES DEFINITION =============== */
+RutineDef   : DEF ID OPEN_PAR RutineArgs CLOSE_PAR 
+              OptReturn OPEN_C_BRACE Actions CLOSE_C_BRACE { ; }
             ; 
 RutineArgs  : /* lambda */ 
 						| ArgsDef                                                                           { ; }
