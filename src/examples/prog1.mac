@@ -8,22 +8,22 @@ ${
 
 # tipos primitivos
 
-Int i;          # Entero inicializado pero sin valor asignado.
-Int j = 1;      # Entero inicializado y con valor asignado.
-Char c = '1';   # Caracter
-Bool b;         # Booleano
-Float f = 1.0;  # Flotante
+let Int i;          # Entero inicializado pero sin valor asignado.
+let Int j = 1;      # Entero inicializado y con valor asignado.
+let Char c = '1';   # Caracter
+let Bool b;         # Booleano
+let Float f = 1.0;  # Flotante
 
 # tipos complejos
 ## arreglos
-Bool[] array;
-Int[] integers = [1, 1, 2, 42, 69];
+let Bool[4] array;
+let Int[6] integers = [1, 1, 2, 42, 69];
 
 ## strings
-String hello = "world";
-String aja = ['a', 'y', ' ', 'n', 'o'];
-Char[] ohno = "ohwell";
-Char[] press = ['F'];
+let String hello = "world";
+let String aja = ['a', 'y', ' ', 'n', 'o'];
+let Char[4] ohno = "ohwell";
+let Char[3] press = ['F'];
 
 ## registros
 register registro {

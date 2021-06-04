@@ -32,11 +32,11 @@ El lenguaje contará con 4 tipos primitivos:
 Para la inicialización de cada uno de ellos se usará la siguiente sintáxis:
 
 ```
-Int i;          # Entero inicializado pero sin valor asignado.
-Int j = 1;      # Entero inicializado y con valor asignado.
-Char c = '1';   # Caracter
-Bool b;         # Booleano
-Float f = 1.0;  # Flotante
+let Int i;          # Entero inicializado pero sin valor asignado.
+let Int j = 1;      # Entero inicializado y con valor asignado.
+let Char c = '1';   # Caracter
+let Bool b;         # Booleano
+let Float f = 1.0;  # Flotante
 ```
 
 Todos estos tipos soportan la operación de asignación `=`, excepto `Unit`.
@@ -100,8 +100,8 @@ sería equivalente al tipo `Char[]`. Por ejemplo:
 ```
 String hello = "world";
 String aja = ['a', 'y', ' ', 'n', 'o'];
-Char[] ohno = "ohwell";
-Char[] press = ['F'];
+Char[6] ohno = "ohwell";
+Char[1] press = ['F'];
 ```
 
 Por lo tanto, el tipo `String` tiene definidas las mismas operaciones que los arreglos.
@@ -127,11 +127,11 @@ lenguaje. Las únicas operaciones definidas sobre los registros son el acceso a 
 ```
 register alo {
   Char mander;
-  Bool[] basaur;
+  Bool[4] basaur;
   String erThings = "a";
 }
 alo ok;
-ok.a = "sua";
+ok.erThings = "sua";
 ```
 
 Intentar realizar otra operación a parte de la asignación sobre un campo no definido

@@ -7,11 +7,12 @@
   #include <vector>
   #include <queue>
   #include "parser.tab.h"
+  #include <iostream>
 
   using namespace std;
 
   // queues for tokens and errors
-  extern queue<string> errors;
+  queue<string> errors;
   
   // count rows and columns to identify errors
   int yycolumn = 1;
@@ -21,11 +22,14 @@
     yylloc.first_column = yycolumn; yylloc.last_column = yycolumn + yyleng - 1; \
     yycolumn += yyleng; \
     yylval.str = strdup(yytext); 
+
+  // add an error to queue
+  void pushError(void);
 %}
 
 %%
 \$\{[^(\$\})]*\}\$        { /* ignore multiline line comment */ }
-#.*\n                     { /* ignore single line comment */ }
+#.*\n                     { yycolumn = 1; /* ignore single line comment */ }
 ";"      		              { return SEMICOLON; }
 "("                       { return OPEN_PAR; }
 ")"                       { return CLOSE_PAR; }
@@ -77,18 +81,36 @@
 "def"                     { return DEF; }
 "@"                       { return AT; }
 "=>"                      { return RIGHT_ARROW; }
-[0-9]+\.[0-9]+            { yylval.flot = atof(yytext); return FLOAT; }
+[[:alpha:]_][[:alnum:]_]* { return ID; }
 [0-9]+                    { yylval.integer = atoi(yytext); return INT; }
+[0-9]+\.[0-9]+            { yylval.flot = atof(yytext); return FLOAT; }
+[[:digit:]][[:alnum:]_]*  { 
+                            /* add error to queue */
+                            pushError(); 
+                            return ERROR;
+                          }
 [\t]                      { yycolumn++; /* ignore tab */ }
 [ ]                       { /* ignore whitespace */ }
-[[:alpha:]_][[:alnum:]_]* { return ID; }
 \'.\'                     { yylval.ch = yytext[1]; return CHAR; }
 \"(?:[^"\\\n]|\\.)*\"     { return STRING; }
-\n                        { /* ignore new line characters */ } 
+\n                        { yycolumn = 1; /* ignore new line characters */ } 
 .                         { 
-                            // duplicate the value of yytext
-                            string temp = strdup(yytext);
-                            // errors.push("Unexpected character " + temp + 
-                            //             " at position " + "[" + to_string(yylineno) 
-                            //             + "," + to_string(yycolumn) + "]. \n");
+                            /* add error to queue */
+                            pushError(); 
+                            return ERROR;
                           }
+                            
+                          
+%%
+
+/*
+  adds a lexing error to the queue that will be printed on the parsing phase
+*/
+void pushError() {
+  // duplicate the value of yytext
+  string temp = strdup(yytext);
+
+  // add the error to the queue
+  errors.push("Unexpected token " + temp + " at position " + "[" + 
+              to_string(yylineno) + "," + to_string(yycolumn - yyleng) + "]. \n");
+}

@@ -14,7 +14,7 @@
   // queues for tokens and errors
   extern queue<string> errors;
 
-  // offsets the columns and the rows for multiline comments, as could be the case
+  // offsets the columns and the rows for multiline comments
   void setMultiLineOffset(char* text);
 
   // Prints error;
@@ -22,56 +22,6 @@
 
   // Prints the queue to std.
   void printQueue(queue<string> queueToPrint);
-
-  /*
-    Starts lexer execution
-  int main(int argc, char **argv)
-  {
-    // Look for input line
-    if(argc < 2) 
-    {
-      cout << "No input file" << endl;
-      return -1;
-    }
-
-    // open file to extract the tokens
-    FILE *file = fopen(argv[1], "r");
-      
-    // check if file was succesfully opened.
-    if (!file) 
-    {
-      cout << "There was an error opening the file" << endl;
-      return -1;
-    }
-
-    // insert tokens into the lexer
-    yyin = file;
-
-    // iterate while there are new tokens
-    int tok;
-    while(tok = yylex()) 
-    {
-      // if token can have multiple values, also print the value of the token
-      if(tok == INT || tok == ID || tok == SINGLE_QUOTE || tok == DOUBLE_QUOTE
-        || tok == FLOAT)
-      {
-        tokens.push(to_string(tok) + " = " + yylval + "\n");
-      }
-      else 
-        tokens.push(to_string(tok) + "\n");
-      col += strlen(yytext);
-    }
-
-    fclose(file);
-
-    if(errors.empty())
-      printQueue(tokens);
-    else
-      printQueue(errors);
-
-    return 0;
-  }
-  */
 %}
 
 %define parse.lac full
@@ -98,6 +48,7 @@
 %left       OPEN_BRACKET CLOSE_BRACKET
 %right      POINTER
 %left       DOT
+%nonassoc   ID
 %left       OPEN_PAR
 
 
@@ -150,6 +101,7 @@
 %token DEF
 %token AT
 %token RIGHT_ARROW
+%token ERROR
 
 %token <integer>  INT
 %token <flot>     FLOAT
@@ -277,8 +229,8 @@ UnionBody	: Type ID SEMICOLON                               { ; }
 /* ================ REGISTER DEFINITION ================ */
 RegisterDef   : REGISTER ID OPEN_C_BRACE RegisterBody CLOSE_C_BRACE   { ; }
               ;
-RegisterBody	: VarDef SEMICOLON                                      { ; }
-							|	RegisterBody VarDef SEMICOLON                         { ; }
+RegisterBody	: VarDefBody SEMICOLON                                      { ; }
+							|	RegisterBody VarDefBody SEMICOLON                         { ; }
               ;
 
 /* ===================== CONDITIONALS ===================== */
@@ -295,12 +247,13 @@ OptElse     : /* lambda */
             ;
 
 /* ======================== LOOPS ======================== */
-LoopWhile : WHILE Exp DO I DONE                                                            { ; }
+LoopWhile : WHILE Exp DO I DONE                                            { ; }
           ; 
-LoopFor   : FOR OPEN_PAR ID SEMICOLON Exp SEMICOLON Exp OptStep CLOSE_PAR DO I DONE   { ; }
+LoopFor   : FOR OPEN_PAR ID SEMICOLON Exp SEMICOLON 
+            Exp OptStep CLOSE_PAR DO I DONE   { ; }
           ;
 OptStep   : /* lambda */ 
-				  | SEMICOLON Exp                                                                { ; }
+				  | SEMICOLON Exp                                                  { ; }
           ;
 
 /* =============== SUBROUTINES DEFINITION =============== */
@@ -308,19 +261,19 @@ RutineDef   : DEF ID OPEN_PAR RutineArgs CLOSE_PAR
               OptReturn OPEN_C_BRACE Actions CLOSE_C_BRACE { ; }
             ; 
 RutineArgs  : /* lambda */ 
-						| ArgsDef                                                                           { ; }
+						| ArgsDef                                                      { ; }
             ;
-ArgsDef     : Type OptRef ID OptAssign                                                          { ; }
-						| ArgsDef Type OptRef ID OptAssign                                                  { ; }
+ArgsDef     : Type OptRef ID OptAssign                                     { ; }
+						| ArgsDef Type OptRef ID OptAssign                             { ; }
             ;
 OptRef      : /* lambda */
-						| AT                                                                                { ; }
+						| AT                                                           { ; }
             ;
 OptReturn   : /* lambda */ 
-						| RIGHT_ARROW Type                                                                  { ; }
+						| RIGHT_ARROW Type                                             { ; }
             ;
-Actions     : Action                                                                            { ; }
-						| Actions Action                                                                    { ; }
+Actions     : Action                                                       { ; }
+						| Actions Action                                               { ; }
             ;
 
 %%
@@ -345,7 +298,26 @@ int main(int argc, char **argv)
     return -1;
   }
 
-  yyparse();
+  // apply lexing
+  int tok;
+  while(tok = yylex());
+
+  fclose(yyin);
+  yyin = fopen(argv[1], "r");
+
+
+  // if there are no errors, apply parsing
+  if (errors.empty()) {
+    
+    // reset lines and columns
+    yylineno = 1; 
+    yycolumn = 1;
+
+    // start parsing
+    yyparse();
+  } else {
+    printQueue(errors);
+  }
   return 0;
 }
 
@@ -354,7 +326,7 @@ int main(int argc, char **argv)
 */
 void yyerror(char *s)
 {
-  fprintf(stderr, "error: %s\n", s);
+  fprintf(stderr, "error: %s (%d,%d)\n", s, yylineno, yycolumn);
 }
 
 /*
