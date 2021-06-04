@@ -4,25 +4,8 @@ Terminals unused in grammar
    FORGET
 
 
-Rules useless in parser due to conflicts
-
-  114 RutineArgs: %empty
-
-
-State 37 conflicts: 1 shift/reduce
-State 40 conflicts: 2 reduce/reduce
-State 43 conflicts: 3 reduce/reduce
-State 56 conflicts: 2 shift/reduce, 1 reduce/reduce
-State 72 conflicts: 1 shift/reduce, 3 reduce/reduce
-State 75 conflicts: 4 shift/reduce
-State 119 conflicts: 26 reduce/reduce
-State 123 conflicts: 26 reduce/reduce
-State 128 conflicts: 1 shift/reduce
-State 139 conflicts: 4 shift/reduce
-State 140 conflicts: 4 shift/reduce
-State 141 conflicts: 4 shift/reduce
-State 142 conflicts: 4 shift/reduce
-State 158 conflicts: 1 shift/reduce
+State 10 conflicts: 1 shift/reduce
+State 71 conflicts: 1 shift/reduce
 
 
 Grammar
@@ -60,291 +43,257 @@ Grammar
 
    21 Assign: LValue ASSIGNMENT RValue
 
-   22 RValue: LValue
-   23       | Expression
-   24       | FuncCall
+   22 RValue: Exp
+   23       | Array
+   24       | STRING
 
-   25 Expression: Number
-   26           | Bool
-   27           | Array
-   28           | STRING
-   29           | CHAR
+   25 Type: Type OPEN_BRACKET Exp CLOSE_BRACKET
+   26     | POINTER Type
+   27     | OPEN_PAR Type CLOSE_PAR
+   28     | T_UNIT
+   29     | T_BOOL
+   30     | T_CHAR
+   31     | T_INT
+   32     | T_FLOAT
+   33     | T_STRING
 
-   30 Type: Type OPEN_BRACKET Integer CLOSE_BRACKET
-   31     | POINTER Type
-   32     | OPEN_PAR Type CLOSE_PAR
-   33     | T_UNIT
-   34     | T_BOOL
-   35     | T_CHAR
-   36     | T_INT
-   37     | T_FLOAT
-   38     | T_STRING
+   34 LValue: LValue OPEN_BRACKET Exp CLOSE_BRACKET
+   35       | POINTER LValue
+   36       | LValue DOT ID
+   37       | OPEN_PAR LValue CLOSE_PAR
+   38       | ID
 
-   39 LValue: LValue OPEN_BRACKET Integer CLOSE_BRACKET
-   40       | POINTER LValue
-   41       | LValue DOT ID
-   42       | OPEN_PAR LValue CLOSE_PAR
-   43       | ID
+   39 Exp: Exp EQUIV Exp
+   40    | Exp NOT_EQUIV Exp
+   41    | Exp OR Exp
+   42    | Exp AND Exp
+   43    | NOT Exp
+   44    | Exp LESS_THAN Exp
+   45    | Exp LESS_EQUAL_THAN Exp
+   46    | Exp GREATER_THAN Exp
+   47    | Exp GREATER_EQUAL_THAN Exp
+   48    | Exp PLUS Exp
+   49    | Exp MINUS Exp
+   50    | Exp ASTERISK Exp
+   51    | Exp DIV Exp
+   52    | Exp MODULE Exp
+   53    | MINUS Exp
+   54    | PLUS Exp
+   55    | Exp POWER Exp
+   56    | OPEN_PAR Exp CLOSE_PAR
+   57    | LValue
+   58    | FuncCall
+   59    | TRUE
+   60    | FALSE
+   61    | CHAR
+   62    | INT
+   63    | FLOAT
 
-   44 Number: Number PLUS Number
-   45       | Number MINUS Number
-   46       | Number ASTERISK Number
-   47       | Number DIV Number
-   48       | Number MODULE Number
-   49       | MINUS Number
-   50       | PLUS Number
-   51       | Number POWER Number
-   52       | OPEN_PAR Number CLOSE_PAR
-   53       | LValue
-   54       | FuncCall
-   55       | INT
-   56       | FLOAT
+   64 Array: OPEN_BRACKET ArrExp CLOSE_BRACKET
 
-   57 Bool: Bool EQUIV Bool
-   58     | Bool NOT_EQUIV Bool
-   59     | Bool OR Bool
-   60     | Bool AND Bool
-   61     | NOT Bool
-   62     | OPEN_PAR Bool CLOSE_PAR
-   63     | Number Comp Number
-   64     | TRUE
-   65     | FALSE
-   66     | LValue
-   67     | FuncCall
+   65 ArrExp: %empty
+   66       | ArrElems RValue
 
-   68 Comp: LESS_THAN
-   69     | LESS_EQUAL_THAN
-   70     | EQUIV
-   71     | NOT_EQUIV
-   72     | GREATER_EQUAL_THAN
-   73     | GREATER_THAN
+   67 ArrElems: %empty
+   68         | ArrElems RValue COMMA
 
-   74 Array: OPEN_BRACKET ArrExp CLOSE_BRACKET
+   69 FuncCall: ID OPEN_PAR ArgsExp CLOSE_PAR
 
-   75 ArrExp: %empty
-   76       | ArrElems RValue
+   70 ArgsExp: %empty
+   71        | Args RValue
 
-   77 ArrElems: %empty
-   78         | ArrElems RValue COMMA
+   72 Args: %empty
+   73     | Args RValue COMMA
 
-   79 Integer: Integer PLUS Integer
-   80        | Integer MINUS Integer
-   81        | Integer ASTERISK Integer
-   82        | Integer DIV Integer
-   83        | Integer MODULE Integer
-   84        | MINUS Integer
-   85        | PLUS Integer
-   86        | Integer POWER Integer
-   87        | OPEN_PAR Integer CLOSE_PAR
-   88        | LValue
-   89        | FuncCall
-   90        | INT
+   74 UnionDef: UNION ID OPEN_C_BRACE UnionBody CLOSE_C_BRACE
 
-   91 FuncCall: ID OPEN_PAR ArgsExp CLOSE_PAR
+   75 UnionBody: Type ID SEMICOLON
+   76          | UnionBody Type ID SEMICOLON
 
-   92 ArgsExp: %empty
-   93        | Args RValue
+   77 RegisterDef: REGISTER ID OPEN_C_BRACE RegisterBody CLOSE_C_BRACE
 
-   94 Args: %empty
-   95     | Args RValue COMMA
+   78 RegisterBody: VarDef SEMICOLON
+   79             | RegisterBody VarDef SEMICOLON
 
-   96 UnionDef: UNION ID OPEN_C_BRACE UnionBody CLOSE_C_BRACE
+   80 Conditional: IF Exp THEN I OptElsif OptElse END
 
-   97 UnionBody: Type ID SEMICOLON
-   98          | UnionBody Type ID SEMICOLON
+   81 OptElsif: %empty
+   82         | Elsifs
 
-   99 RegisterDef: REGISTER ID OPEN_C_BRACE RegisterBody CLOSE_C_BRACE
+   83 Elsifs: ELSIF Exp THEN I
+   84       | Elsifs ELSIF Exp THEN I
 
-  100 RegisterBody: VarDef SEMICOLON
-  101             | RegisterBody VarDef SEMICOLON
+   85 OptElse: %empty
+   86        | ELSE I
 
-  102 Conditional: IF Bool THEN I OptElsif OptElse END
+   87 LoopWhile: WHILE Exp DO I DONE
 
-  103 OptElsif: %empty
-  104         | Elsifs
+   88 LoopFor: FOR OPEN_PAR ID SEMICOLON Exp SEMICOLON Exp OptStep CLOSE_PAR DO I DONE
 
-  105 Elsifs: ELSIF Bool THEN I
-  106       | Elsifs ELSIF Bool THEN I
+   89 OptStep: %empty
+   90        | SEMICOLON Exp
 
-  107 OptElse: %empty
-  108        | ELSE I
+   91 RutineDef: DEF ID OPEN_PAR RutineArgs CLOSE_PAR OptReturn OPEN_C_BRACE Actions CLOSE_C_BRACE
 
-  109 LoopWhile: WHILE Bool DO I DONE
+   92 RutineArgs: %empty
+   93           | ArgsDef
 
-  110 LoopFor: FOR OPEN_PAR ID SEMICOLON Number SEMICOLON Number OptStep CLOSE_PAR DO I DONE
+   94 ArgsDef: Type OptRef ID OptAssign
+   95        | ArgsDef Type OptRef ID OptAssign
 
-  111 OptStep: %empty
-  112        | SEMICOLON Number
+   96 OptRef: %empty
+   97       | AT
 
-  113 RutineDef: ID OPEN_PAR RutineArgs CLOSE_PAR OptReturn OPEN_C_BRACE Actions CLOSE_C_BRACE
+   98 OptReturn: %empty
+   99          | RIGHT_ARROW Type
 
-  114 RutineArgs: %empty
-  115           | ArgsDef
-
-  116 ArgsDef: Type OptRef ID OptAssign
-  117        | ArgsDef Type OptRef ID OptAssign
-
-  118 OptRef: %empty
-  119       | AT
-
-  120 OptReturn: %empty
-  121          | RIGHT_ARROW Type
-
-  122 Actions: Action
-  123        | Actions Action
+  100 Actions: Action
+  101        | Actions Action
 
 
 Terminals, with rules where they appear
 
 $end (0) 0
 error (256)
-DOT (258) 41
-POINTER (259) 31 40
-OPEN_BRACKET (260) 30 39 74
-CLOSE_BRACKET (261) 30 39 74
-PLUS (262) 44 50 79 85
-MINUS (263) 45 49 80 84
-ASTERISK (264) 46 81
-DIV (265) 47 82
-MODULE (266) 48 83
-POWER (267) 51 86
-SEMICOLON (268) 7 8 97 98 100 101 110 112
-OPEN_PAR (269) 32 42 52 62 87 91 110 113
-CLOSE_PAR (270) 32 42 52 62 87 91 110 113
-AND (271) 60
-OR (272) 59
-NOT_EQUIV (273) 58 71
-NOT (274) 61
-EQUIV (275) 57 70
-GREATER_EQUAL_THAN (276) 72
-LESS_EQUAL_THAN (277) 69
-GREATER_THAN (278) 73
-LESS_THAN (279) 68
+EQUIV (258) 39
+NOT_EQUIV (259) 40
+OR (260) 41
+AND (261) 42
+LESS_THAN (262) 44
+LESS_EQUAL_THAN (263) 45
+GREATER_THAN (264) 46
+GREATER_EQUAL_THAN (265) 47
+NOT (266) 43
+PLUS (267) 48 54
+MINUS (268) 49 53
+ASTERISK (269) 50
+DIV (270) 51
+MODULE (271) 52
+POWER (272) 55
+OPEN_BRACKET (273) 25 34 64
+CLOSE_BRACKET (274) 25 34 64
+POINTER (275) 26 35
+DOT (276) 36
+OPEN_PAR (277) 27 37 56 69 88 91
+SEMICOLON (278) 7 8 75 76 78 79 88 90
+CLOSE_PAR (279) 27 37 56 69 88 91
 ASSIGNMENT (280) 20 21
-T_INT (281) 36
-T_CHAR (282) 35
-T_BOOL (283) 34
-T_FLOAT (284) 37
-T_UNIT (285) 33
-T_STRING (286) 38
-OPEN_C_BRACE (287) 96 99 113
-CLOSE_C_BRACE (288) 96 99 113
-COMMA (289) 78 95
-REGISTER (290) 99
-UNION (291) 96
+T_INT (281) 31
+T_CHAR (282) 30
+T_BOOL (283) 29
+T_FLOAT (284) 32
+T_UNIT (285) 28
+T_STRING (286) 33
+OPEN_C_BRACE (287) 74 77 91
+CLOSE_C_BRACE (288) 74 77 91
+COMMA (289) 68 73
+REGISTER (290) 77
+UNION (291) 74
 NEW (292)
 FORGET (293)
-IF (294) 102
-THEN (295) 102 105 106
-ELSIF (296) 105 106
-ELSE (297) 108
-END (298) 102
-WHILE (299) 109
-DO (300) 109 110
-DONE (301) 109 110
-FOR (302) 110
+IF (294) 80
+THEN (295) 80 83 84
+ELSIF (296) 83 84
+ELSE (297) 86
+END (298) 80
+WHILE (299) 87
+DO (300) 87 88
+DONE (301) 87 88
+FOR (302) 88
 LET (303) 17
-AT (304) 119
-RIGHT_ARROW (305) 121
-INT <integer> (306) 55 90
-FLOAT <flot> (307) 56
-ID <id> (308) 18 41 43 91 96 97 98 99 110 113 116 117
-CHAR <chr> (309) 29
-STRING <str> (310) 28
-TRUE <boolean> (311) 64
-FALSE <boolean> (312) 65
+DEF (304) 91
+AT (305) 97
+RIGHT_ARROW (306) 99
+INT <integer> (307) 62
+FLOAT <flot> (308) 63
+ID <id> (309) 18 36 38 69 74 75 76 77 88 91 94 95
+CHAR <chr> (310) 61
+STRING <str> (311) 24
+TRUE <boolean> (312) 59
+FALSE <boolean> (313) 60
 
 
 Nonterminals, with rules where they appear
 
-$accept (58)
+$accept (59)
     on left: 0
-S (59)
+S (60)
     on left: 1 2, on right: 0
-I (60)
-    on left: 3 4, on right: 1 4 102 105 106 108 109 110
-Inst (61)
+I (61)
+    on left: 3 4, on right: 1 4 80 83 84 86 87 88
+Inst (62)
     on left: 5 6, on right: 3 4
-Action (62)
-    on left: 7 8 9 10 11, on right: 5 122 123
-Def (63)
+Action (63)
+    on left: 7 8 9 10 11, on right: 5 100 101
+Def (64)
     on left: 12 13 14, on right: 6
-VarInst (64)
+VarInst (65)
     on left: 15 16, on right: 7
-VarDef (65)
-    on left: 17, on right: 15 100 101
-VarDefBody (66)
+VarDef (66)
+    on left: 17, on right: 15 78 79
+VarDefBody (67)
     on left: 18, on right: 17
-OptAssign (67)
-    on left: 19 20, on right: 18 116 117
-Assign (68)
+OptAssign (68)
+    on left: 19 20, on right: 18 94 95
+Assign (69)
     on left: 21, on right: 16
-RValue (69)
-    on left: 22 23 24, on right: 20 21 76 78 93 95
-Expression (70)
-    on left: 25 26 27 28 29, on right: 23
+RValue (70)
+    on left: 22 23 24, on right: 20 21 66 68 71 73
 Type (71)
-    on left: 30 31 32 33 34 35 36 37 38, on right: 18 30 31 32 97 98
-    116 117 121
+    on left: 25 26 27 28 29 30 31 32 33, on right: 18 25 26 27 75 76
+    94 95 99
 LValue (72)
-    on left: 39 40 41 42 43, on right: 21 22 39 40 41 42 53 66 88
-Number (73)
-    on left: 44 45 46 47 48 49 50 51 52 53 54 55 56, on right: 25 44
-    45 46 47 48 49 50 51 52 63 110 112
-Bool (74)
-    on left: 57 58 59 60 61 62 63 64 65 66 67, on right: 26 57 58 59
-    60 61 62 102 105 106 109
-Comp (75)
-    on left: 68 69 70 71 72 73, on right: 63
-Array (76)
-    on left: 74, on right: 27
-ArrExp (77)
-    on left: 75 76, on right: 74
-ArrElems (78)
-    on left: 77 78, on right: 76 78
-Integer <integer> (79)
-    on left: 79 80 81 82 83 84 85 86 87 88 89 90, on right: 30 39 79
-    80 81 82 83 84 85 86 87
-FuncCall (80)
-    on left: 91, on right: 8 24 54 67 89
-ArgsExp (81)
+    on left: 34 35 36 37 38, on right: 21 34 35 36 37 57
+Exp (73)
+    on left: 39 40 41 42 43 44 45 46 47 48 49 50 51 52 53 54 55 56
+    57 58 59 60 61 62 63, on right: 22 25 34 39 40 41 42 43 44 45 46
+    47 48 49 50 51 52 53 54 55 56 80 83 84 87 88 90
+Array (74)
+    on left: 64, on right: 23
+ArrExp (75)
+    on left: 65 66, on right: 64
+ArrElems (76)
+    on left: 67 68, on right: 66 68
+FuncCall (77)
+    on left: 69, on right: 8 58
+ArgsExp (78)
+    on left: 70 71, on right: 69
+Args (79)
+    on left: 72 73, on right: 71 73
+UnionDef (80)
+    on left: 74, on right: 12
+UnionBody (81)
+    on left: 75 76, on right: 74 76
+RegisterDef (82)
+    on left: 77, on right: 13
+RegisterBody (83)
+    on left: 78 79, on right: 77 79
+Conditional (84)
+    on left: 80, on right: 9
+OptElsif (85)
+    on left: 81 82, on right: 80
+Elsifs (86)
+    on left: 83 84, on right: 82 84
+OptElse (87)
+    on left: 85 86, on right: 80
+LoopWhile (88)
+    on left: 87, on right: 10
+LoopFor (89)
+    on left: 88, on right: 11
+OptStep (90)
+    on left: 89 90, on right: 88
+RutineDef (91)
+    on left: 91, on right: 14
+RutineArgs (92)
     on left: 92 93, on right: 91
-Args (82)
+ArgsDef (93)
     on left: 94 95, on right: 93 95
-UnionDef (83)
-    on left: 96, on right: 12
-UnionBody (84)
-    on left: 97 98, on right: 96 98
-RegisterDef (85)
-    on left: 99, on right: 13
-RegisterBody (86)
-    on left: 100 101, on right: 99 101
-Conditional (87)
-    on left: 102, on right: 9
-OptElsif (88)
-    on left: 103 104, on right: 102
-Elsifs (89)
-    on left: 105 106, on right: 104 106
-OptElse (90)
-    on left: 107 108, on right: 102
-LoopWhile (91)
-    on left: 109, on right: 10
-LoopFor (92)
-    on left: 110, on right: 11
-OptStep (93)
-    on left: 111 112, on right: 110
-RutineDef (94)
-    on left: 113, on right: 14
-RutineArgs (95)
-    on left: 114 115, on right: 113
-ArgsDef (96)
-    on left: 116 117, on right: 115 117
-OptRef (97)
-    on left: 118 119, on right: 116 117
-OptReturn (98)
-    on left: 120 121, on right: 113
-Actions (99)
-    on left: 122 123, on right: 113 123
+OptRef (94)
+    on left: 96 97, on right: 94 95
+OptReturn (95)
+    on left: 98 99, on right: 91
+Actions (96)
+    on left: 100 101, on right: 91 101
 
 
 State 0
@@ -359,109 +308,110 @@ State 0
     WHILE     shift, and go to state 6
     FOR       shift, and go to state 7
     LET       shift, and go to state 8
-    ID        shift, and go to state 9
+    DEF       shift, and go to state 9
+    ID        shift, and go to state 10
 
     $default  reduce using rule 2 (S)
 
-    S            go to state 10
-    I            go to state 11
-    Inst         go to state 12
-    Action       go to state 13
-    Def          go to state 14
-    VarInst      go to state 15
-    VarDef       go to state 16
-    Assign       go to state 17
-    LValue       go to state 18
-    FuncCall     go to state 19
-    UnionDef     go to state 20
-    RegisterDef  go to state 21
-    Conditional  go to state 22
-    LoopWhile    go to state 23
-    LoopFor      go to state 24
-    RutineDef    go to state 25
+    S            go to state 11
+    I            go to state 12
+    Inst         go to state 13
+    Action       go to state 14
+    Def          go to state 15
+    VarInst      go to state 16
+    VarDef       go to state 17
+    Assign       go to state 18
+    LValue       go to state 19
+    FuncCall     go to state 20
+    UnionDef     go to state 21
+    RegisterDef  go to state 22
+    Conditional  go to state 23
+    LoopWhile    go to state 24
+    LoopFor      go to state 25
+    RutineDef    go to state 26
 
 
 State 1
 
-   40 LValue: POINTER . LValue
+   35 LValue: POINTER . LValue
 
     POINTER   shift, and go to state 1
     OPEN_PAR  shift, and go to state 2
-    ID        shift, and go to state 26
-
-    LValue  go to state 27
-
-
-State 2
-
-   42 LValue: OPEN_PAR . LValue CLOSE_PAR
-
-    POINTER   shift, and go to state 1
-    OPEN_PAR  shift, and go to state 2
-    ID        shift, and go to state 26
+    ID        shift, and go to state 27
 
     LValue  go to state 28
 
 
+State 2
+
+   37 LValue: OPEN_PAR . LValue CLOSE_PAR
+
+    POINTER   shift, and go to state 1
+    OPEN_PAR  shift, and go to state 2
+    ID        shift, and go to state 27
+
+    LValue  go to state 29
+
+
 State 3
 
-   99 RegisterDef: REGISTER . ID OPEN_C_BRACE RegisterBody CLOSE_C_BRACE
-
-    ID  shift, and go to state 29
-
-
-State 4
-
-   96 UnionDef: UNION . ID OPEN_C_BRACE UnionBody CLOSE_C_BRACE
+   77 RegisterDef: REGISTER . ID OPEN_C_BRACE RegisterBody CLOSE_C_BRACE
 
     ID  shift, and go to state 30
 
 
+State 4
+
+   74 UnionDef: UNION . ID OPEN_C_BRACE UnionBody CLOSE_C_BRACE
+
+    ID  shift, and go to state 31
+
+
 State 5
 
-  102 Conditional: IF . Bool THEN I OptElsif OptElse END
+   80 Conditional: IF . Exp THEN I OptElsif OptElse END
 
+    NOT       shift, and go to state 32
+    PLUS      shift, and go to state 33
+    MINUS     shift, and go to state 34
     POINTER   shift, and go to state 1
-    PLUS      shift, and go to state 31
-    MINUS     shift, and go to state 32
-    OPEN_PAR  shift, and go to state 33
-    NOT       shift, and go to state 34
-    INT       shift, and go to state 35
-    FLOAT     shift, and go to state 36
-    ID        shift, and go to state 37
-    TRUE      shift, and go to state 38
-    FALSE     shift, and go to state 39
+    OPEN_PAR  shift, and go to state 35
+    INT       shift, and go to state 36
+    FLOAT     shift, and go to state 37
+    ID        shift, and go to state 10
+    CHAR      shift, and go to state 38
+    TRUE      shift, and go to state 39
+    FALSE     shift, and go to state 40
 
-    LValue    go to state 40
-    Number    go to state 41
-    Bool      go to state 42
+    LValue    go to state 41
+    Exp       go to state 42
     FuncCall  go to state 43
 
 
 State 6
 
-  109 LoopWhile: WHILE . Bool DO I DONE
+   87 LoopWhile: WHILE . Exp DO I DONE
 
+    NOT       shift, and go to state 32
+    PLUS      shift, and go to state 33
+    MINUS     shift, and go to state 34
     POINTER   shift, and go to state 1
-    PLUS      shift, and go to state 31
-    MINUS     shift, and go to state 32
-    OPEN_PAR  shift, and go to state 33
-    NOT       shift, and go to state 34
-    INT       shift, and go to state 35
-    FLOAT     shift, and go to state 36
-    ID        shift, and go to state 37
-    TRUE      shift, and go to state 38
-    FALSE     shift, and go to state 39
+    OPEN_PAR  shift, and go to state 35
+    INT       shift, and go to state 36
+    FLOAT     shift, and go to state 37
+    ID        shift, and go to state 10
+    CHAR      shift, and go to state 38
+    TRUE      shift, and go to state 39
+    FALSE     shift, and go to state 40
 
-    LValue    go to state 40
-    Number    go to state 41
-    Bool      go to state 44
+    LValue    go to state 41
+    Exp       go to state 44
     FuncCall  go to state 43
 
 
 State 7
 
-  110 LoopFor: FOR . OPEN_PAR ID SEMICOLON Number SEMICOLON Number OptStep CLOSE_PAR DO I DONE
+   88 LoopFor: FOR . OPEN_PAR ID SEMICOLON Exp SEMICOLON Exp OptStep CLOSE_PAR DO I DONE
 
     OPEN_PAR  shift, and go to state 45
 
@@ -485,23 +435,30 @@ State 8
 
 State 9
 
-   43 LValue: ID .
-   91 FuncCall: ID . OPEN_PAR ArgsExp CLOSE_PAR
-  113 RutineDef: ID . OPEN_PAR RutineArgs CLOSE_PAR OptReturn OPEN_C_BRACE Actions CLOSE_C_BRACE
+   91 RutineDef: DEF . ID OPEN_PAR RutineArgs CLOSE_PAR OptReturn OPEN_C_BRACE Actions CLOSE_C_BRACE
 
-    OPEN_PAR  shift, and go to state 56
-
-    $default  reduce using rule 43 (LValue)
+    ID  shift, and go to state 56
 
 
 State 10
 
-    0 $accept: S . $end
+   38 LValue: ID .
+   69 FuncCall: ID . OPEN_PAR ArgsExp CLOSE_PAR
 
-    $end  shift, and go to state 57
+    OPEN_PAR  shift, and go to state 57
+
+    OPEN_PAR  [reduce using rule 38 (LValue)]
+    $default  reduce using rule 38 (LValue)
 
 
 State 11
+
+    0 $accept: S . $end
+
+    $end  shift, and go to state 58
+
+
+State 12
 
     1 S: I .
     4 I: I . Inst
@@ -514,405 +471,391 @@ State 11
     WHILE     shift, and go to state 6
     FOR       shift, and go to state 7
     LET       shift, and go to state 8
-    ID        shift, and go to state 9
+    DEF       shift, and go to state 9
+    ID        shift, and go to state 10
 
     $default  reduce using rule 1 (S)
 
-    Inst         go to state 58
-    Action       go to state 13
-    Def          go to state 14
-    VarInst      go to state 15
-    VarDef       go to state 16
-    Assign       go to state 17
-    LValue       go to state 18
-    FuncCall     go to state 19
-    UnionDef     go to state 20
-    RegisterDef  go to state 21
-    Conditional  go to state 22
-    LoopWhile    go to state 23
-    LoopFor      go to state 24
-    RutineDef    go to state 25
+    Inst         go to state 59
+    Action       go to state 14
+    Def          go to state 15
+    VarInst      go to state 16
+    VarDef       go to state 17
+    Assign       go to state 18
+    LValue       go to state 19
+    FuncCall     go to state 20
+    UnionDef     go to state 21
+    RegisterDef  go to state 22
+    Conditional  go to state 23
+    LoopWhile    go to state 24
+    LoopFor      go to state 25
+    RutineDef    go to state 26
 
 
-State 12
+State 13
 
     3 I: Inst .
 
     $default  reduce using rule 3 (I)
 
 
-State 13
+State 14
 
     5 Inst: Action .
 
     $default  reduce using rule 5 (Inst)
 
 
-State 14
+State 15
 
     6 Inst: Def .
 
     $default  reduce using rule 6 (Inst)
 
 
-State 15
+State 16
 
     7 Action: VarInst . SEMICOLON
 
-    SEMICOLON  shift, and go to state 59
+    SEMICOLON  shift, and go to state 60
 
 
-State 16
+State 17
 
    15 VarInst: VarDef .
 
     $default  reduce using rule 15 (VarInst)
 
 
-State 17
+State 18
 
    16 VarInst: Assign .
 
     $default  reduce using rule 16 (VarInst)
 
 
-State 18
-
-   21 Assign: LValue . ASSIGNMENT RValue
-   39 LValue: LValue . OPEN_BRACKET Integer CLOSE_BRACKET
-   41       | LValue . DOT ID
-
-    DOT           shift, and go to state 60
-    OPEN_BRACKET  shift, and go to state 61
-    ASSIGNMENT    shift, and go to state 62
-
-
 State 19
 
-    8 Action: FuncCall . SEMICOLON
+   21 Assign: LValue . ASSIGNMENT RValue
+   34 LValue: LValue . OPEN_BRACKET Exp CLOSE_BRACKET
+   36       | LValue . DOT ID
 
-    SEMICOLON  shift, and go to state 63
+    OPEN_BRACKET  shift, and go to state 61
+    DOT           shift, and go to state 62
+    ASSIGNMENT    shift, and go to state 63
 
 
 State 20
+
+    8 Action: FuncCall . SEMICOLON
+
+    SEMICOLON  shift, and go to state 64
+
+
+State 21
 
    12 Def: UnionDef .
 
     $default  reduce using rule 12 (Def)
 
 
-State 21
+State 22
 
    13 Def: RegisterDef .
 
     $default  reduce using rule 13 (Def)
 
 
-State 22
+State 23
 
     9 Action: Conditional .
 
     $default  reduce using rule 9 (Action)
 
 
-State 23
+State 24
 
    10 Action: LoopWhile .
 
     $default  reduce using rule 10 (Action)
 
 
-State 24
+State 25
 
    11 Action: LoopFor .
 
     $default  reduce using rule 11 (Action)
 
 
-State 25
+State 26
 
    14 Def: RutineDef .
 
     $default  reduce using rule 14 (Def)
 
 
-State 26
-
-   43 LValue: ID .
-
-    $default  reduce using rule 43 (LValue)
-
-
 State 27
 
-   39 LValue: LValue . OPEN_BRACKET Integer CLOSE_BRACKET
-   40       | POINTER LValue .
-   41       | LValue . DOT ID
+   38 LValue: ID .
 
-    OPEN_BRACKET  shift, and go to state 61
-
-    $default  reduce using rule 40 (LValue)
+    $default  reduce using rule 38 (LValue)
 
 
 State 28
 
-   39 LValue: LValue . OPEN_BRACKET Integer CLOSE_BRACKET
-   41       | LValue . DOT ID
-   42       | OPEN_PAR LValue . CLOSE_PAR
+   34 LValue: LValue . OPEN_BRACKET Exp CLOSE_BRACKET
+   35       | POINTER LValue .
+   36       | LValue . DOT ID
 
-    DOT           shift, and go to state 60
-    OPEN_BRACKET  shift, and go to state 61
-    CLOSE_PAR     shift, and go to state 64
+    DOT  shift, and go to state 62
+
+    $default  reduce using rule 35 (LValue)
 
 
 State 29
 
-   99 RegisterDef: REGISTER ID . OPEN_C_BRACE RegisterBody CLOSE_C_BRACE
+   34 LValue: LValue . OPEN_BRACKET Exp CLOSE_BRACKET
+   36       | LValue . DOT ID
+   37       | OPEN_PAR LValue . CLOSE_PAR
 
-    OPEN_C_BRACE  shift, and go to state 65
+    OPEN_BRACKET  shift, and go to state 61
+    DOT           shift, and go to state 62
+    CLOSE_PAR     shift, and go to state 65
 
 
 State 30
 
-   96 UnionDef: UNION ID . OPEN_C_BRACE UnionBody CLOSE_C_BRACE
+   77 RegisterDef: REGISTER ID . OPEN_C_BRACE RegisterBody CLOSE_C_BRACE
 
     OPEN_C_BRACE  shift, and go to state 66
 
 
 State 31
 
-   50 Number: PLUS . Number
+   74 UnionDef: UNION ID . OPEN_C_BRACE UnionBody CLOSE_C_BRACE
 
-    POINTER   shift, and go to state 1
-    PLUS      shift, and go to state 31
-    MINUS     shift, and go to state 32
-    OPEN_PAR  shift, and go to state 67
-    INT       shift, and go to state 35
-    FLOAT     shift, and go to state 36
-    ID        shift, and go to state 37
-
-    LValue    go to state 68
-    Number    go to state 69
-    FuncCall  go to state 70
+    OPEN_C_BRACE  shift, and go to state 67
 
 
 State 32
 
-   49 Number: MINUS . Number
+   43 Exp: NOT . Exp
 
+    NOT       shift, and go to state 32
+    PLUS      shift, and go to state 33
+    MINUS     shift, and go to state 34
     POINTER   shift, and go to state 1
-    PLUS      shift, and go to state 31
-    MINUS     shift, and go to state 32
-    OPEN_PAR  shift, and go to state 67
-    INT       shift, and go to state 35
-    FLOAT     shift, and go to state 36
-    ID        shift, and go to state 37
+    OPEN_PAR  shift, and go to state 35
+    INT       shift, and go to state 36
+    FLOAT     shift, and go to state 37
+    ID        shift, and go to state 10
+    CHAR      shift, and go to state 38
+    TRUE      shift, and go to state 39
+    FALSE     shift, and go to state 40
 
-    LValue    go to state 68
-    Number    go to state 71
-    FuncCall  go to state 70
+    LValue    go to state 41
+    Exp       go to state 68
+    FuncCall  go to state 43
 
 
 State 33
 
-   42 LValue: OPEN_PAR . LValue CLOSE_PAR
-   52 Number: OPEN_PAR . Number CLOSE_PAR
-   62 Bool: OPEN_PAR . Bool CLOSE_PAR
+   54 Exp: PLUS . Exp
 
+    NOT       shift, and go to state 32
+    PLUS      shift, and go to state 33
+    MINUS     shift, and go to state 34
     POINTER   shift, and go to state 1
-    PLUS      shift, and go to state 31
-    MINUS     shift, and go to state 32
-    OPEN_PAR  shift, and go to state 33
-    NOT       shift, and go to state 34
-    INT       shift, and go to state 35
-    FLOAT     shift, and go to state 36
-    ID        shift, and go to state 37
-    TRUE      shift, and go to state 38
-    FALSE     shift, and go to state 39
+    OPEN_PAR  shift, and go to state 35
+    INT       shift, and go to state 36
+    FLOAT     shift, and go to state 37
+    ID        shift, and go to state 10
+    CHAR      shift, and go to state 38
+    TRUE      shift, and go to state 39
+    FALSE     shift, and go to state 40
 
-    LValue    go to state 72
-    Number    go to state 73
-    Bool      go to state 74
+    LValue    go to state 41
+    Exp       go to state 69
     FuncCall  go to state 43
 
 
 State 34
 
-   61 Bool: NOT . Bool
+   53 Exp: MINUS . Exp
 
+    NOT       shift, and go to state 32
+    PLUS      shift, and go to state 33
+    MINUS     shift, and go to state 34
     POINTER   shift, and go to state 1
-    PLUS      shift, and go to state 31
-    MINUS     shift, and go to state 32
-    OPEN_PAR  shift, and go to state 33
-    NOT       shift, and go to state 34
-    INT       shift, and go to state 35
-    FLOAT     shift, and go to state 36
-    ID        shift, and go to state 37
-    TRUE      shift, and go to state 38
-    FALSE     shift, and go to state 39
+    OPEN_PAR  shift, and go to state 35
+    INT       shift, and go to state 36
+    FLOAT     shift, and go to state 37
+    ID        shift, and go to state 10
+    CHAR      shift, and go to state 38
+    TRUE      shift, and go to state 39
+    FALSE     shift, and go to state 40
 
-    LValue    go to state 40
-    Number    go to state 41
-    Bool      go to state 75
+    LValue    go to state 41
+    Exp       go to state 70
     FuncCall  go to state 43
 
 
 State 35
 
-   55 Number: INT .
+   37 LValue: OPEN_PAR . LValue CLOSE_PAR
+   56 Exp: OPEN_PAR . Exp CLOSE_PAR
 
-    $default  reduce using rule 55 (Number)
+    NOT       shift, and go to state 32
+    PLUS      shift, and go to state 33
+    MINUS     shift, and go to state 34
+    POINTER   shift, and go to state 1
+    OPEN_PAR  shift, and go to state 35
+    INT       shift, and go to state 36
+    FLOAT     shift, and go to state 37
+    ID        shift, and go to state 10
+    CHAR      shift, and go to state 38
+    TRUE      shift, and go to state 39
+    FALSE     shift, and go to state 40
+
+    LValue    go to state 71
+    Exp       go to state 72
+    FuncCall  go to state 43
 
 
 State 36
 
-   56 Number: FLOAT .
+   62 Exp: INT .
 
-    $default  reduce using rule 56 (Number)
+    $default  reduce using rule 62 (Exp)
 
 
 State 37
 
-   43 LValue: ID .
-   91 FuncCall: ID . OPEN_PAR ArgsExp CLOSE_PAR
+   63 Exp: FLOAT .
 
-    OPEN_PAR  shift, and go to state 76
-
-    OPEN_PAR  [reduce using rule 43 (LValue)]
-    $default  reduce using rule 43 (LValue)
+    $default  reduce using rule 63 (Exp)
 
 
 State 38
 
-   64 Bool: TRUE .
+   61 Exp: CHAR .
 
-    $default  reduce using rule 64 (Bool)
+    $default  reduce using rule 61 (Exp)
 
 
 State 39
 
-   65 Bool: FALSE .
+   59 Exp: TRUE .
 
-    $default  reduce using rule 65 (Bool)
+    $default  reduce using rule 59 (Exp)
 
 
 State 40
 
-   39 LValue: LValue . OPEN_BRACKET Integer CLOSE_BRACKET
-   41       | LValue . DOT ID
-   53 Number: LValue .
-   66 Bool: LValue .
+   60 Exp: FALSE .
 
-    DOT           shift, and go to state 60
-    OPEN_BRACKET  shift, and go to state 61
-
-    PLUS                reduce using rule 53 (Number)
-    MINUS               reduce using rule 53 (Number)
-    ASTERISK            reduce using rule 53 (Number)
-    DIV                 reduce using rule 53 (Number)
-    MODULE              reduce using rule 53 (Number)
-    POWER               reduce using rule 53 (Number)
-    NOT_EQUIV           reduce using rule 53 (Number)
-    NOT_EQUIV           [reduce using rule 66 (Bool)]
-    EQUIV               reduce using rule 53 (Number)
-    EQUIV               [reduce using rule 66 (Bool)]
-    GREATER_EQUAL_THAN  reduce using rule 53 (Number)
-    LESS_EQUAL_THAN     reduce using rule 53 (Number)
-    GREATER_THAN        reduce using rule 53 (Number)
-    LESS_THAN           reduce using rule 53 (Number)
-    $default            reduce using rule 66 (Bool)
+    $default  reduce using rule 60 (Exp)
 
 
 State 41
 
-   44 Number: Number . PLUS Number
-   45       | Number . MINUS Number
-   46       | Number . ASTERISK Number
-   47       | Number . DIV Number
-   48       | Number . MODULE Number
-   51       | Number . POWER Number
-   63 Bool: Number . Comp Number
+   34 LValue: LValue . OPEN_BRACKET Exp CLOSE_BRACKET
+   36       | LValue . DOT ID
+   57 Exp: LValue .
 
-    PLUS                shift, and go to state 77
-    MINUS               shift, and go to state 78
-    ASTERISK            shift, and go to state 79
-    DIV                 shift, and go to state 80
-    MODULE              shift, and go to state 81
-    POWER               shift, and go to state 82
-    NOT_EQUIV           shift, and go to state 83
-    EQUIV               shift, and go to state 84
-    GREATER_EQUAL_THAN  shift, and go to state 85
-    LESS_EQUAL_THAN     shift, and go to state 86
-    GREATER_THAN        shift, and go to state 87
-    LESS_THAN           shift, and go to state 88
+    OPEN_BRACKET  shift, and go to state 61
+    DOT           shift, and go to state 62
 
-    Comp  go to state 89
+    $default  reduce using rule 57 (Exp)
 
 
 State 42
 
-   57 Bool: Bool . EQUIV Bool
-   58     | Bool . NOT_EQUIV Bool
-   59     | Bool . OR Bool
-   60     | Bool . AND Bool
-  102 Conditional: IF Bool . THEN I OptElsif OptElse END
+   39 Exp: Exp . EQUIV Exp
+   40    | Exp . NOT_EQUIV Exp
+   41    | Exp . OR Exp
+   42    | Exp . AND Exp
+   44    | Exp . LESS_THAN Exp
+   45    | Exp . LESS_EQUAL_THAN Exp
+   46    | Exp . GREATER_THAN Exp
+   47    | Exp . GREATER_EQUAL_THAN Exp
+   48    | Exp . PLUS Exp
+   49    | Exp . MINUS Exp
+   50    | Exp . ASTERISK Exp
+   51    | Exp . DIV Exp
+   52    | Exp . MODULE Exp
+   55    | Exp . POWER Exp
+   80 Conditional: IF Exp . THEN I OptElsif OptElse END
 
-    AND        shift, and go to state 90
-    OR         shift, and go to state 91
-    NOT_EQUIV  shift, and go to state 92
-    EQUIV      shift, and go to state 93
-    THEN       shift, and go to state 94
+    EQUIV               shift, and go to state 73
+    NOT_EQUIV           shift, and go to state 74
+    OR                  shift, and go to state 75
+    AND                 shift, and go to state 76
+    LESS_THAN           shift, and go to state 77
+    LESS_EQUAL_THAN     shift, and go to state 78
+    GREATER_THAN        shift, and go to state 79
+    GREATER_EQUAL_THAN  shift, and go to state 80
+    PLUS                shift, and go to state 81
+    MINUS               shift, and go to state 82
+    ASTERISK            shift, and go to state 83
+    DIV                 shift, and go to state 84
+    MODULE              shift, and go to state 85
+    POWER               shift, and go to state 86
+    THEN                shift, and go to state 87
 
 
 State 43
 
-   54 Number: FuncCall .
-   67 Bool: FuncCall .
+   58 Exp: FuncCall .
 
-    PLUS                reduce using rule 54 (Number)
-    MINUS               reduce using rule 54 (Number)
-    ASTERISK            reduce using rule 54 (Number)
-    DIV                 reduce using rule 54 (Number)
-    MODULE              reduce using rule 54 (Number)
-    POWER               reduce using rule 54 (Number)
-    CLOSE_PAR           reduce using rule 54 (Number)
-    CLOSE_PAR           [reduce using rule 67 (Bool)]
-    NOT_EQUIV           reduce using rule 54 (Number)
-    NOT_EQUIV           [reduce using rule 67 (Bool)]
-    EQUIV               reduce using rule 54 (Number)
-    EQUIV               [reduce using rule 67 (Bool)]
-    GREATER_EQUAL_THAN  reduce using rule 54 (Number)
-    LESS_EQUAL_THAN     reduce using rule 54 (Number)
-    GREATER_THAN        reduce using rule 54 (Number)
-    LESS_THAN           reduce using rule 54 (Number)
-    $default            reduce using rule 67 (Bool)
+    $default  reduce using rule 58 (Exp)
 
 
 State 44
 
-   57 Bool: Bool . EQUIV Bool
-   58     | Bool . NOT_EQUIV Bool
-   59     | Bool . OR Bool
-   60     | Bool . AND Bool
-  109 LoopWhile: WHILE Bool . DO I DONE
+   39 Exp: Exp . EQUIV Exp
+   40    | Exp . NOT_EQUIV Exp
+   41    | Exp . OR Exp
+   42    | Exp . AND Exp
+   44    | Exp . LESS_THAN Exp
+   45    | Exp . LESS_EQUAL_THAN Exp
+   46    | Exp . GREATER_THAN Exp
+   47    | Exp . GREATER_EQUAL_THAN Exp
+   48    | Exp . PLUS Exp
+   49    | Exp . MINUS Exp
+   50    | Exp . ASTERISK Exp
+   51    | Exp . DIV Exp
+   52    | Exp . MODULE Exp
+   55    | Exp . POWER Exp
+   87 LoopWhile: WHILE Exp . DO I DONE
 
-    AND        shift, and go to state 90
-    OR         shift, and go to state 91
-    NOT_EQUIV  shift, and go to state 92
-    EQUIV      shift, and go to state 93
-    DO         shift, and go to state 95
+    EQUIV               shift, and go to state 73
+    NOT_EQUIV           shift, and go to state 74
+    OR                  shift, and go to state 75
+    AND                 shift, and go to state 76
+    LESS_THAN           shift, and go to state 77
+    LESS_EQUAL_THAN     shift, and go to state 78
+    GREATER_THAN        shift, and go to state 79
+    GREATER_EQUAL_THAN  shift, and go to state 80
+    PLUS                shift, and go to state 81
+    MINUS               shift, and go to state 82
+    ASTERISK            shift, and go to state 83
+    DIV                 shift, and go to state 84
+    MODULE              shift, and go to state 85
+    POWER               shift, and go to state 86
+    DO                  shift, and go to state 88
 
 
 State 45
 
-  110 LoopFor: FOR OPEN_PAR . ID SEMICOLON Number SEMICOLON Number OptStep CLOSE_PAR DO I DONE
+   88 LoopFor: FOR OPEN_PAR . ID SEMICOLON Exp SEMICOLON Exp OptStep CLOSE_PAR DO I DONE
 
-    ID  shift, and go to state 96
+    ID  shift, and go to state 89
 
 
 State 46
 
-   31 Type: POINTER . Type
+   26 Type: POINTER . Type
 
     POINTER   shift, and go to state 46
     OPEN_PAR  shift, and go to state 47
@@ -923,12 +866,12 @@ State 46
     T_UNIT    shift, and go to state 52
     T_STRING  shift, and go to state 53
 
-    Type  go to state 97
+    Type  go to state 90
 
 
 State 47
 
-   32 Type: OPEN_PAR . Type CLOSE_PAR
+   27 Type: OPEN_PAR . Type CLOSE_PAR
 
     POINTER   shift, and go to state 46
     OPEN_PAR  shift, and go to state 47
@@ -939,49 +882,49 @@ State 47
     T_UNIT    shift, and go to state 52
     T_STRING  shift, and go to state 53
 
-    Type  go to state 98
+    Type  go to state 91
 
 
 State 48
 
-   36 Type: T_INT .
+   31 Type: T_INT .
 
-    $default  reduce using rule 36 (Type)
+    $default  reduce using rule 31 (Type)
 
 
 State 49
 
-   35 Type: T_CHAR .
+   30 Type: T_CHAR .
 
-    $default  reduce using rule 35 (Type)
+    $default  reduce using rule 30 (Type)
 
 
 State 50
 
-   34 Type: T_BOOL .
+   29 Type: T_BOOL .
 
-    $default  reduce using rule 34 (Type)
+    $default  reduce using rule 29 (Type)
 
 
 State 51
 
-   37 Type: T_FLOAT .
+   32 Type: T_FLOAT .
 
-    $default  reduce using rule 37 (Type)
+    $default  reduce using rule 32 (Type)
 
 
 State 52
 
-   33 Type: T_UNIT .
+   28 Type: T_UNIT .
 
-    $default  reduce using rule 33 (Type)
+    $default  reduce using rule 28 (Type)
 
 
 State 53
 
-   38 Type: T_STRING .
+   33 Type: T_STRING .
 
-    $default  reduce using rule 38 (Type)
+    $default  reduce using rule 33 (Type)
 
 
 State 54
@@ -994,137 +937,131 @@ State 54
 State 55
 
    18 VarDefBody: Type . ID OptAssign
-   30 Type: Type . OPEN_BRACKET Integer CLOSE_BRACKET
+   25 Type: Type . OPEN_BRACKET Exp CLOSE_BRACKET
 
-    OPEN_BRACKET  shift, and go to state 99
-    ID            shift, and go to state 100
+    OPEN_BRACKET  shift, and go to state 92
+    ID            shift, and go to state 93
 
 
 State 56
 
-   91 FuncCall: ID OPEN_PAR . ArgsExp CLOSE_PAR
-  113 RutineDef: ID OPEN_PAR . RutineArgs CLOSE_PAR OptReturn OPEN_C_BRACE Actions CLOSE_C_BRACE
+   91 RutineDef: DEF ID . OPEN_PAR RutineArgs CLOSE_PAR OptReturn OPEN_C_BRACE Actions CLOSE_C_BRACE
 
-    POINTER   shift, and go to state 46
-    OPEN_PAR  shift, and go to state 47
-    T_INT     shift, and go to state 48
-    T_CHAR    shift, and go to state 49
-    T_BOOL    shift, and go to state 50
-    T_FLOAT   shift, and go to state 51
-    T_UNIT    shift, and go to state 52
-    T_STRING  shift, and go to state 53
-
-    POINTER    [reduce using rule 94 (Args)]
-    OPEN_PAR   [reduce using rule 94 (Args)]
-    CLOSE_PAR  reduce using rule 92 (ArgsExp)
-    CLOSE_PAR  [reduce using rule 114 (RutineArgs)]
-    $default   reduce using rule 94 (Args)
-
-    Type        go to state 101
-    ArgsExp     go to state 102
-    Args        go to state 103
-    RutineArgs  go to state 104
-    ArgsDef     go to state 105
+    OPEN_PAR  shift, and go to state 94
 
 
 State 57
+
+   69 FuncCall: ID OPEN_PAR . ArgsExp CLOSE_PAR
+
+    CLOSE_PAR  reduce using rule 70 (ArgsExp)
+    $default   reduce using rule 72 (Args)
+
+    ArgsExp  go to state 95
+    Args     go to state 96
+
+
+State 58
 
     0 $accept: S $end .
 
     $default  accept
 
 
-State 58
+State 59
 
     4 I: I Inst .
 
     $default  reduce using rule 4 (I)
 
 
-State 59
+State 60
 
     7 Action: VarInst SEMICOLON .
 
     $default  reduce using rule 7 (Action)
 
 
-State 60
-
-   41 LValue: LValue DOT . ID
-
-    ID  shift, and go to state 106
-
-
 State 61
 
-   39 LValue: LValue OPEN_BRACKET . Integer CLOSE_BRACKET
+   34 LValue: LValue OPEN_BRACKET . Exp CLOSE_BRACKET
 
+    NOT       shift, and go to state 32
+    PLUS      shift, and go to state 33
+    MINUS     shift, and go to state 34
     POINTER   shift, and go to state 1
-    PLUS      shift, and go to state 107
-    MINUS     shift, and go to state 108
-    OPEN_PAR  shift, and go to state 109
-    INT       shift, and go to state 110
-    ID        shift, and go to state 37
+    OPEN_PAR  shift, and go to state 35
+    INT       shift, and go to state 36
+    FLOAT     shift, and go to state 37
+    ID        shift, and go to state 10
+    CHAR      shift, and go to state 38
+    TRUE      shift, and go to state 39
+    FALSE     shift, and go to state 40
 
-    LValue    go to state 111
-    Integer   go to state 112
-    FuncCall  go to state 113
+    LValue    go to state 41
+    Exp       go to state 97
+    FuncCall  go to state 43
 
 
 State 62
 
-   21 Assign: LValue ASSIGNMENT . RValue
+   36 LValue: LValue DOT . ID
 
-    POINTER       shift, and go to state 1
-    OPEN_BRACKET  shift, and go to state 114
-    PLUS          shift, and go to state 31
-    MINUS         shift, and go to state 32
-    OPEN_PAR      shift, and go to state 33
-    NOT           shift, and go to state 34
-    INT           shift, and go to state 35
-    FLOAT         shift, and go to state 36
-    ID            shift, and go to state 37
-    CHAR          shift, and go to state 115
-    STRING        shift, and go to state 116
-    TRUE          shift, and go to state 38
-    FALSE         shift, and go to state 39
-
-    RValue      go to state 117
-    Expression  go to state 118
-    LValue      go to state 119
-    Number      go to state 120
-    Bool        go to state 121
-    Array       go to state 122
-    FuncCall    go to state 123
+    ID  shift, and go to state 98
 
 
 State 63
+
+   21 Assign: LValue ASSIGNMENT . RValue
+
+    NOT           shift, and go to state 32
+    PLUS          shift, and go to state 33
+    MINUS         shift, and go to state 34
+    OPEN_BRACKET  shift, and go to state 99
+    POINTER       shift, and go to state 1
+    OPEN_PAR      shift, and go to state 35
+    INT           shift, and go to state 36
+    FLOAT         shift, and go to state 37
+    ID            shift, and go to state 10
+    CHAR          shift, and go to state 38
+    STRING        shift, and go to state 100
+    TRUE          shift, and go to state 39
+    FALSE         shift, and go to state 40
+
+    RValue    go to state 101
+    LValue    go to state 41
+    Exp       go to state 102
+    Array     go to state 103
+    FuncCall  go to state 43
+
+
+State 64
 
     8 Action: FuncCall SEMICOLON .
 
     $default  reduce using rule 8 (Action)
 
 
-State 64
-
-   42 LValue: OPEN_PAR LValue CLOSE_PAR .
-
-    $default  reduce using rule 42 (LValue)
-
-
 State 65
 
-   99 RegisterDef: REGISTER ID OPEN_C_BRACE . RegisterBody CLOSE_C_BRACE
+   37 LValue: OPEN_PAR LValue CLOSE_PAR .
 
-    LET  shift, and go to state 8
-
-    VarDef        go to state 124
-    RegisterBody  go to state 125
+    $default  reduce using rule 37 (LValue)
 
 
 State 66
 
-   96 UnionDef: UNION ID OPEN_C_BRACE . UnionBody CLOSE_C_BRACE
+   77 RegisterDef: REGISTER ID OPEN_C_BRACE . RegisterBody CLOSE_C_BRACE
+
+    LET  shift, and go to state 8
+
+    VarDef        go to state 104
+    RegisterBody  go to state 105
+
+
+State 67
+
+   74 UnionDef: UNION ID OPEN_C_BRACE . UnionBody CLOSE_C_BRACE
 
     POINTER   shift, and go to state 46
     OPEN_PAR  shift, and go to state 47
@@ -1135,599 +1072,557 @@ State 66
     T_UNIT    shift, and go to state 52
     T_STRING  shift, and go to state 53
 
-    Type       go to state 126
-    UnionBody  go to state 127
-
-
-State 67
-
-   42 LValue: OPEN_PAR . LValue CLOSE_PAR
-   52 Number: OPEN_PAR . Number CLOSE_PAR
-
-    POINTER   shift, and go to state 1
-    PLUS      shift, and go to state 31
-    MINUS     shift, and go to state 32
-    OPEN_PAR  shift, and go to state 67
-    INT       shift, and go to state 35
-    FLOAT     shift, and go to state 36
-    ID        shift, and go to state 37
-
-    LValue    go to state 128
-    Number    go to state 129
-    FuncCall  go to state 70
+    Type       go to state 106
+    UnionBody  go to state 107
 
 
 State 68
 
-   39 LValue: LValue . OPEN_BRACKET Integer CLOSE_BRACKET
-   41       | LValue . DOT ID
-   53 Number: LValue .
+   39 Exp: Exp . EQUIV Exp
+   40    | Exp . NOT_EQUIV Exp
+   41    | Exp . OR Exp
+   42    | Exp . AND Exp
+   43    | NOT Exp .
+   44    | Exp . LESS_THAN Exp
+   45    | Exp . LESS_EQUAL_THAN Exp
+   46    | Exp . GREATER_THAN Exp
+   47    | Exp . GREATER_EQUAL_THAN Exp
+   48    | Exp . PLUS Exp
+   49    | Exp . MINUS Exp
+   50    | Exp . ASTERISK Exp
+   51    | Exp . DIV Exp
+   52    | Exp . MODULE Exp
+   55    | Exp . POWER Exp
 
-    DOT           shift, and go to state 60
-    OPEN_BRACKET  shift, and go to state 61
+    PLUS      shift, and go to state 81
+    MINUS     shift, and go to state 82
+    ASTERISK  shift, and go to state 83
+    DIV       shift, and go to state 84
+    MODULE    shift, and go to state 85
+    POWER     shift, and go to state 86
 
-    $default  reduce using rule 53 (Number)
+    $default  reduce using rule 43 (Exp)
 
 
 State 69
 
-   44 Number: Number . PLUS Number
-   45       | Number . MINUS Number
-   46       | Number . ASTERISK Number
-   47       | Number . DIV Number
-   48       | Number . MODULE Number
-   50       | PLUS Number .
-   51       | Number . POWER Number
+   39 Exp: Exp . EQUIV Exp
+   40    | Exp . NOT_EQUIV Exp
+   41    | Exp . OR Exp
+   42    | Exp . AND Exp
+   44    | Exp . LESS_THAN Exp
+   45    | Exp . LESS_EQUAL_THAN Exp
+   46    | Exp . GREATER_THAN Exp
+   47    | Exp . GREATER_EQUAL_THAN Exp
+   48    | Exp . PLUS Exp
+   49    | Exp . MINUS Exp
+   50    | Exp . ASTERISK Exp
+   51    | Exp . DIV Exp
+   52    | Exp . MODULE Exp
+   54    | PLUS Exp .
+   55    | Exp . POWER Exp
 
-    ASTERISK  shift, and go to state 79
-    DIV       shift, and go to state 80
-    MODULE    shift, and go to state 81
-    POWER     shift, and go to state 82
+    ASTERISK  shift, and go to state 83
+    DIV       shift, and go to state 84
+    MODULE    shift, and go to state 85
+    POWER     shift, and go to state 86
 
-    $default  reduce using rule 50 (Number)
+    $default  reduce using rule 54 (Exp)
 
 
 State 70
 
-   54 Number: FuncCall .
+   39 Exp: Exp . EQUIV Exp
+   40    | Exp . NOT_EQUIV Exp
+   41    | Exp . OR Exp
+   42    | Exp . AND Exp
+   44    | Exp . LESS_THAN Exp
+   45    | Exp . LESS_EQUAL_THAN Exp
+   46    | Exp . GREATER_THAN Exp
+   47    | Exp . GREATER_EQUAL_THAN Exp
+   48    | Exp . PLUS Exp
+   49    | Exp . MINUS Exp
+   50    | Exp . ASTERISK Exp
+   51    | Exp . DIV Exp
+   52    | Exp . MODULE Exp
+   53    | MINUS Exp .
+   55    | Exp . POWER Exp
 
-    $default  reduce using rule 54 (Number)
+    ASTERISK  shift, and go to state 83
+    DIV       shift, and go to state 84
+    MODULE    shift, and go to state 85
+    POWER     shift, and go to state 86
+
+    $default  reduce using rule 53 (Exp)
 
 
 State 71
 
-   44 Number: Number . PLUS Number
-   45       | Number . MINUS Number
-   46       | Number . ASTERISK Number
-   47       | Number . DIV Number
-   48       | Number . MODULE Number
-   49       | MINUS Number .
-   51       | Number . POWER Number
+   34 LValue: LValue . OPEN_BRACKET Exp CLOSE_BRACKET
+   36       | LValue . DOT ID
+   37       | OPEN_PAR LValue . CLOSE_PAR
+   57 Exp: LValue .
 
-    ASTERISK  shift, and go to state 79
-    DIV       shift, and go to state 80
-    MODULE    shift, and go to state 81
-    POWER     shift, and go to state 82
+    OPEN_BRACKET  shift, and go to state 61
+    DOT           shift, and go to state 62
+    CLOSE_PAR     shift, and go to state 65
 
-    $default  reduce using rule 49 (Number)
+    CLOSE_PAR  [reduce using rule 57 (Exp)]
+    $default   reduce using rule 57 (Exp)
 
 
 State 72
 
-   39 LValue: LValue . OPEN_BRACKET Integer CLOSE_BRACKET
-   41       | LValue . DOT ID
-   42       | OPEN_PAR LValue . CLOSE_PAR
-   53 Number: LValue .
-   66 Bool: LValue .
+   39 Exp: Exp . EQUIV Exp
+   40    | Exp . NOT_EQUIV Exp
+   41    | Exp . OR Exp
+   42    | Exp . AND Exp
+   44    | Exp . LESS_THAN Exp
+   45    | Exp . LESS_EQUAL_THAN Exp
+   46    | Exp . GREATER_THAN Exp
+   47    | Exp . GREATER_EQUAL_THAN Exp
+   48    | Exp . PLUS Exp
+   49    | Exp . MINUS Exp
+   50    | Exp . ASTERISK Exp
+   51    | Exp . DIV Exp
+   52    | Exp . MODULE Exp
+   55    | Exp . POWER Exp
+   56    | OPEN_PAR Exp . CLOSE_PAR
 
-    DOT           shift, and go to state 60
-    OPEN_BRACKET  shift, and go to state 61
-    CLOSE_PAR     shift, and go to state 64
-
-    CLOSE_PAR  [reduce using rule 53 (Number)]
-    CLOSE_PAR  [reduce using rule 66 (Bool)]
-    AND        reduce using rule 66 (Bool)
-    OR         reduce using rule 66 (Bool)
-    NOT_EQUIV  reduce using rule 53 (Number)
-    NOT_EQUIV  [reduce using rule 66 (Bool)]
-    EQUIV      reduce using rule 53 (Number)
-    EQUIV      [reduce using rule 66 (Bool)]
-    $default   reduce using rule 53 (Number)
+    EQUIV               shift, and go to state 73
+    NOT_EQUIV           shift, and go to state 74
+    OR                  shift, and go to state 75
+    AND                 shift, and go to state 76
+    LESS_THAN           shift, and go to state 77
+    LESS_EQUAL_THAN     shift, and go to state 78
+    GREATER_THAN        shift, and go to state 79
+    GREATER_EQUAL_THAN  shift, and go to state 80
+    PLUS                shift, and go to state 81
+    MINUS               shift, and go to state 82
+    ASTERISK            shift, and go to state 83
+    DIV                 shift, and go to state 84
+    MODULE              shift, and go to state 85
+    POWER               shift, and go to state 86
+    CLOSE_PAR           shift, and go to state 108
 
 
 State 73
 
-   44 Number: Number . PLUS Number
-   45       | Number . MINUS Number
-   46       | Number . ASTERISK Number
-   47       | Number . DIV Number
-   48       | Number . MODULE Number
-   51       | Number . POWER Number
-   52       | OPEN_PAR Number . CLOSE_PAR
-   63 Bool: Number . Comp Number
+   39 Exp: Exp EQUIV . Exp
 
-    PLUS                shift, and go to state 77
-    MINUS               shift, and go to state 78
-    ASTERISK            shift, and go to state 79
-    DIV                 shift, and go to state 80
-    MODULE              shift, and go to state 81
-    POWER               shift, and go to state 82
-    CLOSE_PAR           shift, and go to state 130
-    NOT_EQUIV           shift, and go to state 83
-    EQUIV               shift, and go to state 84
-    GREATER_EQUAL_THAN  shift, and go to state 85
-    LESS_EQUAL_THAN     shift, and go to state 86
-    GREATER_THAN        shift, and go to state 87
-    LESS_THAN           shift, and go to state 88
+    NOT       shift, and go to state 32
+    PLUS      shift, and go to state 33
+    MINUS     shift, and go to state 34
+    POINTER   shift, and go to state 1
+    OPEN_PAR  shift, and go to state 35
+    INT       shift, and go to state 36
+    FLOAT     shift, and go to state 37
+    ID        shift, and go to state 10
+    CHAR      shift, and go to state 38
+    TRUE      shift, and go to state 39
+    FALSE     shift, and go to state 40
 
-    Comp  go to state 89
+    LValue    go to state 41
+    Exp       go to state 109
+    FuncCall  go to state 43
 
 
 State 74
 
-   57 Bool: Bool . EQUIV Bool
-   58     | Bool . NOT_EQUIV Bool
-   59     | Bool . OR Bool
-   60     | Bool . AND Bool
-   62     | OPEN_PAR Bool . CLOSE_PAR
+   40 Exp: Exp NOT_EQUIV . Exp
 
-    CLOSE_PAR  shift, and go to state 131
-    AND        shift, and go to state 90
-    OR         shift, and go to state 91
-    NOT_EQUIV  shift, and go to state 92
-    EQUIV      shift, and go to state 93
+    NOT       shift, and go to state 32
+    PLUS      shift, and go to state 33
+    MINUS     shift, and go to state 34
+    POINTER   shift, and go to state 1
+    OPEN_PAR  shift, and go to state 35
+    INT       shift, and go to state 36
+    FLOAT     shift, and go to state 37
+    ID        shift, and go to state 10
+    CHAR      shift, and go to state 38
+    TRUE      shift, and go to state 39
+    FALSE     shift, and go to state 40
+
+    LValue    go to state 41
+    Exp       go to state 110
+    FuncCall  go to state 43
 
 
 State 75
 
-   57 Bool: Bool . EQUIV Bool
-   58     | Bool . NOT_EQUIV Bool
-   59     | Bool . OR Bool
-   60     | Bool . AND Bool
-   61     | NOT Bool .
+   41 Exp: Exp OR . Exp
 
-    AND        shift, and go to state 90
-    OR         shift, and go to state 91
-    NOT_EQUIV  shift, and go to state 92
-    EQUIV      shift, and go to state 93
+    NOT       shift, and go to state 32
+    PLUS      shift, and go to state 33
+    MINUS     shift, and go to state 34
+    POINTER   shift, and go to state 1
+    OPEN_PAR  shift, and go to state 35
+    INT       shift, and go to state 36
+    FLOAT     shift, and go to state 37
+    ID        shift, and go to state 10
+    CHAR      shift, and go to state 38
+    TRUE      shift, and go to state 39
+    FALSE     shift, and go to state 40
 
-    AND        [reduce using rule 61 (Bool)]
-    OR         [reduce using rule 61 (Bool)]
-    NOT_EQUIV  [reduce using rule 61 (Bool)]
-    EQUIV      [reduce using rule 61 (Bool)]
-    $default   reduce using rule 61 (Bool)
+    LValue    go to state 41
+    Exp       go to state 111
+    FuncCall  go to state 43
 
 
 State 76
 
-   91 FuncCall: ID OPEN_PAR . ArgsExp CLOSE_PAR
+   42 Exp: Exp AND . Exp
 
-    CLOSE_PAR  reduce using rule 92 (ArgsExp)
-    $default   reduce using rule 94 (Args)
+    NOT       shift, and go to state 32
+    PLUS      shift, and go to state 33
+    MINUS     shift, and go to state 34
+    POINTER   shift, and go to state 1
+    OPEN_PAR  shift, and go to state 35
+    INT       shift, and go to state 36
+    FLOAT     shift, and go to state 37
+    ID        shift, and go to state 10
+    CHAR      shift, and go to state 38
+    TRUE      shift, and go to state 39
+    FALSE     shift, and go to state 40
 
-    ArgsExp  go to state 102
-    Args     go to state 103
+    LValue    go to state 41
+    Exp       go to state 112
+    FuncCall  go to state 43
 
 
 State 77
 
-   44 Number: Number PLUS . Number
+   44 Exp: Exp LESS_THAN . Exp
 
+    NOT       shift, and go to state 32
+    PLUS      shift, and go to state 33
+    MINUS     shift, and go to state 34
     POINTER   shift, and go to state 1
-    PLUS      shift, and go to state 31
-    MINUS     shift, and go to state 32
-    OPEN_PAR  shift, and go to state 67
-    INT       shift, and go to state 35
-    FLOAT     shift, and go to state 36
-    ID        shift, and go to state 37
+    OPEN_PAR  shift, and go to state 35
+    INT       shift, and go to state 36
+    FLOAT     shift, and go to state 37
+    ID        shift, and go to state 10
+    CHAR      shift, and go to state 38
+    TRUE      shift, and go to state 39
+    FALSE     shift, and go to state 40
 
-    LValue    go to state 68
-    Number    go to state 132
-    FuncCall  go to state 70
+    LValue    go to state 41
+    Exp       go to state 113
+    FuncCall  go to state 43
 
 
 State 78
 
-   45 Number: Number MINUS . Number
+   45 Exp: Exp LESS_EQUAL_THAN . Exp
 
+    NOT       shift, and go to state 32
+    PLUS      shift, and go to state 33
+    MINUS     shift, and go to state 34
     POINTER   shift, and go to state 1
-    PLUS      shift, and go to state 31
-    MINUS     shift, and go to state 32
-    OPEN_PAR  shift, and go to state 67
-    INT       shift, and go to state 35
-    FLOAT     shift, and go to state 36
-    ID        shift, and go to state 37
+    OPEN_PAR  shift, and go to state 35
+    INT       shift, and go to state 36
+    FLOAT     shift, and go to state 37
+    ID        shift, and go to state 10
+    CHAR      shift, and go to state 38
+    TRUE      shift, and go to state 39
+    FALSE     shift, and go to state 40
 
-    LValue    go to state 68
-    Number    go to state 133
-    FuncCall  go to state 70
+    LValue    go to state 41
+    Exp       go to state 114
+    FuncCall  go to state 43
 
 
 State 79
 
-   46 Number: Number ASTERISK . Number
+   46 Exp: Exp GREATER_THAN . Exp
 
+    NOT       shift, and go to state 32
+    PLUS      shift, and go to state 33
+    MINUS     shift, and go to state 34
     POINTER   shift, and go to state 1
-    PLUS      shift, and go to state 31
-    MINUS     shift, and go to state 32
-    OPEN_PAR  shift, and go to state 67
-    INT       shift, and go to state 35
-    FLOAT     shift, and go to state 36
-    ID        shift, and go to state 37
+    OPEN_PAR  shift, and go to state 35
+    INT       shift, and go to state 36
+    FLOAT     shift, and go to state 37
+    ID        shift, and go to state 10
+    CHAR      shift, and go to state 38
+    TRUE      shift, and go to state 39
+    FALSE     shift, and go to state 40
 
-    LValue    go to state 68
-    Number    go to state 134
-    FuncCall  go to state 70
+    LValue    go to state 41
+    Exp       go to state 115
+    FuncCall  go to state 43
 
 
 State 80
 
-   47 Number: Number DIV . Number
+   47 Exp: Exp GREATER_EQUAL_THAN . Exp
 
+    NOT       shift, and go to state 32
+    PLUS      shift, and go to state 33
+    MINUS     shift, and go to state 34
     POINTER   shift, and go to state 1
-    PLUS      shift, and go to state 31
-    MINUS     shift, and go to state 32
-    OPEN_PAR  shift, and go to state 67
-    INT       shift, and go to state 35
-    FLOAT     shift, and go to state 36
-    ID        shift, and go to state 37
+    OPEN_PAR  shift, and go to state 35
+    INT       shift, and go to state 36
+    FLOAT     shift, and go to state 37
+    ID        shift, and go to state 10
+    CHAR      shift, and go to state 38
+    TRUE      shift, and go to state 39
+    FALSE     shift, and go to state 40
 
-    LValue    go to state 68
-    Number    go to state 135
-    FuncCall  go to state 70
+    LValue    go to state 41
+    Exp       go to state 116
+    FuncCall  go to state 43
 
 
 State 81
 
-   48 Number: Number MODULE . Number
+   48 Exp: Exp PLUS . Exp
 
+    NOT       shift, and go to state 32
+    PLUS      shift, and go to state 33
+    MINUS     shift, and go to state 34
     POINTER   shift, and go to state 1
-    PLUS      shift, and go to state 31
-    MINUS     shift, and go to state 32
-    OPEN_PAR  shift, and go to state 67
-    INT       shift, and go to state 35
-    FLOAT     shift, and go to state 36
-    ID        shift, and go to state 37
+    OPEN_PAR  shift, and go to state 35
+    INT       shift, and go to state 36
+    FLOAT     shift, and go to state 37
+    ID        shift, and go to state 10
+    CHAR      shift, and go to state 38
+    TRUE      shift, and go to state 39
+    FALSE     shift, and go to state 40
 
-    LValue    go to state 68
-    Number    go to state 136
-    FuncCall  go to state 70
+    LValue    go to state 41
+    Exp       go to state 117
+    FuncCall  go to state 43
 
 
 State 82
 
-   51 Number: Number POWER . Number
+   49 Exp: Exp MINUS . Exp
 
+    NOT       shift, and go to state 32
+    PLUS      shift, and go to state 33
+    MINUS     shift, and go to state 34
     POINTER   shift, and go to state 1
-    PLUS      shift, and go to state 31
-    MINUS     shift, and go to state 32
-    OPEN_PAR  shift, and go to state 67
-    INT       shift, and go to state 35
-    FLOAT     shift, and go to state 36
-    ID        shift, and go to state 37
+    OPEN_PAR  shift, and go to state 35
+    INT       shift, and go to state 36
+    FLOAT     shift, and go to state 37
+    ID        shift, and go to state 10
+    CHAR      shift, and go to state 38
+    TRUE      shift, and go to state 39
+    FALSE     shift, and go to state 40
 
-    LValue    go to state 68
-    Number    go to state 137
-    FuncCall  go to state 70
+    LValue    go to state 41
+    Exp       go to state 118
+    FuncCall  go to state 43
 
 
 State 83
 
-   71 Comp: NOT_EQUIV .
+   50 Exp: Exp ASTERISK . Exp
 
-    $default  reduce using rule 71 (Comp)
+    NOT       shift, and go to state 32
+    PLUS      shift, and go to state 33
+    MINUS     shift, and go to state 34
+    POINTER   shift, and go to state 1
+    OPEN_PAR  shift, and go to state 35
+    INT       shift, and go to state 36
+    FLOAT     shift, and go to state 37
+    ID        shift, and go to state 10
+    CHAR      shift, and go to state 38
+    TRUE      shift, and go to state 39
+    FALSE     shift, and go to state 40
+
+    LValue    go to state 41
+    Exp       go to state 119
+    FuncCall  go to state 43
 
 
 State 84
 
-   70 Comp: EQUIV .
+   51 Exp: Exp DIV . Exp
 
-    $default  reduce using rule 70 (Comp)
+    NOT       shift, and go to state 32
+    PLUS      shift, and go to state 33
+    MINUS     shift, and go to state 34
+    POINTER   shift, and go to state 1
+    OPEN_PAR  shift, and go to state 35
+    INT       shift, and go to state 36
+    FLOAT     shift, and go to state 37
+    ID        shift, and go to state 10
+    CHAR      shift, and go to state 38
+    TRUE      shift, and go to state 39
+    FALSE     shift, and go to state 40
+
+    LValue    go to state 41
+    Exp       go to state 120
+    FuncCall  go to state 43
 
 
 State 85
 
-   72 Comp: GREATER_EQUAL_THAN .
+   52 Exp: Exp MODULE . Exp
 
-    $default  reduce using rule 72 (Comp)
+    NOT       shift, and go to state 32
+    PLUS      shift, and go to state 33
+    MINUS     shift, and go to state 34
+    POINTER   shift, and go to state 1
+    OPEN_PAR  shift, and go to state 35
+    INT       shift, and go to state 36
+    FLOAT     shift, and go to state 37
+    ID        shift, and go to state 10
+    CHAR      shift, and go to state 38
+    TRUE      shift, and go to state 39
+    FALSE     shift, and go to state 40
+
+    LValue    go to state 41
+    Exp       go to state 121
+    FuncCall  go to state 43
 
 
 State 86
 
-   69 Comp: LESS_EQUAL_THAN .
+   55 Exp: Exp POWER . Exp
 
-    $default  reduce using rule 69 (Comp)
+    NOT       shift, and go to state 32
+    PLUS      shift, and go to state 33
+    MINUS     shift, and go to state 34
+    POINTER   shift, and go to state 1
+    OPEN_PAR  shift, and go to state 35
+    INT       shift, and go to state 36
+    FLOAT     shift, and go to state 37
+    ID        shift, and go to state 10
+    CHAR      shift, and go to state 38
+    TRUE      shift, and go to state 39
+    FALSE     shift, and go to state 40
+
+    LValue    go to state 41
+    Exp       go to state 122
+    FuncCall  go to state 43
 
 
 State 87
 
-   73 Comp: GREATER_THAN .
+   80 Conditional: IF Exp THEN . I OptElsif OptElse END
 
-    $default  reduce using rule 73 (Comp)
+    POINTER   shift, and go to state 1
+    OPEN_PAR  shift, and go to state 2
+    REGISTER  shift, and go to state 3
+    UNION     shift, and go to state 4
+    IF        shift, and go to state 5
+    WHILE     shift, and go to state 6
+    FOR       shift, and go to state 7
+    LET       shift, and go to state 8
+    DEF       shift, and go to state 9
+    ID        shift, and go to state 10
+
+    I            go to state 123
+    Inst         go to state 13
+    Action       go to state 14
+    Def          go to state 15
+    VarInst      go to state 16
+    VarDef       go to state 17
+    Assign       go to state 18
+    LValue       go to state 19
+    FuncCall     go to state 20
+    UnionDef     go to state 21
+    RegisterDef  go to state 22
+    Conditional  go to state 23
+    LoopWhile    go to state 24
+    LoopFor      go to state 25
+    RutineDef    go to state 26
 
 
 State 88
 
-   68 Comp: LESS_THAN .
+   87 LoopWhile: WHILE Exp DO . I DONE
 
-    $default  reduce using rule 68 (Comp)
+    POINTER   shift, and go to state 1
+    OPEN_PAR  shift, and go to state 2
+    REGISTER  shift, and go to state 3
+    UNION     shift, and go to state 4
+    IF        shift, and go to state 5
+    WHILE     shift, and go to state 6
+    FOR       shift, and go to state 7
+    LET       shift, and go to state 8
+    DEF       shift, and go to state 9
+    ID        shift, and go to state 10
+
+    I            go to state 124
+    Inst         go to state 13
+    Action       go to state 14
+    Def          go to state 15
+    VarInst      go to state 16
+    VarDef       go to state 17
+    Assign       go to state 18
+    LValue       go to state 19
+    FuncCall     go to state 20
+    UnionDef     go to state 21
+    RegisterDef  go to state 22
+    Conditional  go to state 23
+    LoopWhile    go to state 24
+    LoopFor      go to state 25
+    RutineDef    go to state 26
 
 
 State 89
 
-   63 Bool: Number Comp . Number
+   88 LoopFor: FOR OPEN_PAR ID . SEMICOLON Exp SEMICOLON Exp OptStep CLOSE_PAR DO I DONE
 
-    POINTER   shift, and go to state 1
-    PLUS      shift, and go to state 31
-    MINUS     shift, and go to state 32
-    OPEN_PAR  shift, and go to state 67
-    INT       shift, and go to state 35
-    FLOAT     shift, and go to state 36
-    ID        shift, and go to state 37
-
-    LValue    go to state 68
-    Number    go to state 138
-    FuncCall  go to state 70
+    SEMICOLON  shift, and go to state 125
 
 
 State 90
 
-   60 Bool: Bool AND . Bool
+   25 Type: Type . OPEN_BRACKET Exp CLOSE_BRACKET
+   26     | POINTER Type .
 
-    POINTER   shift, and go to state 1
-    PLUS      shift, and go to state 31
-    MINUS     shift, and go to state 32
-    OPEN_PAR  shift, and go to state 33
-    NOT       shift, and go to state 34
-    INT       shift, and go to state 35
-    FLOAT     shift, and go to state 36
-    ID        shift, and go to state 37
-    TRUE      shift, and go to state 38
-    FALSE     shift, and go to state 39
-
-    LValue    go to state 40
-    Number    go to state 41
-    Bool      go to state 139
-    FuncCall  go to state 43
+    $default  reduce using rule 26 (Type)
 
 
 State 91
 
-   59 Bool: Bool OR . Bool
+   25 Type: Type . OPEN_BRACKET Exp CLOSE_BRACKET
+   27     | OPEN_PAR Type . CLOSE_PAR
 
-    POINTER   shift, and go to state 1
-    PLUS      shift, and go to state 31
-    MINUS     shift, and go to state 32
-    OPEN_PAR  shift, and go to state 33
-    NOT       shift, and go to state 34
-    INT       shift, and go to state 35
-    FLOAT     shift, and go to state 36
-    ID        shift, and go to state 37
-    TRUE      shift, and go to state 38
-    FALSE     shift, and go to state 39
-
-    LValue    go to state 40
-    Number    go to state 41
-    Bool      go to state 140
-    FuncCall  go to state 43
+    OPEN_BRACKET  shift, and go to state 92
+    CLOSE_PAR     shift, and go to state 126
 
 
 State 92
 
-   58 Bool: Bool NOT_EQUIV . Bool
+   25 Type: Type OPEN_BRACKET . Exp CLOSE_BRACKET
 
+    NOT       shift, and go to state 32
+    PLUS      shift, and go to state 33
+    MINUS     shift, and go to state 34
     POINTER   shift, and go to state 1
-    PLUS      shift, and go to state 31
-    MINUS     shift, and go to state 32
-    OPEN_PAR  shift, and go to state 33
-    NOT       shift, and go to state 34
-    INT       shift, and go to state 35
-    FLOAT     shift, and go to state 36
-    ID        shift, and go to state 37
-    TRUE      shift, and go to state 38
-    FALSE     shift, and go to state 39
+    OPEN_PAR  shift, and go to state 35
+    INT       shift, and go to state 36
+    FLOAT     shift, and go to state 37
+    ID        shift, and go to state 10
+    CHAR      shift, and go to state 38
+    TRUE      shift, and go to state 39
+    FALSE     shift, and go to state 40
 
-    LValue    go to state 40
-    Number    go to state 41
-    Bool      go to state 141
+    LValue    go to state 41
+    Exp       go to state 127
     FuncCall  go to state 43
 
 
 State 93
 
-   57 Bool: Bool EQUIV . Bool
+   18 VarDefBody: Type ID . OptAssign
 
-    POINTER   shift, and go to state 1
-    PLUS      shift, and go to state 31
-    MINUS     shift, and go to state 32
-    OPEN_PAR  shift, and go to state 33
-    NOT       shift, and go to state 34
-    INT       shift, and go to state 35
-    FLOAT     shift, and go to state 36
-    ID        shift, and go to state 37
-    TRUE      shift, and go to state 38
-    FALSE     shift, and go to state 39
+    ASSIGNMENT  shift, and go to state 128
 
-    LValue    go to state 40
-    Number    go to state 41
-    Bool      go to state 142
-    FuncCall  go to state 43
+    $default  reduce using rule 19 (OptAssign)
+
+    OptAssign  go to state 129
 
 
 State 94
 
-  102 Conditional: IF Bool THEN . I OptElsif OptElse END
-
-    POINTER   shift, and go to state 1
-    OPEN_PAR  shift, and go to state 2
-    REGISTER  shift, and go to state 3
-    UNION     shift, and go to state 4
-    IF        shift, and go to state 5
-    WHILE     shift, and go to state 6
-    FOR       shift, and go to state 7
-    LET       shift, and go to state 8
-    ID        shift, and go to state 9
-
-    I            go to state 143
-    Inst         go to state 12
-    Action       go to state 13
-    Def          go to state 14
-    VarInst      go to state 15
-    VarDef       go to state 16
-    Assign       go to state 17
-    LValue       go to state 18
-    FuncCall     go to state 19
-    UnionDef     go to state 20
-    RegisterDef  go to state 21
-    Conditional  go to state 22
-    LoopWhile    go to state 23
-    LoopFor      go to state 24
-    RutineDef    go to state 25
-
-
-State 95
-
-  109 LoopWhile: WHILE Bool DO . I DONE
-
-    POINTER   shift, and go to state 1
-    OPEN_PAR  shift, and go to state 2
-    REGISTER  shift, and go to state 3
-    UNION     shift, and go to state 4
-    IF        shift, and go to state 5
-    WHILE     shift, and go to state 6
-    FOR       shift, and go to state 7
-    LET       shift, and go to state 8
-    ID        shift, and go to state 9
-
-    I            go to state 144
-    Inst         go to state 12
-    Action       go to state 13
-    Def          go to state 14
-    VarInst      go to state 15
-    VarDef       go to state 16
-    Assign       go to state 17
-    LValue       go to state 18
-    FuncCall     go to state 19
-    UnionDef     go to state 20
-    RegisterDef  go to state 21
-    Conditional  go to state 22
-    LoopWhile    go to state 23
-    LoopFor      go to state 24
-    RutineDef    go to state 25
-
-
-State 96
-
-  110 LoopFor: FOR OPEN_PAR ID . SEMICOLON Number SEMICOLON Number OptStep CLOSE_PAR DO I DONE
-
-    SEMICOLON  shift, and go to state 145
-
-
-State 97
-
-   30 Type: Type . OPEN_BRACKET Integer CLOSE_BRACKET
-   31     | POINTER Type .
-
-    OPEN_BRACKET  shift, and go to state 99
-
-    $default  reduce using rule 31 (Type)
-
-
-State 98
-
-   30 Type: Type . OPEN_BRACKET Integer CLOSE_BRACKET
-   32     | OPEN_PAR Type . CLOSE_PAR
-
-    OPEN_BRACKET  shift, and go to state 99
-    CLOSE_PAR     shift, and go to state 146
-
-
-State 99
-
-   30 Type: Type OPEN_BRACKET . Integer CLOSE_BRACKET
-
-    POINTER   shift, and go to state 1
-    PLUS      shift, and go to state 107
-    MINUS     shift, and go to state 108
-    OPEN_PAR  shift, and go to state 109
-    INT       shift, and go to state 110
-    ID        shift, and go to state 37
-
-    LValue    go to state 111
-    Integer   go to state 147
-    FuncCall  go to state 113
-
-
-State 100
-
-   18 VarDefBody: Type ID . OptAssign
-
-    ASSIGNMENT  shift, and go to state 148
-
-    $default  reduce using rule 19 (OptAssign)
-
-    OptAssign  go to state 149
-
-
-State 101
-
-   30 Type: Type . OPEN_BRACKET Integer CLOSE_BRACKET
-  116 ArgsDef: Type . OptRef ID OptAssign
-
-    OPEN_BRACKET  shift, and go to state 99
-    AT            shift, and go to state 150
-
-    $default  reduce using rule 118 (OptRef)
-
-    OptRef  go to state 151
-
-
-State 102
-
-   91 FuncCall: ID OPEN_PAR ArgsExp . CLOSE_PAR
-
-    CLOSE_PAR  shift, and go to state 152
-
-
-State 103
-
-   93 ArgsExp: Args . RValue
-   95 Args: Args . RValue COMMA
-
-    POINTER       shift, and go to state 1
-    OPEN_BRACKET  shift, and go to state 114
-    PLUS          shift, and go to state 31
-    MINUS         shift, and go to state 32
-    OPEN_PAR      shift, and go to state 33
-    NOT           shift, and go to state 34
-    INT           shift, and go to state 35
-    FLOAT         shift, and go to state 36
-    ID            shift, and go to state 37
-    CHAR          shift, and go to state 115
-    STRING        shift, and go to state 116
-    TRUE          shift, and go to state 38
-    FALSE         shift, and go to state 39
-
-    RValue      go to state 153
-    Expression  go to state 118
-    LValue      go to state 119
-    Number      go to state 120
-    Bool        go to state 121
-    Array       go to state 122
-    FuncCall    go to state 123
-
-
-State 104
-
-  113 RutineDef: ID OPEN_PAR RutineArgs . CLOSE_PAR OptReturn OPEN_C_BRACE Actions CLOSE_C_BRACE
-
-    CLOSE_PAR  shift, and go to state 154
-
-
-State 105
-
-  115 RutineArgs: ArgsDef .
-  117 ArgsDef: ArgsDef . Type OptRef ID OptAssign
+   91 RutineDef: DEF ID OPEN_PAR . RutineArgs CLOSE_PAR OptReturn OPEN_C_BRACE Actions CLOSE_C_BRACE
 
     POINTER   shift, and go to state 46
     OPEN_PAR  shift, and go to state 47
@@ -1738,361 +1633,187 @@ State 105
     T_UNIT    shift, and go to state 52
     T_STRING  shift, and go to state 53
 
-    $default  reduce using rule 115 (RutineArgs)
+    $default  reduce using rule 92 (RutineArgs)
 
-    Type  go to state 155
-
-
-State 106
-
-   41 LValue: LValue DOT ID .
-
-    $default  reduce using rule 41 (LValue)
+    Type        go to state 130
+    RutineArgs  go to state 131
+    ArgsDef     go to state 132
 
 
-State 107
+State 95
 
-   85 Integer: PLUS . Integer
+   69 FuncCall: ID OPEN_PAR ArgsExp . CLOSE_PAR
 
-    POINTER   shift, and go to state 1
-    PLUS      shift, and go to state 107
-    MINUS     shift, and go to state 108
-    OPEN_PAR  shift, and go to state 109
-    INT       shift, and go to state 110
-    ID        shift, and go to state 37
-
-    LValue    go to state 111
-    Integer   go to state 156
-    FuncCall  go to state 113
+    CLOSE_PAR  shift, and go to state 133
 
 
-State 108
+State 96
 
-   84 Integer: MINUS . Integer
+   71 ArgsExp: Args . RValue
+   73 Args: Args . RValue COMMA
 
-    POINTER   shift, and go to state 1
-    PLUS      shift, and go to state 107
-    MINUS     shift, and go to state 108
-    OPEN_PAR  shift, and go to state 109
-    INT       shift, and go to state 110
-    ID        shift, and go to state 37
+    NOT           shift, and go to state 32
+    PLUS          shift, and go to state 33
+    MINUS         shift, and go to state 34
+    OPEN_BRACKET  shift, and go to state 99
+    POINTER       shift, and go to state 1
+    OPEN_PAR      shift, and go to state 35
+    INT           shift, and go to state 36
+    FLOAT         shift, and go to state 37
+    ID            shift, and go to state 10
+    CHAR          shift, and go to state 38
+    STRING        shift, and go to state 100
+    TRUE          shift, and go to state 39
+    FALSE         shift, and go to state 40
 
-    LValue    go to state 111
-    Integer   go to state 157
-    FuncCall  go to state 113
-
-
-State 109
-
-   42 LValue: OPEN_PAR . LValue CLOSE_PAR
-   87 Integer: OPEN_PAR . Integer CLOSE_PAR
-
-    POINTER   shift, and go to state 1
-    PLUS      shift, and go to state 107
-    MINUS     shift, and go to state 108
-    OPEN_PAR  shift, and go to state 109
-    INT       shift, and go to state 110
-    ID        shift, and go to state 37
-
-    LValue    go to state 158
-    Integer   go to state 159
-    FuncCall  go to state 113
+    RValue    go to state 134
+    LValue    go to state 41
+    Exp       go to state 102
+    Array     go to state 103
+    FuncCall  go to state 43
 
 
-State 110
+State 97
 
-   90 Integer: INT .
+   34 LValue: LValue OPEN_BRACKET Exp . CLOSE_BRACKET
+   39 Exp: Exp . EQUIV Exp
+   40    | Exp . NOT_EQUIV Exp
+   41    | Exp . OR Exp
+   42    | Exp . AND Exp
+   44    | Exp . LESS_THAN Exp
+   45    | Exp . LESS_EQUAL_THAN Exp
+   46    | Exp . GREATER_THAN Exp
+   47    | Exp . GREATER_EQUAL_THAN Exp
+   48    | Exp . PLUS Exp
+   49    | Exp . MINUS Exp
+   50    | Exp . ASTERISK Exp
+   51    | Exp . DIV Exp
+   52    | Exp . MODULE Exp
+   55    | Exp . POWER Exp
 
-    $default  reduce using rule 90 (Integer)
-
-
-State 111
-
-   39 LValue: LValue . OPEN_BRACKET Integer CLOSE_BRACKET
-   41       | LValue . DOT ID
-   88 Integer: LValue .
-
-    DOT           shift, and go to state 60
-    OPEN_BRACKET  shift, and go to state 61
-
-    $default  reduce using rule 88 (Integer)
-
-
-State 112
-
-   39 LValue: LValue OPEN_BRACKET Integer . CLOSE_BRACKET
-   79 Integer: Integer . PLUS Integer
-   80        | Integer . MINUS Integer
-   81        | Integer . ASTERISK Integer
-   82        | Integer . DIV Integer
-   83        | Integer . MODULE Integer
-   86        | Integer . POWER Integer
-
-    CLOSE_BRACKET  shift, and go to state 160
-    PLUS           shift, and go to state 161
-    MINUS          shift, and go to state 162
-    ASTERISK       shift, and go to state 163
-    DIV            shift, and go to state 164
-    MODULE         shift, and go to state 165
-    POWER          shift, and go to state 166
+    EQUIV               shift, and go to state 73
+    NOT_EQUIV           shift, and go to state 74
+    OR                  shift, and go to state 75
+    AND                 shift, and go to state 76
+    LESS_THAN           shift, and go to state 77
+    LESS_EQUAL_THAN     shift, and go to state 78
+    GREATER_THAN        shift, and go to state 79
+    GREATER_EQUAL_THAN  shift, and go to state 80
+    PLUS                shift, and go to state 81
+    MINUS               shift, and go to state 82
+    ASTERISK            shift, and go to state 83
+    DIV                 shift, and go to state 84
+    MODULE              shift, and go to state 85
+    POWER               shift, and go to state 86
+    CLOSE_BRACKET       shift, and go to state 135
 
 
-State 113
+State 98
 
-   89 Integer: FuncCall .
+   36 LValue: LValue DOT ID .
 
-    $default  reduce using rule 89 (Integer)
-
-
-State 114
-
-   74 Array: OPEN_BRACKET . ArrExp CLOSE_BRACKET
-
-    CLOSE_BRACKET  reduce using rule 75 (ArrExp)
-    $default       reduce using rule 77 (ArrElems)
-
-    ArrExp    go to state 167
-    ArrElems  go to state 168
+    $default  reduce using rule 36 (LValue)
 
 
-State 115
+State 99
 
-   29 Expression: CHAR .
+   64 Array: OPEN_BRACKET . ArrExp CLOSE_BRACKET
 
-    $default  reduce using rule 29 (Expression)
+    CLOSE_BRACKET  reduce using rule 65 (ArrExp)
+    $default       reduce using rule 67 (ArrElems)
 
-
-State 116
-
-   28 Expression: STRING .
-
-    $default  reduce using rule 28 (Expression)
+    ArrExp    go to state 136
+    ArrElems  go to state 137
 
 
-State 117
+State 100
+
+   24 RValue: STRING .
+
+    $default  reduce using rule 24 (RValue)
+
+
+State 101
 
    21 Assign: LValue ASSIGNMENT RValue .
 
     $default  reduce using rule 21 (Assign)
 
 
-State 118
+State 102
 
-   23 RValue: Expression .
+   22 RValue: Exp .
+   39 Exp: Exp . EQUIV Exp
+   40    | Exp . NOT_EQUIV Exp
+   41    | Exp . OR Exp
+   42    | Exp . AND Exp
+   44    | Exp . LESS_THAN Exp
+   45    | Exp . LESS_EQUAL_THAN Exp
+   46    | Exp . GREATER_THAN Exp
+   47    | Exp . GREATER_EQUAL_THAN Exp
+   48    | Exp . PLUS Exp
+   49    | Exp . MINUS Exp
+   50    | Exp . ASTERISK Exp
+   51    | Exp . DIV Exp
+   52    | Exp . MODULE Exp
+   55    | Exp . POWER Exp
+
+    EQUIV               shift, and go to state 73
+    NOT_EQUIV           shift, and go to state 74
+    OR                  shift, and go to state 75
+    AND                 shift, and go to state 76
+    LESS_THAN           shift, and go to state 77
+    LESS_EQUAL_THAN     shift, and go to state 78
+    GREATER_THAN        shift, and go to state 79
+    GREATER_EQUAL_THAN  shift, and go to state 80
+    PLUS                shift, and go to state 81
+    MINUS               shift, and go to state 82
+    ASTERISK            shift, and go to state 83
+    DIV                 shift, and go to state 84
+    MODULE              shift, and go to state 85
+    POWER               shift, and go to state 86
+
+    $default  reduce using rule 22 (RValue)
+
+
+State 103
+
+   23 RValue: Array .
 
     $default  reduce using rule 23 (RValue)
 
 
-State 119
+State 104
 
-   22 RValue: LValue .
-   39 LValue: LValue . OPEN_BRACKET Integer CLOSE_BRACKET
-   41       | LValue . DOT ID
-   53 Number: LValue .
-   66 Bool: LValue .
+   78 RegisterBody: VarDef . SEMICOLON
 
-    DOT           shift, and go to state 60
-    OPEN_BRACKET  shift, and go to state 61
-
-    POINTER             reduce using rule 22 (RValue)
-    POINTER             [reduce using rule 53 (Number)]
-    POINTER             [reduce using rule 66 (Bool)]
-    CLOSE_BRACKET       reduce using rule 22 (RValue)
-    CLOSE_BRACKET       [reduce using rule 53 (Number)]
-    CLOSE_BRACKET       [reduce using rule 66 (Bool)]
-    PLUS                reduce using rule 53 (Number)
-    MINUS               reduce using rule 53 (Number)
-    ASTERISK            reduce using rule 53 (Number)
-    DIV                 reduce using rule 53 (Number)
-    MODULE              reduce using rule 53 (Number)
-    POWER               reduce using rule 53 (Number)
-    SEMICOLON           reduce using rule 22 (RValue)
-    SEMICOLON           [reduce using rule 53 (Number)]
-    SEMICOLON           [reduce using rule 66 (Bool)]
-    OPEN_PAR            reduce using rule 22 (RValue)
-    OPEN_PAR            [reduce using rule 53 (Number)]
-    OPEN_PAR            [reduce using rule 66 (Bool)]
-    CLOSE_PAR           reduce using rule 22 (RValue)
-    CLOSE_PAR           [reduce using rule 53 (Number)]
-    CLOSE_PAR           [reduce using rule 66 (Bool)]
-    AND                 reduce using rule 66 (Bool)
-    OR                  reduce using rule 66 (Bool)
-    NOT_EQUIV           reduce using rule 53 (Number)
-    NOT_EQUIV           [reduce using rule 66 (Bool)]
-    EQUIV               reduce using rule 53 (Number)
-    EQUIV               [reduce using rule 66 (Bool)]
-    GREATER_EQUAL_THAN  reduce using rule 53 (Number)
-    LESS_EQUAL_THAN     reduce using rule 53 (Number)
-    GREATER_THAN        reduce using rule 53 (Number)
-    LESS_THAN           reduce using rule 53 (Number)
-    T_INT               reduce using rule 22 (RValue)
-    T_INT               [reduce using rule 53 (Number)]
-    T_INT               [reduce using rule 66 (Bool)]
-    T_CHAR              reduce using rule 22 (RValue)
-    T_CHAR              [reduce using rule 53 (Number)]
-    T_CHAR              [reduce using rule 66 (Bool)]
-    T_BOOL              reduce using rule 22 (RValue)
-    T_BOOL              [reduce using rule 53 (Number)]
-    T_BOOL              [reduce using rule 66 (Bool)]
-    T_FLOAT             reduce using rule 22 (RValue)
-    T_FLOAT             [reduce using rule 53 (Number)]
-    T_FLOAT             [reduce using rule 66 (Bool)]
-    T_UNIT              reduce using rule 22 (RValue)
-    T_UNIT              [reduce using rule 53 (Number)]
-    T_UNIT              [reduce using rule 66 (Bool)]
-    T_STRING            reduce using rule 22 (RValue)
-    T_STRING            [reduce using rule 53 (Number)]
-    T_STRING            [reduce using rule 66 (Bool)]
-    COMMA               reduce using rule 22 (RValue)
-    COMMA               [reduce using rule 53 (Number)]
-    COMMA               [reduce using rule 66 (Bool)]
-    $default            reduce using rule 22 (RValue)
+    SEMICOLON  shift, and go to state 138
 
 
-State 120
+State 105
 
-   25 Expression: Number .
-   44 Number: Number . PLUS Number
-   45       | Number . MINUS Number
-   46       | Number . ASTERISK Number
-   47       | Number . DIV Number
-   48       | Number . MODULE Number
-   51       | Number . POWER Number
-   63 Bool: Number . Comp Number
+   77 RegisterDef: REGISTER ID OPEN_C_BRACE RegisterBody . CLOSE_C_BRACE
+   79 RegisterBody: RegisterBody . VarDef SEMICOLON
 
-    PLUS                shift, and go to state 77
-    MINUS               shift, and go to state 78
-    ASTERISK            shift, and go to state 79
-    DIV                 shift, and go to state 80
-    MODULE              shift, and go to state 81
-    POWER               shift, and go to state 82
-    NOT_EQUIV           shift, and go to state 83
-    EQUIV               shift, and go to state 84
-    GREATER_EQUAL_THAN  shift, and go to state 85
-    LESS_EQUAL_THAN     shift, and go to state 86
-    GREATER_THAN        shift, and go to state 87
-    LESS_THAN           shift, and go to state 88
-
-    $default  reduce using rule 25 (Expression)
-
-    Comp  go to state 89
-
-
-State 121
-
-   26 Expression: Bool .
-   57 Bool: Bool . EQUIV Bool
-   58     | Bool . NOT_EQUIV Bool
-   59     | Bool . OR Bool
-   60     | Bool . AND Bool
-
-    AND        shift, and go to state 90
-    OR         shift, and go to state 91
-    NOT_EQUIV  shift, and go to state 92
-    EQUIV      shift, and go to state 93
-
-    $default  reduce using rule 26 (Expression)
-
-
-State 122
-
-   27 Expression: Array .
-
-    $default  reduce using rule 27 (Expression)
-
-
-State 123
-
-   24 RValue: FuncCall .
-   54 Number: FuncCall .
-   67 Bool: FuncCall .
-
-    POINTER             reduce using rule 24 (RValue)
-    POINTER             [reduce using rule 54 (Number)]
-    POINTER             [reduce using rule 67 (Bool)]
-    CLOSE_BRACKET       reduce using rule 24 (RValue)
-    CLOSE_BRACKET       [reduce using rule 54 (Number)]
-    CLOSE_BRACKET       [reduce using rule 67 (Bool)]
-    PLUS                reduce using rule 54 (Number)
-    MINUS               reduce using rule 54 (Number)
-    ASTERISK            reduce using rule 54 (Number)
-    DIV                 reduce using rule 54 (Number)
-    MODULE              reduce using rule 54 (Number)
-    POWER               reduce using rule 54 (Number)
-    SEMICOLON           reduce using rule 24 (RValue)
-    SEMICOLON           [reduce using rule 54 (Number)]
-    SEMICOLON           [reduce using rule 67 (Bool)]
-    OPEN_PAR            reduce using rule 24 (RValue)
-    OPEN_PAR            [reduce using rule 54 (Number)]
-    OPEN_PAR            [reduce using rule 67 (Bool)]
-    CLOSE_PAR           reduce using rule 24 (RValue)
-    CLOSE_PAR           [reduce using rule 54 (Number)]
-    CLOSE_PAR           [reduce using rule 67 (Bool)]
-    AND                 reduce using rule 67 (Bool)
-    OR                  reduce using rule 67 (Bool)
-    NOT_EQUIV           reduce using rule 54 (Number)
-    NOT_EQUIV           [reduce using rule 67 (Bool)]
-    EQUIV               reduce using rule 54 (Number)
-    EQUIV               [reduce using rule 67 (Bool)]
-    GREATER_EQUAL_THAN  reduce using rule 54 (Number)
-    LESS_EQUAL_THAN     reduce using rule 54 (Number)
-    GREATER_THAN        reduce using rule 54 (Number)
-    LESS_THAN           reduce using rule 54 (Number)
-    T_INT               reduce using rule 24 (RValue)
-    T_INT               [reduce using rule 54 (Number)]
-    T_INT               [reduce using rule 67 (Bool)]
-    T_CHAR              reduce using rule 24 (RValue)
-    T_CHAR              [reduce using rule 54 (Number)]
-    T_CHAR              [reduce using rule 67 (Bool)]
-    T_BOOL              reduce using rule 24 (RValue)
-    T_BOOL              [reduce using rule 54 (Number)]
-    T_BOOL              [reduce using rule 67 (Bool)]
-    T_FLOAT             reduce using rule 24 (RValue)
-    T_FLOAT             [reduce using rule 54 (Number)]
-    T_FLOAT             [reduce using rule 67 (Bool)]
-    T_UNIT              reduce using rule 24 (RValue)
-    T_UNIT              [reduce using rule 54 (Number)]
-    T_UNIT              [reduce using rule 67 (Bool)]
-    T_STRING            reduce using rule 24 (RValue)
-    T_STRING            [reduce using rule 54 (Number)]
-    T_STRING            [reduce using rule 67 (Bool)]
-    COMMA               reduce using rule 24 (RValue)
-    COMMA               [reduce using rule 54 (Number)]
-    COMMA               [reduce using rule 67 (Bool)]
-    $default            reduce using rule 24 (RValue)
-
-
-State 124
-
-  100 RegisterBody: VarDef . SEMICOLON
-
-    SEMICOLON  shift, and go to state 169
-
-
-State 125
-
-   99 RegisterDef: REGISTER ID OPEN_C_BRACE RegisterBody . CLOSE_C_BRACE
-  101 RegisterBody: RegisterBody . VarDef SEMICOLON
-
-    CLOSE_C_BRACE  shift, and go to state 170
+    CLOSE_C_BRACE  shift, and go to state 139
     LET            shift, and go to state 8
 
-    VarDef  go to state 171
+    VarDef  go to state 140
 
 
-State 126
+State 106
 
-   30 Type: Type . OPEN_BRACKET Integer CLOSE_BRACKET
-   97 UnionBody: Type . ID SEMICOLON
+   25 Type: Type . OPEN_BRACKET Exp CLOSE_BRACKET
+   75 UnionBody: Type . ID SEMICOLON
 
-    OPEN_BRACKET  shift, and go to state 99
-    ID            shift, and go to state 172
+    OPEN_BRACKET  shift, and go to state 92
+    ID            shift, and go to state 141
 
 
-State 127
+State 107
 
-   96 UnionDef: UNION ID OPEN_C_BRACE UnionBody . CLOSE_C_BRACE
-   98 UnionBody: UnionBody . Type ID SEMICOLON
+   74 UnionDef: UNION ID OPEN_C_BRACE UnionBody . CLOSE_C_BRACE
+   76 UnionBody: UnionBody . Type ID SEMICOLON
 
     POINTER        shift, and go to state 46
     OPEN_PAR       shift, and go to state 47
@@ -2102,810 +1823,615 @@ State 127
     T_FLOAT        shift, and go to state 51
     T_UNIT         shift, and go to state 52
     T_STRING       shift, and go to state 53
-    CLOSE_C_BRACE  shift, and go to state 173
+    CLOSE_C_BRACE  shift, and go to state 142
 
-    Type  go to state 174
+    Type  go to state 143
+
+
+State 108
+
+   56 Exp: OPEN_PAR Exp CLOSE_PAR .
+
+    $default  reduce using rule 56 (Exp)
+
+
+State 109
+
+   39 Exp: Exp . EQUIV Exp
+   39    | Exp EQUIV Exp .
+   40    | Exp . NOT_EQUIV Exp
+   41    | Exp . OR Exp
+   42    | Exp . AND Exp
+   44    | Exp . LESS_THAN Exp
+   45    | Exp . LESS_EQUAL_THAN Exp
+   46    | Exp . GREATER_THAN Exp
+   47    | Exp . GREATER_EQUAL_THAN Exp
+   48    | Exp . PLUS Exp
+   49    | Exp . MINUS Exp
+   50    | Exp . ASTERISK Exp
+   51    | Exp . DIV Exp
+   52    | Exp . MODULE Exp
+   55    | Exp . POWER Exp
+
+    OR                  shift, and go to state 75
+    AND                 shift, and go to state 76
+    LESS_THAN           shift, and go to state 77
+    LESS_EQUAL_THAN     shift, and go to state 78
+    GREATER_THAN        shift, and go to state 79
+    GREATER_EQUAL_THAN  shift, and go to state 80
+    PLUS                shift, and go to state 81
+    MINUS               shift, and go to state 82
+    ASTERISK            shift, and go to state 83
+    DIV                 shift, and go to state 84
+    MODULE              shift, and go to state 85
+    POWER               shift, and go to state 86
+
+    $default  reduce using rule 39 (Exp)
+
+
+State 110
+
+   39 Exp: Exp . EQUIV Exp
+   40    | Exp . NOT_EQUIV Exp
+   40    | Exp NOT_EQUIV Exp .
+   41    | Exp . OR Exp
+   42    | Exp . AND Exp
+   44    | Exp . LESS_THAN Exp
+   45    | Exp . LESS_EQUAL_THAN Exp
+   46    | Exp . GREATER_THAN Exp
+   47    | Exp . GREATER_EQUAL_THAN Exp
+   48    | Exp . PLUS Exp
+   49    | Exp . MINUS Exp
+   50    | Exp . ASTERISK Exp
+   51    | Exp . DIV Exp
+   52    | Exp . MODULE Exp
+   55    | Exp . POWER Exp
+
+    OR                  shift, and go to state 75
+    AND                 shift, and go to state 76
+    LESS_THAN           shift, and go to state 77
+    LESS_EQUAL_THAN     shift, and go to state 78
+    GREATER_THAN        shift, and go to state 79
+    GREATER_EQUAL_THAN  shift, and go to state 80
+    PLUS                shift, and go to state 81
+    MINUS               shift, and go to state 82
+    ASTERISK            shift, and go to state 83
+    DIV                 shift, and go to state 84
+    MODULE              shift, and go to state 85
+    POWER               shift, and go to state 86
+
+    $default  reduce using rule 40 (Exp)
+
+
+State 111
+
+   39 Exp: Exp . EQUIV Exp
+   40    | Exp . NOT_EQUIV Exp
+   41    | Exp . OR Exp
+   41    | Exp OR Exp .
+   42    | Exp . AND Exp
+   44    | Exp . LESS_THAN Exp
+   45    | Exp . LESS_EQUAL_THAN Exp
+   46    | Exp . GREATER_THAN Exp
+   47    | Exp . GREATER_EQUAL_THAN Exp
+   48    | Exp . PLUS Exp
+   49    | Exp . MINUS Exp
+   50    | Exp . ASTERISK Exp
+   51    | Exp . DIV Exp
+   52    | Exp . MODULE Exp
+   55    | Exp . POWER Exp
+
+    LESS_THAN           shift, and go to state 77
+    LESS_EQUAL_THAN     shift, and go to state 78
+    GREATER_THAN        shift, and go to state 79
+    GREATER_EQUAL_THAN  shift, and go to state 80
+    PLUS                shift, and go to state 81
+    MINUS               shift, and go to state 82
+    ASTERISK            shift, and go to state 83
+    DIV                 shift, and go to state 84
+    MODULE              shift, and go to state 85
+    POWER               shift, and go to state 86
+
+    $default  reduce using rule 41 (Exp)
+
+
+State 112
+
+   39 Exp: Exp . EQUIV Exp
+   40    | Exp . NOT_EQUIV Exp
+   41    | Exp . OR Exp
+   42    | Exp . AND Exp
+   42    | Exp AND Exp .
+   44    | Exp . LESS_THAN Exp
+   45    | Exp . LESS_EQUAL_THAN Exp
+   46    | Exp . GREATER_THAN Exp
+   47    | Exp . GREATER_EQUAL_THAN Exp
+   48    | Exp . PLUS Exp
+   49    | Exp . MINUS Exp
+   50    | Exp . ASTERISK Exp
+   51    | Exp . DIV Exp
+   52    | Exp . MODULE Exp
+   55    | Exp . POWER Exp
+
+    LESS_THAN           shift, and go to state 77
+    LESS_EQUAL_THAN     shift, and go to state 78
+    GREATER_THAN        shift, and go to state 79
+    GREATER_EQUAL_THAN  shift, and go to state 80
+    PLUS                shift, and go to state 81
+    MINUS               shift, and go to state 82
+    ASTERISK            shift, and go to state 83
+    DIV                 shift, and go to state 84
+    MODULE              shift, and go to state 85
+    POWER               shift, and go to state 86
+
+    $default  reduce using rule 42 (Exp)
+
+
+State 113
+
+   39 Exp: Exp . EQUIV Exp
+   40    | Exp . NOT_EQUIV Exp
+   41    | Exp . OR Exp
+   42    | Exp . AND Exp
+   44    | Exp . LESS_THAN Exp
+   44    | Exp LESS_THAN Exp .
+   45    | Exp . LESS_EQUAL_THAN Exp
+   46    | Exp . GREATER_THAN Exp
+   47    | Exp . GREATER_EQUAL_THAN Exp
+   48    | Exp . PLUS Exp
+   49    | Exp . MINUS Exp
+   50    | Exp . ASTERISK Exp
+   51    | Exp . DIV Exp
+   52    | Exp . MODULE Exp
+   55    | Exp . POWER Exp
+
+    PLUS      shift, and go to state 81
+    MINUS     shift, and go to state 82
+    ASTERISK  shift, and go to state 83
+    DIV       shift, and go to state 84
+    MODULE    shift, and go to state 85
+    POWER     shift, and go to state 86
+
+    LESS_THAN           error (nonassociative)
+    LESS_EQUAL_THAN     error (nonassociative)
+    GREATER_THAN        error (nonassociative)
+    GREATER_EQUAL_THAN  error (nonassociative)
+
+    $default  reduce using rule 44 (Exp)
+
+
+State 114
+
+   39 Exp: Exp . EQUIV Exp
+   40    | Exp . NOT_EQUIV Exp
+   41    | Exp . OR Exp
+   42    | Exp . AND Exp
+   44    | Exp . LESS_THAN Exp
+   45    | Exp . LESS_EQUAL_THAN Exp
+   45    | Exp LESS_EQUAL_THAN Exp .
+   46    | Exp . GREATER_THAN Exp
+   47    | Exp . GREATER_EQUAL_THAN Exp
+   48    | Exp . PLUS Exp
+   49    | Exp . MINUS Exp
+   50    | Exp . ASTERISK Exp
+   51    | Exp . DIV Exp
+   52    | Exp . MODULE Exp
+   55    | Exp . POWER Exp
+
+    PLUS      shift, and go to state 81
+    MINUS     shift, and go to state 82
+    ASTERISK  shift, and go to state 83
+    DIV       shift, and go to state 84
+    MODULE    shift, and go to state 85
+    POWER     shift, and go to state 86
+
+    LESS_THAN           error (nonassociative)
+    LESS_EQUAL_THAN     error (nonassociative)
+    GREATER_THAN        error (nonassociative)
+    GREATER_EQUAL_THAN  error (nonassociative)
+
+    $default  reduce using rule 45 (Exp)
+
+
+State 115
+
+   39 Exp: Exp . EQUIV Exp
+   40    | Exp . NOT_EQUIV Exp
+   41    | Exp . OR Exp
+   42    | Exp . AND Exp
+   44    | Exp . LESS_THAN Exp
+   45    | Exp . LESS_EQUAL_THAN Exp
+   46    | Exp . GREATER_THAN Exp
+   46    | Exp GREATER_THAN Exp .
+   47    | Exp . GREATER_EQUAL_THAN Exp
+   48    | Exp . PLUS Exp
+   49    | Exp . MINUS Exp
+   50    | Exp . ASTERISK Exp
+   51    | Exp . DIV Exp
+   52    | Exp . MODULE Exp
+   55    | Exp . POWER Exp
+
+    PLUS      shift, and go to state 81
+    MINUS     shift, and go to state 82
+    ASTERISK  shift, and go to state 83
+    DIV       shift, and go to state 84
+    MODULE    shift, and go to state 85
+    POWER     shift, and go to state 86
+
+    LESS_THAN           error (nonassociative)
+    LESS_EQUAL_THAN     error (nonassociative)
+    GREATER_THAN        error (nonassociative)
+    GREATER_EQUAL_THAN  error (nonassociative)
+
+    $default  reduce using rule 46 (Exp)
+
+
+State 116
+
+   39 Exp: Exp . EQUIV Exp
+   40    | Exp . NOT_EQUIV Exp
+   41    | Exp . OR Exp
+   42    | Exp . AND Exp
+   44    | Exp . LESS_THAN Exp
+   45    | Exp . LESS_EQUAL_THAN Exp
+   46    | Exp . GREATER_THAN Exp
+   47    | Exp . GREATER_EQUAL_THAN Exp
+   47    | Exp GREATER_EQUAL_THAN Exp .
+   48    | Exp . PLUS Exp
+   49    | Exp . MINUS Exp
+   50    | Exp . ASTERISK Exp
+   51    | Exp . DIV Exp
+   52    | Exp . MODULE Exp
+   55    | Exp . POWER Exp
+
+    PLUS      shift, and go to state 81
+    MINUS     shift, and go to state 82
+    ASTERISK  shift, and go to state 83
+    DIV       shift, and go to state 84
+    MODULE    shift, and go to state 85
+    POWER     shift, and go to state 86
+
+    LESS_THAN           error (nonassociative)
+    LESS_EQUAL_THAN     error (nonassociative)
+    GREATER_THAN        error (nonassociative)
+    GREATER_EQUAL_THAN  error (nonassociative)
+
+    $default  reduce using rule 47 (Exp)
+
+
+State 117
+
+   39 Exp: Exp . EQUIV Exp
+   40    | Exp . NOT_EQUIV Exp
+   41    | Exp . OR Exp
+   42    | Exp . AND Exp
+   44    | Exp . LESS_THAN Exp
+   45    | Exp . LESS_EQUAL_THAN Exp
+   46    | Exp . GREATER_THAN Exp
+   47    | Exp . GREATER_EQUAL_THAN Exp
+   48    | Exp . PLUS Exp
+   48    | Exp PLUS Exp .
+   49    | Exp . MINUS Exp
+   50    | Exp . ASTERISK Exp
+   51    | Exp . DIV Exp
+   52    | Exp . MODULE Exp
+   55    | Exp . POWER Exp
+
+    ASTERISK  shift, and go to state 83
+    DIV       shift, and go to state 84
+    MODULE    shift, and go to state 85
+    POWER     shift, and go to state 86
+
+    $default  reduce using rule 48 (Exp)
+
+
+State 118
+
+   39 Exp: Exp . EQUIV Exp
+   40    | Exp . NOT_EQUIV Exp
+   41    | Exp . OR Exp
+   42    | Exp . AND Exp
+   44    | Exp . LESS_THAN Exp
+   45    | Exp . LESS_EQUAL_THAN Exp
+   46    | Exp . GREATER_THAN Exp
+   47    | Exp . GREATER_EQUAL_THAN Exp
+   48    | Exp . PLUS Exp
+   49    | Exp . MINUS Exp
+   49    | Exp MINUS Exp .
+   50    | Exp . ASTERISK Exp
+   51    | Exp . DIV Exp
+   52    | Exp . MODULE Exp
+   55    | Exp . POWER Exp
+
+    ASTERISK  shift, and go to state 83
+    DIV       shift, and go to state 84
+    MODULE    shift, and go to state 85
+    POWER     shift, and go to state 86
+
+    $default  reduce using rule 49 (Exp)
+
+
+State 119
+
+   39 Exp: Exp . EQUIV Exp
+   40    | Exp . NOT_EQUIV Exp
+   41    | Exp . OR Exp
+   42    | Exp . AND Exp
+   44    | Exp . LESS_THAN Exp
+   45    | Exp . LESS_EQUAL_THAN Exp
+   46    | Exp . GREATER_THAN Exp
+   47    | Exp . GREATER_EQUAL_THAN Exp
+   48    | Exp . PLUS Exp
+   49    | Exp . MINUS Exp
+   50    | Exp . ASTERISK Exp
+   50    | Exp ASTERISK Exp .
+   51    | Exp . DIV Exp
+   52    | Exp . MODULE Exp
+   55    | Exp . POWER Exp
+
+    POWER  shift, and go to state 86
+
+    $default  reduce using rule 50 (Exp)
+
+
+State 120
+
+   39 Exp: Exp . EQUIV Exp
+   40    | Exp . NOT_EQUIV Exp
+   41    | Exp . OR Exp
+   42    | Exp . AND Exp
+   44    | Exp . LESS_THAN Exp
+   45    | Exp . LESS_EQUAL_THAN Exp
+   46    | Exp . GREATER_THAN Exp
+   47    | Exp . GREATER_EQUAL_THAN Exp
+   48    | Exp . PLUS Exp
+   49    | Exp . MINUS Exp
+   50    | Exp . ASTERISK Exp
+   51    | Exp . DIV Exp
+   51    | Exp DIV Exp .
+   52    | Exp . MODULE Exp
+   55    | Exp . POWER Exp
+
+    POWER  shift, and go to state 86
+
+    $default  reduce using rule 51 (Exp)
+
+
+State 121
+
+   39 Exp: Exp . EQUIV Exp
+   40    | Exp . NOT_EQUIV Exp
+   41    | Exp . OR Exp
+   42    | Exp . AND Exp
+   44    | Exp . LESS_THAN Exp
+   45    | Exp . LESS_EQUAL_THAN Exp
+   46    | Exp . GREATER_THAN Exp
+   47    | Exp . GREATER_EQUAL_THAN Exp
+   48    | Exp . PLUS Exp
+   49    | Exp . MINUS Exp
+   50    | Exp . ASTERISK Exp
+   51    | Exp . DIV Exp
+   52    | Exp . MODULE Exp
+   52    | Exp MODULE Exp .
+   55    | Exp . POWER Exp
+
+    POWER  shift, and go to state 86
+
+    $default  reduce using rule 52 (Exp)
+
+
+State 122
+
+   39 Exp: Exp . EQUIV Exp
+   40    | Exp . NOT_EQUIV Exp
+   41    | Exp . OR Exp
+   42    | Exp . AND Exp
+   44    | Exp . LESS_THAN Exp
+   45    | Exp . LESS_EQUAL_THAN Exp
+   46    | Exp . GREATER_THAN Exp
+   47    | Exp . GREATER_EQUAL_THAN Exp
+   48    | Exp . PLUS Exp
+   49    | Exp . MINUS Exp
+   50    | Exp . ASTERISK Exp
+   51    | Exp . DIV Exp
+   52    | Exp . MODULE Exp
+   55    | Exp . POWER Exp
+   55    | Exp POWER Exp .
+
+    POWER  shift, and go to state 86
+
+    $default  reduce using rule 55 (Exp)
+
+
+State 123
+
+    4 I: I . Inst
+   80 Conditional: IF Exp THEN I . OptElsif OptElse END
+
+    POINTER   shift, and go to state 1
+    OPEN_PAR  shift, and go to state 2
+    REGISTER  shift, and go to state 3
+    UNION     shift, and go to state 4
+    IF        shift, and go to state 5
+    ELSIF     shift, and go to state 144
+    WHILE     shift, and go to state 6
+    FOR       shift, and go to state 7
+    LET       shift, and go to state 8
+    DEF       shift, and go to state 9
+    ID        shift, and go to state 10
+
+    $default  reduce using rule 81 (OptElsif)
+
+    Inst         go to state 59
+    Action       go to state 14
+    Def          go to state 15
+    VarInst      go to state 16
+    VarDef       go to state 17
+    Assign       go to state 18
+    LValue       go to state 19
+    FuncCall     go to state 20
+    UnionDef     go to state 21
+    RegisterDef  go to state 22
+    Conditional  go to state 23
+    OptElsif     go to state 145
+    Elsifs       go to state 146
+    LoopWhile    go to state 24
+    LoopFor      go to state 25
+    RutineDef    go to state 26
+
+
+State 124
+
+    4 I: I . Inst
+   87 LoopWhile: WHILE Exp DO I . DONE
+
+    POINTER   shift, and go to state 1
+    OPEN_PAR  shift, and go to state 2
+    REGISTER  shift, and go to state 3
+    UNION     shift, and go to state 4
+    IF        shift, and go to state 5
+    WHILE     shift, and go to state 6
+    DONE      shift, and go to state 147
+    FOR       shift, and go to state 7
+    LET       shift, and go to state 8
+    DEF       shift, and go to state 9
+    ID        shift, and go to state 10
+
+    Inst         go to state 59
+    Action       go to state 14
+    Def          go to state 15
+    VarInst      go to state 16
+    VarDef       go to state 17
+    Assign       go to state 18
+    LValue       go to state 19
+    FuncCall     go to state 20
+    UnionDef     go to state 21
+    RegisterDef  go to state 22
+    Conditional  go to state 23
+    LoopWhile    go to state 24
+    LoopFor      go to state 25
+    RutineDef    go to state 26
+
+
+State 125
+
+   88 LoopFor: FOR OPEN_PAR ID SEMICOLON . Exp SEMICOLON Exp OptStep CLOSE_PAR DO I DONE
+
+    NOT       shift, and go to state 32
+    PLUS      shift, and go to state 33
+    MINUS     shift, and go to state 34
+    POINTER   shift, and go to state 1
+    OPEN_PAR  shift, and go to state 35
+    INT       shift, and go to state 36
+    FLOAT     shift, and go to state 37
+    ID        shift, and go to state 10
+    CHAR      shift, and go to state 38
+    TRUE      shift, and go to state 39
+    FALSE     shift, and go to state 40
+
+    LValue    go to state 41
+    Exp       go to state 148
+    FuncCall  go to state 43
+
+
+State 126
+
+   27 Type: OPEN_PAR Type CLOSE_PAR .
+
+    $default  reduce using rule 27 (Type)
+
+
+State 127
+
+   25 Type: Type OPEN_BRACKET Exp . CLOSE_BRACKET
+   39 Exp: Exp . EQUIV Exp
+   40    | Exp . NOT_EQUIV Exp
+   41    | Exp . OR Exp
+   42    | Exp . AND Exp
+   44    | Exp . LESS_THAN Exp
+   45    | Exp . LESS_EQUAL_THAN Exp
+   46    | Exp . GREATER_THAN Exp
+   47    | Exp . GREATER_EQUAL_THAN Exp
+   48    | Exp . PLUS Exp
+   49    | Exp . MINUS Exp
+   50    | Exp . ASTERISK Exp
+   51    | Exp . DIV Exp
+   52    | Exp . MODULE Exp
+   55    | Exp . POWER Exp
+
+    EQUIV               shift, and go to state 73
+    NOT_EQUIV           shift, and go to state 74
+    OR                  shift, and go to state 75
+    AND                 shift, and go to state 76
+    LESS_THAN           shift, and go to state 77
+    LESS_EQUAL_THAN     shift, and go to state 78
+    GREATER_THAN        shift, and go to state 79
+    GREATER_EQUAL_THAN  shift, and go to state 80
+    PLUS                shift, and go to state 81
+    MINUS               shift, and go to state 82
+    ASTERISK            shift, and go to state 83
+    DIV                 shift, and go to state 84
+    MODULE              shift, and go to state 85
+    POWER               shift, and go to state 86
+    CLOSE_BRACKET       shift, and go to state 149
 
 
 State 128
 
-   39 LValue: LValue . OPEN_BRACKET Integer CLOSE_BRACKET
-   41       | LValue . DOT ID
-   42       | OPEN_PAR LValue . CLOSE_PAR
-   53 Number: LValue .
+   20 OptAssign: ASSIGNMENT . RValue
 
-    DOT           shift, and go to state 60
-    OPEN_BRACKET  shift, and go to state 61
-    CLOSE_PAR     shift, and go to state 64
+    NOT           shift, and go to state 32
+    PLUS          shift, and go to state 33
+    MINUS         shift, and go to state 34
+    OPEN_BRACKET  shift, and go to state 99
+    POINTER       shift, and go to state 1
+    OPEN_PAR      shift, and go to state 35
+    INT           shift, and go to state 36
+    FLOAT         shift, and go to state 37
+    ID            shift, and go to state 10
+    CHAR          shift, and go to state 38
+    STRING        shift, and go to state 100
+    TRUE          shift, and go to state 39
+    FALSE         shift, and go to state 40
 
-    CLOSE_PAR  [reduce using rule 53 (Number)]
-    $default   reduce using rule 53 (Number)
+    RValue    go to state 150
+    LValue    go to state 41
+    Exp       go to state 102
+    Array     go to state 103
+    FuncCall  go to state 43
 
 
 State 129
-
-   44 Number: Number . PLUS Number
-   45       | Number . MINUS Number
-   46       | Number . ASTERISK Number
-   47       | Number . DIV Number
-   48       | Number . MODULE Number
-   51       | Number . POWER Number
-   52       | OPEN_PAR Number . CLOSE_PAR
-
-    PLUS       shift, and go to state 77
-    MINUS      shift, and go to state 78
-    ASTERISK   shift, and go to state 79
-    DIV        shift, and go to state 80
-    MODULE     shift, and go to state 81
-    POWER      shift, and go to state 82
-    CLOSE_PAR  shift, and go to state 130
-
-
-State 130
-
-   52 Number: OPEN_PAR Number CLOSE_PAR .
-
-    $default  reduce using rule 52 (Number)
-
-
-State 131
-
-   62 Bool: OPEN_PAR Bool CLOSE_PAR .
-
-    $default  reduce using rule 62 (Bool)
-
-
-State 132
-
-   44 Number: Number . PLUS Number
-   44       | Number PLUS Number .
-   45       | Number . MINUS Number
-   46       | Number . ASTERISK Number
-   47       | Number . DIV Number
-   48       | Number . MODULE Number
-   51       | Number . POWER Number
-
-    ASTERISK  shift, and go to state 79
-    DIV       shift, and go to state 80
-    MODULE    shift, and go to state 81
-    POWER     shift, and go to state 82
-
-    $default  reduce using rule 44 (Number)
-
-
-State 133
-
-   44 Number: Number . PLUS Number
-   45       | Number . MINUS Number
-   45       | Number MINUS Number .
-   46       | Number . ASTERISK Number
-   47       | Number . DIV Number
-   48       | Number . MODULE Number
-   51       | Number . POWER Number
-
-    ASTERISK  shift, and go to state 79
-    DIV       shift, and go to state 80
-    MODULE    shift, and go to state 81
-    POWER     shift, and go to state 82
-
-    $default  reduce using rule 45 (Number)
-
-
-State 134
-
-   44 Number: Number . PLUS Number
-   45       | Number . MINUS Number
-   46       | Number . ASTERISK Number
-   46       | Number ASTERISK Number .
-   47       | Number . DIV Number
-   48       | Number . MODULE Number
-   51       | Number . POWER Number
-
-    POWER  shift, and go to state 82
-
-    $default  reduce using rule 46 (Number)
-
-
-State 135
-
-   44 Number: Number . PLUS Number
-   45       | Number . MINUS Number
-   46       | Number . ASTERISK Number
-   47       | Number . DIV Number
-   47       | Number DIV Number .
-   48       | Number . MODULE Number
-   51       | Number . POWER Number
-
-    POWER  shift, and go to state 82
-
-    $default  reduce using rule 47 (Number)
-
-
-State 136
-
-   44 Number: Number . PLUS Number
-   45       | Number . MINUS Number
-   46       | Number . ASTERISK Number
-   47       | Number . DIV Number
-   48       | Number . MODULE Number
-   48       | Number MODULE Number .
-   51       | Number . POWER Number
-
-    POWER  shift, and go to state 82
-
-    $default  reduce using rule 48 (Number)
-
-
-State 137
-
-   44 Number: Number . PLUS Number
-   45       | Number . MINUS Number
-   46       | Number . ASTERISK Number
-   47       | Number . DIV Number
-   48       | Number . MODULE Number
-   51       | Number . POWER Number
-   51       | Number POWER Number .
-
-    POWER  shift, and go to state 82
-
-    $default  reduce using rule 51 (Number)
-
-
-State 138
-
-   44 Number: Number . PLUS Number
-   45       | Number . MINUS Number
-   46       | Number . ASTERISK Number
-   47       | Number . DIV Number
-   48       | Number . MODULE Number
-   51       | Number . POWER Number
-   63 Bool: Number Comp Number .
-
-    PLUS      shift, and go to state 77
-    MINUS     shift, and go to state 78
-    ASTERISK  shift, and go to state 79
-    DIV       shift, and go to state 80
-    MODULE    shift, and go to state 81
-    POWER     shift, and go to state 82
-
-    $default  reduce using rule 63 (Bool)
-
-
-State 139
-
-   57 Bool: Bool . EQUIV Bool
-   58     | Bool . NOT_EQUIV Bool
-   59     | Bool . OR Bool
-   60     | Bool . AND Bool
-   60     | Bool AND Bool .
-
-    AND        shift, and go to state 90
-    OR         shift, and go to state 91
-    NOT_EQUIV  shift, and go to state 92
-    EQUIV      shift, and go to state 93
-
-    AND        [reduce using rule 60 (Bool)]
-    OR         [reduce using rule 60 (Bool)]
-    NOT_EQUIV  [reduce using rule 60 (Bool)]
-    EQUIV      [reduce using rule 60 (Bool)]
-    $default   reduce using rule 60 (Bool)
-
-
-State 140
-
-   57 Bool: Bool . EQUIV Bool
-   58     | Bool . NOT_EQUIV Bool
-   59     | Bool . OR Bool
-   59     | Bool OR Bool .
-   60     | Bool . AND Bool
-
-    AND        shift, and go to state 90
-    OR         shift, and go to state 91
-    NOT_EQUIV  shift, and go to state 92
-    EQUIV      shift, and go to state 93
-
-    AND        [reduce using rule 59 (Bool)]
-    OR         [reduce using rule 59 (Bool)]
-    NOT_EQUIV  [reduce using rule 59 (Bool)]
-    EQUIV      [reduce using rule 59 (Bool)]
-    $default   reduce using rule 59 (Bool)
-
-
-State 141
-
-   57 Bool: Bool . EQUIV Bool
-   58     | Bool . NOT_EQUIV Bool
-   58     | Bool NOT_EQUIV Bool .
-   59     | Bool . OR Bool
-   60     | Bool . AND Bool
-
-    AND        shift, and go to state 90
-    OR         shift, and go to state 91
-    NOT_EQUIV  shift, and go to state 92
-    EQUIV      shift, and go to state 93
-
-    AND        [reduce using rule 58 (Bool)]
-    OR         [reduce using rule 58 (Bool)]
-    NOT_EQUIV  [reduce using rule 58 (Bool)]
-    EQUIV      [reduce using rule 58 (Bool)]
-    $default   reduce using rule 58 (Bool)
-
-
-State 142
-
-   57 Bool: Bool . EQUIV Bool
-   57     | Bool EQUIV Bool .
-   58     | Bool . NOT_EQUIV Bool
-   59     | Bool . OR Bool
-   60     | Bool . AND Bool
-
-    AND        shift, and go to state 90
-    OR         shift, and go to state 91
-    NOT_EQUIV  shift, and go to state 92
-    EQUIV      shift, and go to state 93
-
-    AND        [reduce using rule 57 (Bool)]
-    OR         [reduce using rule 57 (Bool)]
-    NOT_EQUIV  [reduce using rule 57 (Bool)]
-    EQUIV      [reduce using rule 57 (Bool)]
-    $default   reduce using rule 57 (Bool)
-
-
-State 143
-
-    4 I: I . Inst
-  102 Conditional: IF Bool THEN I . OptElsif OptElse END
-
-    POINTER   shift, and go to state 1
-    OPEN_PAR  shift, and go to state 2
-    REGISTER  shift, and go to state 3
-    UNION     shift, and go to state 4
-    IF        shift, and go to state 5
-    ELSIF     shift, and go to state 175
-    WHILE     shift, and go to state 6
-    FOR       shift, and go to state 7
-    LET       shift, and go to state 8
-    ID        shift, and go to state 9
-
-    $default  reduce using rule 103 (OptElsif)
-
-    Inst         go to state 58
-    Action       go to state 13
-    Def          go to state 14
-    VarInst      go to state 15
-    VarDef       go to state 16
-    Assign       go to state 17
-    LValue       go to state 18
-    FuncCall     go to state 19
-    UnionDef     go to state 20
-    RegisterDef  go to state 21
-    Conditional  go to state 22
-    OptElsif     go to state 176
-    Elsifs       go to state 177
-    LoopWhile    go to state 23
-    LoopFor      go to state 24
-    RutineDef    go to state 25
-
-
-State 144
-
-    4 I: I . Inst
-  109 LoopWhile: WHILE Bool DO I . DONE
-
-    POINTER   shift, and go to state 1
-    OPEN_PAR  shift, and go to state 2
-    REGISTER  shift, and go to state 3
-    UNION     shift, and go to state 4
-    IF        shift, and go to state 5
-    WHILE     shift, and go to state 6
-    DONE      shift, and go to state 178
-    FOR       shift, and go to state 7
-    LET       shift, and go to state 8
-    ID        shift, and go to state 9
-
-    Inst         go to state 58
-    Action       go to state 13
-    Def          go to state 14
-    VarInst      go to state 15
-    VarDef       go to state 16
-    Assign       go to state 17
-    LValue       go to state 18
-    FuncCall     go to state 19
-    UnionDef     go to state 20
-    RegisterDef  go to state 21
-    Conditional  go to state 22
-    LoopWhile    go to state 23
-    LoopFor      go to state 24
-    RutineDef    go to state 25
-
-
-State 145
-
-  110 LoopFor: FOR OPEN_PAR ID SEMICOLON . Number SEMICOLON Number OptStep CLOSE_PAR DO I DONE
-
-    POINTER   shift, and go to state 1
-    PLUS      shift, and go to state 31
-    MINUS     shift, and go to state 32
-    OPEN_PAR  shift, and go to state 67
-    INT       shift, and go to state 35
-    FLOAT     shift, and go to state 36
-    ID        shift, and go to state 37
-
-    LValue    go to state 68
-    Number    go to state 179
-    FuncCall  go to state 70
-
-
-State 146
-
-   32 Type: OPEN_PAR Type CLOSE_PAR .
-
-    $default  reduce using rule 32 (Type)
-
-
-State 147
-
-   30 Type: Type OPEN_BRACKET Integer . CLOSE_BRACKET
-   79 Integer: Integer . PLUS Integer
-   80        | Integer . MINUS Integer
-   81        | Integer . ASTERISK Integer
-   82        | Integer . DIV Integer
-   83        | Integer . MODULE Integer
-   86        | Integer . POWER Integer
-
-    CLOSE_BRACKET  shift, and go to state 180
-    PLUS           shift, and go to state 161
-    MINUS          shift, and go to state 162
-    ASTERISK       shift, and go to state 163
-    DIV            shift, and go to state 164
-    MODULE         shift, and go to state 165
-    POWER          shift, and go to state 166
-
-
-State 148
-
-   20 OptAssign: ASSIGNMENT . RValue
-
-    POINTER       shift, and go to state 1
-    OPEN_BRACKET  shift, and go to state 114
-    PLUS          shift, and go to state 31
-    MINUS         shift, and go to state 32
-    OPEN_PAR      shift, and go to state 33
-    NOT           shift, and go to state 34
-    INT           shift, and go to state 35
-    FLOAT         shift, and go to state 36
-    ID            shift, and go to state 37
-    CHAR          shift, and go to state 115
-    STRING        shift, and go to state 116
-    TRUE          shift, and go to state 38
-    FALSE         shift, and go to state 39
-
-    RValue      go to state 181
-    Expression  go to state 118
-    LValue      go to state 119
-    Number      go to state 120
-    Bool        go to state 121
-    Array       go to state 122
-    FuncCall    go to state 123
-
-
-State 149
 
    18 VarDefBody: Type ID OptAssign .
 
     $default  reduce using rule 18 (VarDefBody)
 
 
-State 150
+State 130
 
-  119 OptRef: AT .
+   25 Type: Type . OPEN_BRACKET Exp CLOSE_BRACKET
+   94 ArgsDef: Type . OptRef ID OptAssign
 
-    $default  reduce using rule 119 (OptRef)
+    OPEN_BRACKET  shift, and go to state 92
+    AT            shift, and go to state 151
 
+    $default  reduce using rule 96 (OptRef)
 
-State 151
+    OptRef  go to state 152
 
-  116 ArgsDef: Type OptRef . ID OptAssign
 
-    ID  shift, and go to state 182
+State 131
 
+   91 RutineDef: DEF ID OPEN_PAR RutineArgs . CLOSE_PAR OptReturn OPEN_C_BRACE Actions CLOSE_C_BRACE
 
-State 152
+    CLOSE_PAR  shift, and go to state 153
 
-   91 FuncCall: ID OPEN_PAR ArgsExp CLOSE_PAR .
 
-    $default  reduce using rule 91 (FuncCall)
+State 132
 
-
-State 153
-
-   93 ArgsExp: Args RValue .
-   95 Args: Args RValue . COMMA
-
-    COMMA  shift, and go to state 183
-
-    $default  reduce using rule 93 (ArgsExp)
-
-
-State 154
-
-  113 RutineDef: ID OPEN_PAR RutineArgs CLOSE_PAR . OptReturn OPEN_C_BRACE Actions CLOSE_C_BRACE
-
-    RIGHT_ARROW  shift, and go to state 184
-
-    $default  reduce using rule 120 (OptReturn)
-
-    OptReturn  go to state 185
-
-
-State 155
-
-   30 Type: Type . OPEN_BRACKET Integer CLOSE_BRACKET
-  117 ArgsDef: ArgsDef Type . OptRef ID OptAssign
-
-    OPEN_BRACKET  shift, and go to state 99
-    AT            shift, and go to state 150
-
-    $default  reduce using rule 118 (OptRef)
-
-    OptRef  go to state 186
-
-
-State 156
-
-   79 Integer: Integer . PLUS Integer
-   80        | Integer . MINUS Integer
-   81        | Integer . ASTERISK Integer
-   82        | Integer . DIV Integer
-   83        | Integer . MODULE Integer
-   85        | PLUS Integer .
-   86        | Integer . POWER Integer
-
-    ASTERISK  shift, and go to state 163
-    DIV       shift, and go to state 164
-    MODULE    shift, and go to state 165
-    POWER     shift, and go to state 166
-
-    $default  reduce using rule 85 (Integer)
-
-
-State 157
-
-   79 Integer: Integer . PLUS Integer
-   80        | Integer . MINUS Integer
-   81        | Integer . ASTERISK Integer
-   82        | Integer . DIV Integer
-   83        | Integer . MODULE Integer
-   84        | MINUS Integer .
-   86        | Integer . POWER Integer
-
-    ASTERISK  shift, and go to state 163
-    DIV       shift, and go to state 164
-    MODULE    shift, and go to state 165
-    POWER     shift, and go to state 166
-
-    $default  reduce using rule 84 (Integer)
-
-
-State 158
-
-   39 LValue: LValue . OPEN_BRACKET Integer CLOSE_BRACKET
-   41       | LValue . DOT ID
-   42       | OPEN_PAR LValue . CLOSE_PAR
-   88 Integer: LValue .
-
-    DOT           shift, and go to state 60
-    OPEN_BRACKET  shift, and go to state 61
-    CLOSE_PAR     shift, and go to state 64
-
-    CLOSE_PAR  [reduce using rule 88 (Integer)]
-    $default   reduce using rule 88 (Integer)
-
-
-State 159
-
-   79 Integer: Integer . PLUS Integer
-   80        | Integer . MINUS Integer
-   81        | Integer . ASTERISK Integer
-   82        | Integer . DIV Integer
-   83        | Integer . MODULE Integer
-   86        | Integer . POWER Integer
-   87        | OPEN_PAR Integer . CLOSE_PAR
-
-    PLUS       shift, and go to state 161
-    MINUS      shift, and go to state 162
-    ASTERISK   shift, and go to state 163
-    DIV        shift, and go to state 164
-    MODULE     shift, and go to state 165
-    POWER      shift, and go to state 166
-    CLOSE_PAR  shift, and go to state 187
-
-
-State 160
-
-   39 LValue: LValue OPEN_BRACKET Integer CLOSE_BRACKET .
-
-    $default  reduce using rule 39 (LValue)
-
-
-State 161
-
-   79 Integer: Integer PLUS . Integer
-
-    POINTER   shift, and go to state 1
-    PLUS      shift, and go to state 107
-    MINUS     shift, and go to state 108
-    OPEN_PAR  shift, and go to state 109
-    INT       shift, and go to state 110
-    ID        shift, and go to state 37
-
-    LValue    go to state 111
-    Integer   go to state 188
-    FuncCall  go to state 113
-
-
-State 162
-
-   80 Integer: Integer MINUS . Integer
-
-    POINTER   shift, and go to state 1
-    PLUS      shift, and go to state 107
-    MINUS     shift, and go to state 108
-    OPEN_PAR  shift, and go to state 109
-    INT       shift, and go to state 110
-    ID        shift, and go to state 37
-
-    LValue    go to state 111
-    Integer   go to state 189
-    FuncCall  go to state 113
-
-
-State 163
-
-   81 Integer: Integer ASTERISK . Integer
-
-    POINTER   shift, and go to state 1
-    PLUS      shift, and go to state 107
-    MINUS     shift, and go to state 108
-    OPEN_PAR  shift, and go to state 109
-    INT       shift, and go to state 110
-    ID        shift, and go to state 37
-
-    LValue    go to state 111
-    Integer   go to state 190
-    FuncCall  go to state 113
-
-
-State 164
-
-   82 Integer: Integer DIV . Integer
-
-    POINTER   shift, and go to state 1
-    PLUS      shift, and go to state 107
-    MINUS     shift, and go to state 108
-    OPEN_PAR  shift, and go to state 109
-    INT       shift, and go to state 110
-    ID        shift, and go to state 37
-
-    LValue    go to state 111
-    Integer   go to state 191
-    FuncCall  go to state 113
-
-
-State 165
-
-   83 Integer: Integer MODULE . Integer
-
-    POINTER   shift, and go to state 1
-    PLUS      shift, and go to state 107
-    MINUS     shift, and go to state 108
-    OPEN_PAR  shift, and go to state 109
-    INT       shift, and go to state 110
-    ID        shift, and go to state 37
-
-    LValue    go to state 111
-    Integer   go to state 192
-    FuncCall  go to state 113
-
-
-State 166
-
-   86 Integer: Integer POWER . Integer
-
-    POINTER   shift, and go to state 1
-    PLUS      shift, and go to state 107
-    MINUS     shift, and go to state 108
-    OPEN_PAR  shift, and go to state 109
-    INT       shift, and go to state 110
-    ID        shift, and go to state 37
-
-    LValue    go to state 111
-    Integer   go to state 193
-    FuncCall  go to state 113
-
-
-State 167
-
-   74 Array: OPEN_BRACKET ArrExp . CLOSE_BRACKET
-
-    CLOSE_BRACKET  shift, and go to state 194
-
-
-State 168
-
-   76 ArrExp: ArrElems . RValue
-   78 ArrElems: ArrElems . RValue COMMA
-
-    POINTER       shift, and go to state 1
-    OPEN_BRACKET  shift, and go to state 114
-    PLUS          shift, and go to state 31
-    MINUS         shift, and go to state 32
-    OPEN_PAR      shift, and go to state 33
-    NOT           shift, and go to state 34
-    INT           shift, and go to state 35
-    FLOAT         shift, and go to state 36
-    ID            shift, and go to state 37
-    CHAR          shift, and go to state 115
-    STRING        shift, and go to state 116
-    TRUE          shift, and go to state 38
-    FALSE         shift, and go to state 39
-
-    RValue      go to state 195
-    Expression  go to state 118
-    LValue      go to state 119
-    Number      go to state 120
-    Bool        go to state 121
-    Array       go to state 122
-    FuncCall    go to state 123
-
-
-State 169
-
-  100 RegisterBody: VarDef SEMICOLON .
-
-    $default  reduce using rule 100 (RegisterBody)
-
-
-State 170
-
-   99 RegisterDef: REGISTER ID OPEN_C_BRACE RegisterBody CLOSE_C_BRACE .
-
-    $default  reduce using rule 99 (RegisterDef)
-
-
-State 171
-
-  101 RegisterBody: RegisterBody VarDef . SEMICOLON
-
-    SEMICOLON  shift, and go to state 196
-
-
-State 172
-
-   97 UnionBody: Type ID . SEMICOLON
-
-    SEMICOLON  shift, and go to state 197
-
-
-State 173
-
-   96 UnionDef: UNION ID OPEN_C_BRACE UnionBody CLOSE_C_BRACE .
-
-    $default  reduce using rule 96 (UnionDef)
-
-
-State 174
-
-   30 Type: Type . OPEN_BRACKET Integer CLOSE_BRACKET
-   98 UnionBody: UnionBody Type . ID SEMICOLON
-
-    OPEN_BRACKET  shift, and go to state 99
-    ID            shift, and go to state 198
-
-
-State 175
-
-  105 Elsifs: ELSIF . Bool THEN I
-
-    POINTER   shift, and go to state 1
-    PLUS      shift, and go to state 31
-    MINUS     shift, and go to state 32
-    OPEN_PAR  shift, and go to state 33
-    NOT       shift, and go to state 34
-    INT       shift, and go to state 35
-    FLOAT     shift, and go to state 36
-    ID        shift, and go to state 37
-    TRUE      shift, and go to state 38
-    FALSE     shift, and go to state 39
-
-    LValue    go to state 40
-    Number    go to state 41
-    Bool      go to state 199
-    FuncCall  go to state 43
-
-
-State 176
-
-  102 Conditional: IF Bool THEN I OptElsif . OptElse END
-
-    ELSE  shift, and go to state 200
-
-    $default  reduce using rule 107 (OptElse)
-
-    OptElse  go to state 201
-
-
-State 177
-
-  104 OptElsif: Elsifs .
-  106 Elsifs: Elsifs . ELSIF Bool THEN I
-
-    ELSIF  shift, and go to state 202
-
-    $default  reduce using rule 104 (OptElsif)
-
-
-State 178
-
-  109 LoopWhile: WHILE Bool DO I DONE .
-
-    $default  reduce using rule 109 (LoopWhile)
-
-
-State 179
-
-   44 Number: Number . PLUS Number
-   45       | Number . MINUS Number
-   46       | Number . ASTERISK Number
-   47       | Number . DIV Number
-   48       | Number . MODULE Number
-   51       | Number . POWER Number
-  110 LoopFor: FOR OPEN_PAR ID SEMICOLON Number . SEMICOLON Number OptStep CLOSE_PAR DO I DONE
-
-    PLUS       shift, and go to state 77
-    MINUS      shift, and go to state 78
-    ASTERISK   shift, and go to state 79
-    DIV        shift, and go to state 80
-    MODULE     shift, and go to state 81
-    POWER      shift, and go to state 82
-    SEMICOLON  shift, and go to state 203
-
-
-State 180
-
-   30 Type: Type OPEN_BRACKET Integer CLOSE_BRACKET .
-
-    $default  reduce using rule 30 (Type)
-
-
-State 181
-
-   20 OptAssign: ASSIGNMENT RValue .
-
-    $default  reduce using rule 20 (OptAssign)
-
-
-State 182
-
-  116 ArgsDef: Type OptRef ID . OptAssign
-
-    ASSIGNMENT  shift, and go to state 148
-
-    $default  reduce using rule 19 (OptAssign)
-
-    OptAssign  go to state 204
-
-
-State 183
-
-   95 Args: Args RValue COMMA .
-
-    $default  reduce using rule 95 (Args)
-
-
-State 184
-
-  121 OptReturn: RIGHT_ARROW . Type
+   93 RutineArgs: ArgsDef .
+   95 ArgsDef: ArgsDef . Type OptRef ID OptAssign
 
     POINTER   shift, and go to state 46
     OPEN_PAR  shift, and go to state 47
@@ -2916,575 +2442,800 @@ State 184
     T_UNIT    shift, and go to state 52
     T_STRING  shift, and go to state 53
 
-    Type  go to state 205
+    $default  reduce using rule 93 (RutineArgs)
+
+    Type  go to state 154
+
+
+State 133
+
+   69 FuncCall: ID OPEN_PAR ArgsExp CLOSE_PAR .
+
+    $default  reduce using rule 69 (FuncCall)
+
+
+State 134
+
+   71 ArgsExp: Args RValue .
+   73 Args: Args RValue . COMMA
+
+    COMMA  shift, and go to state 155
+
+    $default  reduce using rule 71 (ArgsExp)
+
+
+State 135
+
+   34 LValue: LValue OPEN_BRACKET Exp CLOSE_BRACKET .
+
+    $default  reduce using rule 34 (LValue)
+
+
+State 136
+
+   64 Array: OPEN_BRACKET ArrExp . CLOSE_BRACKET
+
+    CLOSE_BRACKET  shift, and go to state 156
+
+
+State 137
+
+   66 ArrExp: ArrElems . RValue
+   68 ArrElems: ArrElems . RValue COMMA
+
+    NOT           shift, and go to state 32
+    PLUS          shift, and go to state 33
+    MINUS         shift, and go to state 34
+    OPEN_BRACKET  shift, and go to state 99
+    POINTER       shift, and go to state 1
+    OPEN_PAR      shift, and go to state 35
+    INT           shift, and go to state 36
+    FLOAT         shift, and go to state 37
+    ID            shift, and go to state 10
+    CHAR          shift, and go to state 38
+    STRING        shift, and go to state 100
+    TRUE          shift, and go to state 39
+    FALSE         shift, and go to state 40
+
+    RValue    go to state 157
+    LValue    go to state 41
+    Exp       go to state 102
+    Array     go to state 103
+    FuncCall  go to state 43
+
+
+State 138
+
+   78 RegisterBody: VarDef SEMICOLON .
+
+    $default  reduce using rule 78 (RegisterBody)
+
+
+State 139
+
+   77 RegisterDef: REGISTER ID OPEN_C_BRACE RegisterBody CLOSE_C_BRACE .
+
+    $default  reduce using rule 77 (RegisterDef)
+
+
+State 140
+
+   79 RegisterBody: RegisterBody VarDef . SEMICOLON
+
+    SEMICOLON  shift, and go to state 158
+
+
+State 141
+
+   75 UnionBody: Type ID . SEMICOLON
+
+    SEMICOLON  shift, and go to state 159
+
+
+State 142
+
+   74 UnionDef: UNION ID OPEN_C_BRACE UnionBody CLOSE_C_BRACE .
+
+    $default  reduce using rule 74 (UnionDef)
+
+
+State 143
+
+   25 Type: Type . OPEN_BRACKET Exp CLOSE_BRACKET
+   76 UnionBody: UnionBody Type . ID SEMICOLON
+
+    OPEN_BRACKET  shift, and go to state 92
+    ID            shift, and go to state 160
+
+
+State 144
+
+   83 Elsifs: ELSIF . Exp THEN I
+
+    NOT       shift, and go to state 32
+    PLUS      shift, and go to state 33
+    MINUS     shift, and go to state 34
+    POINTER   shift, and go to state 1
+    OPEN_PAR  shift, and go to state 35
+    INT       shift, and go to state 36
+    FLOAT     shift, and go to state 37
+    ID        shift, and go to state 10
+    CHAR      shift, and go to state 38
+    TRUE      shift, and go to state 39
+    FALSE     shift, and go to state 40
+
+    LValue    go to state 41
+    Exp       go to state 161
+    FuncCall  go to state 43
+
+
+State 145
+
+   80 Conditional: IF Exp THEN I OptElsif . OptElse END
+
+    ELSE  shift, and go to state 162
+
+    $default  reduce using rule 85 (OptElse)
+
+    OptElse  go to state 163
+
+
+State 146
+
+   82 OptElsif: Elsifs .
+   84 Elsifs: Elsifs . ELSIF Exp THEN I
+
+    ELSIF  shift, and go to state 164
+
+    $default  reduce using rule 82 (OptElsif)
+
+
+State 147
+
+   87 LoopWhile: WHILE Exp DO I DONE .
+
+    $default  reduce using rule 87 (LoopWhile)
+
+
+State 148
+
+   39 Exp: Exp . EQUIV Exp
+   40    | Exp . NOT_EQUIV Exp
+   41    | Exp . OR Exp
+   42    | Exp . AND Exp
+   44    | Exp . LESS_THAN Exp
+   45    | Exp . LESS_EQUAL_THAN Exp
+   46    | Exp . GREATER_THAN Exp
+   47    | Exp . GREATER_EQUAL_THAN Exp
+   48    | Exp . PLUS Exp
+   49    | Exp . MINUS Exp
+   50    | Exp . ASTERISK Exp
+   51    | Exp . DIV Exp
+   52    | Exp . MODULE Exp
+   55    | Exp . POWER Exp
+   88 LoopFor: FOR OPEN_PAR ID SEMICOLON Exp . SEMICOLON Exp OptStep CLOSE_PAR DO I DONE
+
+    EQUIV               shift, and go to state 73
+    NOT_EQUIV           shift, and go to state 74
+    OR                  shift, and go to state 75
+    AND                 shift, and go to state 76
+    LESS_THAN           shift, and go to state 77
+    LESS_EQUAL_THAN     shift, and go to state 78
+    GREATER_THAN        shift, and go to state 79
+    GREATER_EQUAL_THAN  shift, and go to state 80
+    PLUS                shift, and go to state 81
+    MINUS               shift, and go to state 82
+    ASTERISK            shift, and go to state 83
+    DIV                 shift, and go to state 84
+    MODULE              shift, and go to state 85
+    POWER               shift, and go to state 86
+    SEMICOLON           shift, and go to state 165
+
+
+State 149
+
+   25 Type: Type OPEN_BRACKET Exp CLOSE_BRACKET .
+
+    $default  reduce using rule 25 (Type)
+
+
+State 150
+
+   20 OptAssign: ASSIGNMENT RValue .
+
+    $default  reduce using rule 20 (OptAssign)
+
+
+State 151
+
+   97 OptRef: AT .
+
+    $default  reduce using rule 97 (OptRef)
+
+
+State 152
+
+   94 ArgsDef: Type OptRef . ID OptAssign
+
+    ID  shift, and go to state 166
+
+
+State 153
+
+   91 RutineDef: DEF ID OPEN_PAR RutineArgs CLOSE_PAR . OptReturn OPEN_C_BRACE Actions CLOSE_C_BRACE
+
+    RIGHT_ARROW  shift, and go to state 167
+
+    $default  reduce using rule 98 (OptReturn)
+
+    OptReturn  go to state 168
+
+
+State 154
+
+   25 Type: Type . OPEN_BRACKET Exp CLOSE_BRACKET
+   95 ArgsDef: ArgsDef Type . OptRef ID OptAssign
+
+    OPEN_BRACKET  shift, and go to state 92
+    AT            shift, and go to state 151
+
+    $default  reduce using rule 96 (OptRef)
+
+    OptRef  go to state 169
+
+
+State 155
+
+   73 Args: Args RValue COMMA .
+
+    $default  reduce using rule 73 (Args)
+
+
+State 156
+
+   64 Array: OPEN_BRACKET ArrExp CLOSE_BRACKET .
+
+    $default  reduce using rule 64 (Array)
+
+
+State 157
+
+   66 ArrExp: ArrElems RValue .
+   68 ArrElems: ArrElems RValue . COMMA
+
+    COMMA  shift, and go to state 170
+
+    $default  reduce using rule 66 (ArrExp)
+
+
+State 158
+
+   79 RegisterBody: RegisterBody VarDef SEMICOLON .
+
+    $default  reduce using rule 79 (RegisterBody)
+
+
+State 159
+
+   75 UnionBody: Type ID SEMICOLON .
+
+    $default  reduce using rule 75 (UnionBody)
+
+
+State 160
+
+   76 UnionBody: UnionBody Type ID . SEMICOLON
+
+    SEMICOLON  shift, and go to state 171
+
+
+State 161
+
+   39 Exp: Exp . EQUIV Exp
+   40    | Exp . NOT_EQUIV Exp
+   41    | Exp . OR Exp
+   42    | Exp . AND Exp
+   44    | Exp . LESS_THAN Exp
+   45    | Exp . LESS_EQUAL_THAN Exp
+   46    | Exp . GREATER_THAN Exp
+   47    | Exp . GREATER_EQUAL_THAN Exp
+   48    | Exp . PLUS Exp
+   49    | Exp . MINUS Exp
+   50    | Exp . ASTERISK Exp
+   51    | Exp . DIV Exp
+   52    | Exp . MODULE Exp
+   55    | Exp . POWER Exp
+   83 Elsifs: ELSIF Exp . THEN I
+
+    EQUIV               shift, and go to state 73
+    NOT_EQUIV           shift, and go to state 74
+    OR                  shift, and go to state 75
+    AND                 shift, and go to state 76
+    LESS_THAN           shift, and go to state 77
+    LESS_EQUAL_THAN     shift, and go to state 78
+    GREATER_THAN        shift, and go to state 79
+    GREATER_EQUAL_THAN  shift, and go to state 80
+    PLUS                shift, and go to state 81
+    MINUS               shift, and go to state 82
+    ASTERISK            shift, and go to state 83
+    DIV                 shift, and go to state 84
+    MODULE              shift, and go to state 85
+    POWER               shift, and go to state 86
+    THEN                shift, and go to state 172
+
+
+State 162
+
+   86 OptElse: ELSE . I
+
+    POINTER   shift, and go to state 1
+    OPEN_PAR  shift, and go to state 2
+    REGISTER  shift, and go to state 3
+    UNION     shift, and go to state 4
+    IF        shift, and go to state 5
+    WHILE     shift, and go to state 6
+    FOR       shift, and go to state 7
+    LET       shift, and go to state 8
+    DEF       shift, and go to state 9
+    ID        shift, and go to state 10
+
+    I            go to state 173
+    Inst         go to state 13
+    Action       go to state 14
+    Def          go to state 15
+    VarInst      go to state 16
+    VarDef       go to state 17
+    Assign       go to state 18
+    LValue       go to state 19
+    FuncCall     go to state 20
+    UnionDef     go to state 21
+    RegisterDef  go to state 22
+    Conditional  go to state 23
+    LoopWhile    go to state 24
+    LoopFor      go to state 25
+    RutineDef    go to state 26
+
+
+State 163
+
+   80 Conditional: IF Exp THEN I OptElsif OptElse . END
+
+    END  shift, and go to state 174
+
+
+State 164
+
+   84 Elsifs: Elsifs ELSIF . Exp THEN I
+
+    NOT       shift, and go to state 32
+    PLUS      shift, and go to state 33
+    MINUS     shift, and go to state 34
+    POINTER   shift, and go to state 1
+    OPEN_PAR  shift, and go to state 35
+    INT       shift, and go to state 36
+    FLOAT     shift, and go to state 37
+    ID        shift, and go to state 10
+    CHAR      shift, and go to state 38
+    TRUE      shift, and go to state 39
+    FALSE     shift, and go to state 40
+
+    LValue    go to state 41
+    Exp       go to state 175
+    FuncCall  go to state 43
+
+
+State 165
+
+   88 LoopFor: FOR OPEN_PAR ID SEMICOLON Exp SEMICOLON . Exp OptStep CLOSE_PAR DO I DONE
+
+    NOT       shift, and go to state 32
+    PLUS      shift, and go to state 33
+    MINUS     shift, and go to state 34
+    POINTER   shift, and go to state 1
+    OPEN_PAR  shift, and go to state 35
+    INT       shift, and go to state 36
+    FLOAT     shift, and go to state 37
+    ID        shift, and go to state 10
+    CHAR      shift, and go to state 38
+    TRUE      shift, and go to state 39
+    FALSE     shift, and go to state 40
+
+    LValue    go to state 41
+    Exp       go to state 176
+    FuncCall  go to state 43
+
+
+State 166
+
+   94 ArgsDef: Type OptRef ID . OptAssign
+
+    ASSIGNMENT  shift, and go to state 128
+
+    $default  reduce using rule 19 (OptAssign)
+
+    OptAssign  go to state 177
+
+
+State 167
+
+   99 OptReturn: RIGHT_ARROW . Type
+
+    POINTER   shift, and go to state 46
+    OPEN_PAR  shift, and go to state 47
+    T_INT     shift, and go to state 48
+    T_CHAR    shift, and go to state 49
+    T_BOOL    shift, and go to state 50
+    T_FLOAT   shift, and go to state 51
+    T_UNIT    shift, and go to state 52
+    T_STRING  shift, and go to state 53
+
+    Type  go to state 178
+
+
+State 168
+
+   91 RutineDef: DEF ID OPEN_PAR RutineArgs CLOSE_PAR OptReturn . OPEN_C_BRACE Actions CLOSE_C_BRACE
+
+    OPEN_C_BRACE  shift, and go to state 179
+
+
+State 169
+
+   95 ArgsDef: ArgsDef Type OptRef . ID OptAssign
+
+    ID  shift, and go to state 180
+
+
+State 170
+
+   68 ArrElems: ArrElems RValue COMMA .
+
+    $default  reduce using rule 68 (ArrElems)
+
+
+State 171
+
+   76 UnionBody: UnionBody Type ID SEMICOLON .
+
+    $default  reduce using rule 76 (UnionBody)
+
+
+State 172
+
+   83 Elsifs: ELSIF Exp THEN . I
+
+    POINTER   shift, and go to state 1
+    OPEN_PAR  shift, and go to state 2
+    REGISTER  shift, and go to state 3
+    UNION     shift, and go to state 4
+    IF        shift, and go to state 5
+    WHILE     shift, and go to state 6
+    FOR       shift, and go to state 7
+    LET       shift, and go to state 8
+    DEF       shift, and go to state 9
+    ID        shift, and go to state 10
+
+    I            go to state 181
+    Inst         go to state 13
+    Action       go to state 14
+    Def          go to state 15
+    VarInst      go to state 16
+    VarDef       go to state 17
+    Assign       go to state 18
+    LValue       go to state 19
+    FuncCall     go to state 20
+    UnionDef     go to state 21
+    RegisterDef  go to state 22
+    Conditional  go to state 23
+    LoopWhile    go to state 24
+    LoopFor      go to state 25
+    RutineDef    go to state 26
+
+
+State 173
+
+    4 I: I . Inst
+   86 OptElse: ELSE I .
+
+    POINTER   shift, and go to state 1
+    OPEN_PAR  shift, and go to state 2
+    REGISTER  shift, and go to state 3
+    UNION     shift, and go to state 4
+    IF        shift, and go to state 5
+    WHILE     shift, and go to state 6
+    FOR       shift, and go to state 7
+    LET       shift, and go to state 8
+    DEF       shift, and go to state 9
+    ID        shift, and go to state 10
+
+    $default  reduce using rule 86 (OptElse)
+
+    Inst         go to state 59
+    Action       go to state 14
+    Def          go to state 15
+    VarInst      go to state 16
+    VarDef       go to state 17
+    Assign       go to state 18
+    LValue       go to state 19
+    FuncCall     go to state 20
+    UnionDef     go to state 21
+    RegisterDef  go to state 22
+    Conditional  go to state 23
+    LoopWhile    go to state 24
+    LoopFor      go to state 25
+    RutineDef    go to state 26
+
+
+State 174
+
+   80 Conditional: IF Exp THEN I OptElsif OptElse END .
+
+    $default  reduce using rule 80 (Conditional)
+
+
+State 175
+
+   39 Exp: Exp . EQUIV Exp
+   40    | Exp . NOT_EQUIV Exp
+   41    | Exp . OR Exp
+   42    | Exp . AND Exp
+   44    | Exp . LESS_THAN Exp
+   45    | Exp . LESS_EQUAL_THAN Exp
+   46    | Exp . GREATER_THAN Exp
+   47    | Exp . GREATER_EQUAL_THAN Exp
+   48    | Exp . PLUS Exp
+   49    | Exp . MINUS Exp
+   50    | Exp . ASTERISK Exp
+   51    | Exp . DIV Exp
+   52    | Exp . MODULE Exp
+   55    | Exp . POWER Exp
+   84 Elsifs: Elsifs ELSIF Exp . THEN I
+
+    EQUIV               shift, and go to state 73
+    NOT_EQUIV           shift, and go to state 74
+    OR                  shift, and go to state 75
+    AND                 shift, and go to state 76
+    LESS_THAN           shift, and go to state 77
+    LESS_EQUAL_THAN     shift, and go to state 78
+    GREATER_THAN        shift, and go to state 79
+    GREATER_EQUAL_THAN  shift, and go to state 80
+    PLUS                shift, and go to state 81
+    MINUS               shift, and go to state 82
+    ASTERISK            shift, and go to state 83
+    DIV                 shift, and go to state 84
+    MODULE              shift, and go to state 85
+    POWER               shift, and go to state 86
+    THEN                shift, and go to state 182
+
+
+State 176
+
+   39 Exp: Exp . EQUIV Exp
+   40    | Exp . NOT_EQUIV Exp
+   41    | Exp . OR Exp
+   42    | Exp . AND Exp
+   44    | Exp . LESS_THAN Exp
+   45    | Exp . LESS_EQUAL_THAN Exp
+   46    | Exp . GREATER_THAN Exp
+   47    | Exp . GREATER_EQUAL_THAN Exp
+   48    | Exp . PLUS Exp
+   49    | Exp . MINUS Exp
+   50    | Exp . ASTERISK Exp
+   51    | Exp . DIV Exp
+   52    | Exp . MODULE Exp
+   55    | Exp . POWER Exp
+   88 LoopFor: FOR OPEN_PAR ID SEMICOLON Exp SEMICOLON Exp . OptStep CLOSE_PAR DO I DONE
+
+    EQUIV               shift, and go to state 73
+    NOT_EQUIV           shift, and go to state 74
+    OR                  shift, and go to state 75
+    AND                 shift, and go to state 76
+    LESS_THAN           shift, and go to state 77
+    LESS_EQUAL_THAN     shift, and go to state 78
+    GREATER_THAN        shift, and go to state 79
+    GREATER_EQUAL_THAN  shift, and go to state 80
+    PLUS                shift, and go to state 81
+    MINUS               shift, and go to state 82
+    ASTERISK            shift, and go to state 83
+    DIV                 shift, and go to state 84
+    MODULE              shift, and go to state 85
+    POWER               shift, and go to state 86
+    SEMICOLON           shift, and go to state 183
+
+    $default  reduce using rule 89 (OptStep)
+
+    OptStep  go to state 184
+
+
+State 177
+
+   94 ArgsDef: Type OptRef ID OptAssign .
+
+    $default  reduce using rule 94 (ArgsDef)
+
+
+State 178
+
+   25 Type: Type . OPEN_BRACKET Exp CLOSE_BRACKET
+   99 OptReturn: RIGHT_ARROW Type .
+
+    OPEN_BRACKET  shift, and go to state 92
+
+    $default  reduce using rule 99 (OptReturn)
+
+
+State 179
+
+   91 RutineDef: DEF ID OPEN_PAR RutineArgs CLOSE_PAR OptReturn OPEN_C_BRACE . Actions CLOSE_C_BRACE
+
+    POINTER   shift, and go to state 1
+    OPEN_PAR  shift, and go to state 2
+    IF        shift, and go to state 5
+    WHILE     shift, and go to state 6
+    FOR       shift, and go to state 7
+    LET       shift, and go to state 8
+    ID        shift, and go to state 10
+
+    Action       go to state 185
+    VarInst      go to state 16
+    VarDef       go to state 17
+    Assign       go to state 18
+    LValue       go to state 19
+    FuncCall     go to state 20
+    Conditional  go to state 23
+    LoopWhile    go to state 24
+    LoopFor      go to state 25
+    Actions      go to state 186
+
+
+State 180
+
+   95 ArgsDef: ArgsDef Type OptRef ID . OptAssign
+
+    ASSIGNMENT  shift, and go to state 128
+
+    $default  reduce using rule 19 (OptAssign)
+
+    OptAssign  go to state 187
+
+
+State 181
+
+    4 I: I . Inst
+   83 Elsifs: ELSIF Exp THEN I .
+
+    POINTER   shift, and go to state 1
+    OPEN_PAR  shift, and go to state 2
+    REGISTER  shift, and go to state 3
+    UNION     shift, and go to state 4
+    IF        shift, and go to state 5
+    WHILE     shift, and go to state 6
+    FOR       shift, and go to state 7
+    LET       shift, and go to state 8
+    DEF       shift, and go to state 9
+    ID        shift, and go to state 10
+
+    $default  reduce using rule 83 (Elsifs)
+
+    Inst         go to state 59
+    Action       go to state 14
+    Def          go to state 15
+    VarInst      go to state 16
+    VarDef       go to state 17
+    Assign       go to state 18
+    LValue       go to state 19
+    FuncCall     go to state 20
+    UnionDef     go to state 21
+    RegisterDef  go to state 22
+    Conditional  go to state 23
+    LoopWhile    go to state 24
+    LoopFor      go to state 25
+    RutineDef    go to state 26
+
+
+State 182
+
+   84 Elsifs: Elsifs ELSIF Exp THEN . I
+
+    POINTER   shift, and go to state 1
+    OPEN_PAR  shift, and go to state 2
+    REGISTER  shift, and go to state 3
+    UNION     shift, and go to state 4
+    IF        shift, and go to state 5
+    WHILE     shift, and go to state 6
+    FOR       shift, and go to state 7
+    LET       shift, and go to state 8
+    DEF       shift, and go to state 9
+    ID        shift, and go to state 10
+
+    I            go to state 188
+    Inst         go to state 13
+    Action       go to state 14
+    Def          go to state 15
+    VarInst      go to state 16
+    VarDef       go to state 17
+    Assign       go to state 18
+    LValue       go to state 19
+    FuncCall     go to state 20
+    UnionDef     go to state 21
+    RegisterDef  go to state 22
+    Conditional  go to state 23
+    LoopWhile    go to state 24
+    LoopFor      go to state 25
+    RutineDef    go to state 26
+
+
+State 183
+
+   90 OptStep: SEMICOLON . Exp
+
+    NOT       shift, and go to state 32
+    PLUS      shift, and go to state 33
+    MINUS     shift, and go to state 34
+    POINTER   shift, and go to state 1
+    OPEN_PAR  shift, and go to state 35
+    INT       shift, and go to state 36
+    FLOAT     shift, and go to state 37
+    ID        shift, and go to state 10
+    CHAR      shift, and go to state 38
+    TRUE      shift, and go to state 39
+    FALSE     shift, and go to state 40
+
+    LValue    go to state 41
+    Exp       go to state 189
+    FuncCall  go to state 43
+
+
+State 184
+
+   88 LoopFor: FOR OPEN_PAR ID SEMICOLON Exp SEMICOLON Exp OptStep . CLOSE_PAR DO I DONE
+
+    CLOSE_PAR  shift, and go to state 190
 
 
 State 185
 
-  113 RutineDef: ID OPEN_PAR RutineArgs CLOSE_PAR OptReturn . OPEN_C_BRACE Actions CLOSE_C_BRACE
+  100 Actions: Action .
 
-    OPEN_C_BRACE  shift, and go to state 206
+    $default  reduce using rule 100 (Actions)
 
 
 State 186
 
-  117 ArgsDef: ArgsDef Type OptRef . ID OptAssign
-
-    ID  shift, and go to state 207
-
-
-State 187
-
-   87 Integer: OPEN_PAR Integer CLOSE_PAR .
-
-    $default  reduce using rule 87 (Integer)
-
-
-State 188
-
-   79 Integer: Integer . PLUS Integer
-   79        | Integer PLUS Integer .
-   80        | Integer . MINUS Integer
-   81        | Integer . ASTERISK Integer
-   82        | Integer . DIV Integer
-   83        | Integer . MODULE Integer
-   86        | Integer . POWER Integer
-
-    ASTERISK  shift, and go to state 163
-    DIV       shift, and go to state 164
-    MODULE    shift, and go to state 165
-    POWER     shift, and go to state 166
-
-    $default  reduce using rule 79 (Integer)
-
-
-State 189
-
-   79 Integer: Integer . PLUS Integer
-   80        | Integer . MINUS Integer
-   80        | Integer MINUS Integer .
-   81        | Integer . ASTERISK Integer
-   82        | Integer . DIV Integer
-   83        | Integer . MODULE Integer
-   86        | Integer . POWER Integer
-
-    ASTERISK  shift, and go to state 163
-    DIV       shift, and go to state 164
-    MODULE    shift, and go to state 165
-    POWER     shift, and go to state 166
-
-    $default  reduce using rule 80 (Integer)
-
-
-State 190
-
-   79 Integer: Integer . PLUS Integer
-   80        | Integer . MINUS Integer
-   81        | Integer . ASTERISK Integer
-   81        | Integer ASTERISK Integer .
-   82        | Integer . DIV Integer
-   83        | Integer . MODULE Integer
-   86        | Integer . POWER Integer
-
-    POWER  shift, and go to state 166
-
-    $default  reduce using rule 81 (Integer)
-
-
-State 191
-
-   79 Integer: Integer . PLUS Integer
-   80        | Integer . MINUS Integer
-   81        | Integer . ASTERISK Integer
-   82        | Integer . DIV Integer
-   82        | Integer DIV Integer .
-   83        | Integer . MODULE Integer
-   86        | Integer . POWER Integer
-
-    POWER  shift, and go to state 166
-
-    $default  reduce using rule 82 (Integer)
-
-
-State 192
-
-   79 Integer: Integer . PLUS Integer
-   80        | Integer . MINUS Integer
-   81        | Integer . ASTERISK Integer
-   82        | Integer . DIV Integer
-   83        | Integer . MODULE Integer
-   83        | Integer MODULE Integer .
-   86        | Integer . POWER Integer
-
-    POWER  shift, and go to state 166
-
-    $default  reduce using rule 83 (Integer)
-
-
-State 193
-
-   79 Integer: Integer . PLUS Integer
-   80        | Integer . MINUS Integer
-   81        | Integer . ASTERISK Integer
-   82        | Integer . DIV Integer
-   83        | Integer . MODULE Integer
-   86        | Integer . POWER Integer
-   86        | Integer POWER Integer .
-
-    POWER  shift, and go to state 166
-
-    $default  reduce using rule 86 (Integer)
-
-
-State 194
-
-   74 Array: OPEN_BRACKET ArrExp CLOSE_BRACKET .
-
-    $default  reduce using rule 74 (Array)
-
-
-State 195
-
-   76 ArrExp: ArrElems RValue .
-   78 ArrElems: ArrElems RValue . COMMA
-
-    COMMA  shift, and go to state 208
-
-    $default  reduce using rule 76 (ArrExp)
-
-
-State 196
-
-  101 RegisterBody: RegisterBody VarDef SEMICOLON .
-
-    $default  reduce using rule 101 (RegisterBody)
-
-
-State 197
-
-   97 UnionBody: Type ID SEMICOLON .
-
-    $default  reduce using rule 97 (UnionBody)
-
-
-State 198
-
-   98 UnionBody: UnionBody Type ID . SEMICOLON
-
-    SEMICOLON  shift, and go to state 209
-
-
-State 199
-
-   57 Bool: Bool . EQUIV Bool
-   58     | Bool . NOT_EQUIV Bool
-   59     | Bool . OR Bool
-   60     | Bool . AND Bool
-  105 Elsifs: ELSIF Bool . THEN I
-
-    AND        shift, and go to state 90
-    OR         shift, and go to state 91
-    NOT_EQUIV  shift, and go to state 92
-    EQUIV      shift, and go to state 93
-    THEN       shift, and go to state 210
-
-
-State 200
-
-  108 OptElse: ELSE . I
-
-    POINTER   shift, and go to state 1
-    OPEN_PAR  shift, and go to state 2
-    REGISTER  shift, and go to state 3
-    UNION     shift, and go to state 4
-    IF        shift, and go to state 5
-    WHILE     shift, and go to state 6
-    FOR       shift, and go to state 7
-    LET       shift, and go to state 8
-    ID        shift, and go to state 9
-
-    I            go to state 211
-    Inst         go to state 12
-    Action       go to state 13
-    Def          go to state 14
-    VarInst      go to state 15
-    VarDef       go to state 16
-    Assign       go to state 17
-    LValue       go to state 18
-    FuncCall     go to state 19
-    UnionDef     go to state 20
-    RegisterDef  go to state 21
-    Conditional  go to state 22
-    LoopWhile    go to state 23
-    LoopFor      go to state 24
-    RutineDef    go to state 25
-
-
-State 201
-
-  102 Conditional: IF Bool THEN I OptElsif OptElse . END
-
-    END  shift, and go to state 212
-
-
-State 202
-
-  106 Elsifs: Elsifs ELSIF . Bool THEN I
-
-    POINTER   shift, and go to state 1
-    PLUS      shift, and go to state 31
-    MINUS     shift, and go to state 32
-    OPEN_PAR  shift, and go to state 33
-    NOT       shift, and go to state 34
-    INT       shift, and go to state 35
-    FLOAT     shift, and go to state 36
-    ID        shift, and go to state 37
-    TRUE      shift, and go to state 38
-    FALSE     shift, and go to state 39
-
-    LValue    go to state 40
-    Number    go to state 41
-    Bool      go to state 213
-    FuncCall  go to state 43
-
-
-State 203
-
-  110 LoopFor: FOR OPEN_PAR ID SEMICOLON Number SEMICOLON . Number OptStep CLOSE_PAR DO I DONE
-
-    POINTER   shift, and go to state 1
-    PLUS      shift, and go to state 31
-    MINUS     shift, and go to state 32
-    OPEN_PAR  shift, and go to state 67
-    INT       shift, and go to state 35
-    FLOAT     shift, and go to state 36
-    ID        shift, and go to state 37
-
-    LValue    go to state 68
-    Number    go to state 214
-    FuncCall  go to state 70
-
-
-State 204
-
-  116 ArgsDef: Type OptRef ID OptAssign .
-
-    $default  reduce using rule 116 (ArgsDef)
-
-
-State 205
-
-   30 Type: Type . OPEN_BRACKET Integer CLOSE_BRACKET
-  121 OptReturn: RIGHT_ARROW Type .
-
-    OPEN_BRACKET  shift, and go to state 99
-
-    $default  reduce using rule 121 (OptReturn)
-
-
-State 206
-
-  113 RutineDef: ID OPEN_PAR RutineArgs CLOSE_PAR OptReturn OPEN_C_BRACE . Actions CLOSE_C_BRACE
-
-    POINTER   shift, and go to state 1
-    OPEN_PAR  shift, and go to state 2
-    IF        shift, and go to state 5
-    WHILE     shift, and go to state 6
-    FOR       shift, and go to state 7
-    LET       shift, and go to state 8
-    ID        shift, and go to state 37
-
-    Action       go to state 215
-    VarInst      go to state 15
-    VarDef       go to state 16
-    Assign       go to state 17
-    LValue       go to state 18
-    FuncCall     go to state 19
-    Conditional  go to state 22
-    LoopWhile    go to state 23
-    LoopFor      go to state 24
-    Actions      go to state 216
-
-
-State 207
-
-  117 ArgsDef: ArgsDef Type OptRef ID . OptAssign
-
-    ASSIGNMENT  shift, and go to state 148
-
-    $default  reduce using rule 19 (OptAssign)
-
-    OptAssign  go to state 217
-
-
-State 208
-
-   78 ArrElems: ArrElems RValue COMMA .
-
-    $default  reduce using rule 78 (ArrElems)
-
-
-State 209
-
-   98 UnionBody: UnionBody Type ID SEMICOLON .
-
-    $default  reduce using rule 98 (UnionBody)
-
-
-State 210
-
-  105 Elsifs: ELSIF Bool THEN . I
-
-    POINTER   shift, and go to state 1
-    OPEN_PAR  shift, and go to state 2
-    REGISTER  shift, and go to state 3
-    UNION     shift, and go to state 4
-    IF        shift, and go to state 5
-    WHILE     shift, and go to state 6
-    FOR       shift, and go to state 7
-    LET       shift, and go to state 8
-    ID        shift, and go to state 9
-
-    I            go to state 218
-    Inst         go to state 12
-    Action       go to state 13
-    Def          go to state 14
-    VarInst      go to state 15
-    VarDef       go to state 16
-    Assign       go to state 17
-    LValue       go to state 18
-    FuncCall     go to state 19
-    UnionDef     go to state 20
-    RegisterDef  go to state 21
-    Conditional  go to state 22
-    LoopWhile    go to state 23
-    LoopFor      go to state 24
-    RutineDef    go to state 25
-
-
-State 211
-
-    4 I: I . Inst
-  108 OptElse: ELSE I .
-
-    POINTER   shift, and go to state 1
-    OPEN_PAR  shift, and go to state 2
-    REGISTER  shift, and go to state 3
-    UNION     shift, and go to state 4
-    IF        shift, and go to state 5
-    WHILE     shift, and go to state 6
-    FOR       shift, and go to state 7
-    LET       shift, and go to state 8
-    ID        shift, and go to state 9
-
-    $default  reduce using rule 108 (OptElse)
-
-    Inst         go to state 58
-    Action       go to state 13
-    Def          go to state 14
-    VarInst      go to state 15
-    VarDef       go to state 16
-    Assign       go to state 17
-    LValue       go to state 18
-    FuncCall     go to state 19
-    UnionDef     go to state 20
-    RegisterDef  go to state 21
-    Conditional  go to state 22
-    LoopWhile    go to state 23
-    LoopFor      go to state 24
-    RutineDef    go to state 25
-
-
-State 212
-
-  102 Conditional: IF Bool THEN I OptElsif OptElse END .
-
-    $default  reduce using rule 102 (Conditional)
-
-
-State 213
-
-   57 Bool: Bool . EQUIV Bool
-   58     | Bool . NOT_EQUIV Bool
-   59     | Bool . OR Bool
-   60     | Bool . AND Bool
-  106 Elsifs: Elsifs ELSIF Bool . THEN I
-
-    AND        shift, and go to state 90
-    OR         shift, and go to state 91
-    NOT_EQUIV  shift, and go to state 92
-    EQUIV      shift, and go to state 93
-    THEN       shift, and go to state 219
-
-
-State 214
-
-   44 Number: Number . PLUS Number
-   45       | Number . MINUS Number
-   46       | Number . ASTERISK Number
-   47       | Number . DIV Number
-   48       | Number . MODULE Number
-   51       | Number . POWER Number
-  110 LoopFor: FOR OPEN_PAR ID SEMICOLON Number SEMICOLON Number . OptStep CLOSE_PAR DO I DONE
-
-    PLUS       shift, and go to state 77
-    MINUS      shift, and go to state 78
-    ASTERISK   shift, and go to state 79
-    DIV        shift, and go to state 80
-    MODULE     shift, and go to state 81
-    POWER      shift, and go to state 82
-    SEMICOLON  shift, and go to state 220
-
-    $default  reduce using rule 111 (OptStep)
-
-    OptStep  go to state 221
-
-
-State 215
-
-  122 Actions: Action .
-
-    $default  reduce using rule 122 (Actions)
-
-
-State 216
-
-  113 RutineDef: ID OPEN_PAR RutineArgs CLOSE_PAR OptReturn OPEN_C_BRACE Actions . CLOSE_C_BRACE
-  123 Actions: Actions . Action
+   91 RutineDef: DEF ID OPEN_PAR RutineArgs CLOSE_PAR OptReturn OPEN_C_BRACE Actions . CLOSE_C_BRACE
+  101 Actions: Actions . Action
 
     POINTER        shift, and go to state 1
     OPEN_PAR       shift, and go to state 2
-    CLOSE_C_BRACE  shift, and go to state 222
+    CLOSE_C_BRACE  shift, and go to state 191
     IF             shift, and go to state 5
     WHILE          shift, and go to state 6
     FOR            shift, and go to state 7
     LET            shift, and go to state 8
-    ID             shift, and go to state 37
+    ID             shift, and go to state 10
 
-    Action       go to state 223
-    VarInst      go to state 15
-    VarDef       go to state 16
-    Assign       go to state 17
-    LValue       go to state 18
-    FuncCall     go to state 19
-    Conditional  go to state 22
-    LoopWhile    go to state 23
-    LoopFor      go to state 24
-
-
-State 217
-
-  117 ArgsDef: ArgsDef Type OptRef ID OptAssign .
-
-    $default  reduce using rule 117 (ArgsDef)
+    Action       go to state 192
+    VarInst      go to state 16
+    VarDef       go to state 17
+    Assign       go to state 18
+    LValue       go to state 19
+    FuncCall     go to state 20
+    Conditional  go to state 23
+    LoopWhile    go to state 24
+    LoopFor      go to state 25
 
 
-State 218
+State 187
 
-    4 I: I . Inst
-  105 Elsifs: ELSIF Bool THEN I .
+   95 ArgsDef: ArgsDef Type OptRef ID OptAssign .
 
-    POINTER   shift, and go to state 1
-    OPEN_PAR  shift, and go to state 2
-    REGISTER  shift, and go to state 3
-    UNION     shift, and go to state 4
-    IF        shift, and go to state 5
-    WHILE     shift, and go to state 6
-    FOR       shift, and go to state 7
-    LET       shift, and go to state 8
-    ID        shift, and go to state 9
-
-    $default  reduce using rule 105 (Elsifs)
-
-    Inst         go to state 58
-    Action       go to state 13
-    Def          go to state 14
-    VarInst      go to state 15
-    VarDef       go to state 16
-    Assign       go to state 17
-    LValue       go to state 18
-    FuncCall     go to state 19
-    UnionDef     go to state 20
-    RegisterDef  go to state 21
-    Conditional  go to state 22
-    LoopWhile    go to state 23
-    LoopFor      go to state 24
-    RutineDef    go to state 25
+    $default  reduce using rule 95 (ArgsDef)
 
 
-State 219
-
-  106 Elsifs: Elsifs ELSIF Bool THEN . I
-
-    POINTER   shift, and go to state 1
-    OPEN_PAR  shift, and go to state 2
-    REGISTER  shift, and go to state 3
-    UNION     shift, and go to state 4
-    IF        shift, and go to state 5
-    WHILE     shift, and go to state 6
-    FOR       shift, and go to state 7
-    LET       shift, and go to state 8
-    ID        shift, and go to state 9
-
-    I            go to state 224
-    Inst         go to state 12
-    Action       go to state 13
-    Def          go to state 14
-    VarInst      go to state 15
-    VarDef       go to state 16
-    Assign       go to state 17
-    LValue       go to state 18
-    FuncCall     go to state 19
-    UnionDef     go to state 20
-    RegisterDef  go to state 21
-    Conditional  go to state 22
-    LoopWhile    go to state 23
-    LoopFor      go to state 24
-    RutineDef    go to state 25
-
-
-State 220
-
-  112 OptStep: SEMICOLON . Number
-
-    POINTER   shift, and go to state 1
-    PLUS      shift, and go to state 31
-    MINUS     shift, and go to state 32
-    OPEN_PAR  shift, and go to state 67
-    INT       shift, and go to state 35
-    FLOAT     shift, and go to state 36
-    ID        shift, and go to state 37
-
-    LValue    go to state 68
-    Number    go to state 225
-    FuncCall  go to state 70
-
-
-State 221
-
-  110 LoopFor: FOR OPEN_PAR ID SEMICOLON Number SEMICOLON Number OptStep . CLOSE_PAR DO I DONE
-
-    CLOSE_PAR  shift, and go to state 226
-
-
-State 222
-
-  113 RutineDef: ID OPEN_PAR RutineArgs CLOSE_PAR OptReturn OPEN_C_BRACE Actions CLOSE_C_BRACE .
-
-    $default  reduce using rule 113 (RutineDef)
-
-
-State 223
-
-  123 Actions: Actions Action .
-
-    $default  reduce using rule 123 (Actions)
-
-
-State 224
+State 188
 
     4 I: I . Inst
-  106 Elsifs: Elsifs ELSIF Bool THEN I .
+   84 Elsifs: Elsifs ELSIF Exp THEN I .
 
     POINTER   shift, and go to state 1
     OPEN_PAR  shift, and go to state 2
@@ -3494,56 +3245,87 @@ State 224
     WHILE     shift, and go to state 6
     FOR       shift, and go to state 7
     LET       shift, and go to state 8
-    ID        shift, and go to state 9
+    DEF       shift, and go to state 9
+    ID        shift, and go to state 10
 
-    $default  reduce using rule 106 (Elsifs)
+    $default  reduce using rule 84 (Elsifs)
 
-    Inst         go to state 58
-    Action       go to state 13
-    Def          go to state 14
-    VarInst      go to state 15
-    VarDef       go to state 16
-    Assign       go to state 17
-    LValue       go to state 18
-    FuncCall     go to state 19
-    UnionDef     go to state 20
-    RegisterDef  go to state 21
-    Conditional  go to state 22
-    LoopWhile    go to state 23
-    LoopFor      go to state 24
-    RutineDef    go to state 25
-
-
-State 225
-
-   44 Number: Number . PLUS Number
-   45       | Number . MINUS Number
-   46       | Number . ASTERISK Number
-   47       | Number . DIV Number
-   48       | Number . MODULE Number
-   51       | Number . POWER Number
-  112 OptStep: SEMICOLON Number .
-
-    PLUS      shift, and go to state 77
-    MINUS     shift, and go to state 78
-    ASTERISK  shift, and go to state 79
-    DIV       shift, and go to state 80
-    MODULE    shift, and go to state 81
-    POWER     shift, and go to state 82
-
-    $default  reduce using rule 112 (OptStep)
+    Inst         go to state 59
+    Action       go to state 14
+    Def          go to state 15
+    VarInst      go to state 16
+    VarDef       go to state 17
+    Assign       go to state 18
+    LValue       go to state 19
+    FuncCall     go to state 20
+    UnionDef     go to state 21
+    RegisterDef  go to state 22
+    Conditional  go to state 23
+    LoopWhile    go to state 24
+    LoopFor      go to state 25
+    RutineDef    go to state 26
 
 
-State 226
+State 189
 
-  110 LoopFor: FOR OPEN_PAR ID SEMICOLON Number SEMICOLON Number OptStep CLOSE_PAR . DO I DONE
+   39 Exp: Exp . EQUIV Exp
+   40    | Exp . NOT_EQUIV Exp
+   41    | Exp . OR Exp
+   42    | Exp . AND Exp
+   44    | Exp . LESS_THAN Exp
+   45    | Exp . LESS_EQUAL_THAN Exp
+   46    | Exp . GREATER_THAN Exp
+   47    | Exp . GREATER_EQUAL_THAN Exp
+   48    | Exp . PLUS Exp
+   49    | Exp . MINUS Exp
+   50    | Exp . ASTERISK Exp
+   51    | Exp . DIV Exp
+   52    | Exp . MODULE Exp
+   55    | Exp . POWER Exp
+   90 OptStep: SEMICOLON Exp .
 
-    DO  shift, and go to state 227
+    EQUIV               shift, and go to state 73
+    NOT_EQUIV           shift, and go to state 74
+    OR                  shift, and go to state 75
+    AND                 shift, and go to state 76
+    LESS_THAN           shift, and go to state 77
+    LESS_EQUAL_THAN     shift, and go to state 78
+    GREATER_THAN        shift, and go to state 79
+    GREATER_EQUAL_THAN  shift, and go to state 80
+    PLUS                shift, and go to state 81
+    MINUS               shift, and go to state 82
+    ASTERISK            shift, and go to state 83
+    DIV                 shift, and go to state 84
+    MODULE              shift, and go to state 85
+    POWER               shift, and go to state 86
+
+    $default  reduce using rule 90 (OptStep)
 
 
-State 227
+State 190
 
-  110 LoopFor: FOR OPEN_PAR ID SEMICOLON Number SEMICOLON Number OptStep CLOSE_PAR DO . I DONE
+   88 LoopFor: FOR OPEN_PAR ID SEMICOLON Exp SEMICOLON Exp OptStep CLOSE_PAR . DO I DONE
+
+    DO  shift, and go to state 193
+
+
+State 191
+
+   91 RutineDef: DEF ID OPEN_PAR RutineArgs CLOSE_PAR OptReturn OPEN_C_BRACE Actions CLOSE_C_BRACE .
+
+    $default  reduce using rule 91 (RutineDef)
+
+
+State 192
+
+  101 Actions: Actions Action .
+
+    $default  reduce using rule 101 (Actions)
+
+
+State 193
+
+   88 LoopFor: FOR OPEN_PAR ID SEMICOLON Exp SEMICOLON Exp OptStep CLOSE_PAR DO . I DONE
 
     POINTER   shift, and go to state 1
     OPEN_PAR  shift, and go to state 2
@@ -3553,29 +3335,30 @@ State 227
     WHILE     shift, and go to state 6
     FOR       shift, and go to state 7
     LET       shift, and go to state 8
-    ID        shift, and go to state 9
+    DEF       shift, and go to state 9
+    ID        shift, and go to state 10
 
-    I            go to state 228
-    Inst         go to state 12
-    Action       go to state 13
-    Def          go to state 14
-    VarInst      go to state 15
-    VarDef       go to state 16
-    Assign       go to state 17
-    LValue       go to state 18
-    FuncCall     go to state 19
-    UnionDef     go to state 20
-    RegisterDef  go to state 21
-    Conditional  go to state 22
-    LoopWhile    go to state 23
-    LoopFor      go to state 24
-    RutineDef    go to state 25
+    I            go to state 194
+    Inst         go to state 13
+    Action       go to state 14
+    Def          go to state 15
+    VarInst      go to state 16
+    VarDef       go to state 17
+    Assign       go to state 18
+    LValue       go to state 19
+    FuncCall     go to state 20
+    UnionDef     go to state 21
+    RegisterDef  go to state 22
+    Conditional  go to state 23
+    LoopWhile    go to state 24
+    LoopFor      go to state 25
+    RutineDef    go to state 26
 
 
-State 228
+State 194
 
     4 I: I . Inst
-  110 LoopFor: FOR OPEN_PAR ID SEMICOLON Number SEMICOLON Number OptStep CLOSE_PAR DO I . DONE
+   88 LoopFor: FOR OPEN_PAR ID SEMICOLON Exp SEMICOLON Exp OptStep CLOSE_PAR DO I . DONE
 
     POINTER   shift, and go to state 1
     OPEN_PAR  shift, and go to state 2
@@ -3583,29 +3366,30 @@ State 228
     UNION     shift, and go to state 4
     IF        shift, and go to state 5
     WHILE     shift, and go to state 6
-    DONE      shift, and go to state 229
+    DONE      shift, and go to state 195
     FOR       shift, and go to state 7
     LET       shift, and go to state 8
-    ID        shift, and go to state 9
+    DEF       shift, and go to state 9
+    ID        shift, and go to state 10
 
-    Inst         go to state 58
-    Action       go to state 13
-    Def          go to state 14
-    VarInst      go to state 15
-    VarDef       go to state 16
-    Assign       go to state 17
-    LValue       go to state 18
-    FuncCall     go to state 19
-    UnionDef     go to state 20
-    RegisterDef  go to state 21
-    Conditional  go to state 22
-    LoopWhile    go to state 23
-    LoopFor      go to state 24
-    RutineDef    go to state 25
+    Inst         go to state 59
+    Action       go to state 14
+    Def          go to state 15
+    VarInst      go to state 16
+    VarDef       go to state 17
+    Assign       go to state 18
+    LValue       go to state 19
+    FuncCall     go to state 20
+    UnionDef     go to state 21
+    RegisterDef  go to state 22
+    Conditional  go to state 23
+    LoopWhile    go to state 24
+    LoopFor      go to state 25
+    RutineDef    go to state 26
 
 
-State 229
+State 195
 
-  110 LoopFor: FOR OPEN_PAR ID SEMICOLON Number SEMICOLON Number OptStep CLOSE_PAR DO I DONE .
+   88 LoopFor: FOR OPEN_PAR ID SEMICOLON Exp SEMICOLON Exp OptStep CLOSE_PAR DO I DONE .
 
-    $default  reduce using rule 110 (LoopFor)
+    $default  reduce using rule 88 (LoopFor)

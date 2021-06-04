@@ -49,28 +49,28 @@ extern int yydebug;
 # define YYTOKENTYPE
   enum yytokentype
   {
-    DOT = 258,
-    POINTER = 259,
-    OPEN_BRACKET = 260,
-    CLOSE_BRACKET = 261,
-    PLUS = 262,
-    MINUS = 263,
-    ASTERISK = 264,
-    DIV = 265,
-    MODULE = 266,
-    POWER = 267,
-    SEMICOLON = 268,
-    OPEN_PAR = 269,
-    CLOSE_PAR = 270,
-    AND = 271,
-    OR = 272,
-    NOT_EQUIV = 273,
-    NOT = 274,
-    EQUIV = 275,
-    GREATER_EQUAL_THAN = 276,
-    LESS_EQUAL_THAN = 277,
-    GREATER_THAN = 278,
-    LESS_THAN = 279,
+    EQUIV = 258,
+    NOT_EQUIV = 259,
+    OR = 260,
+    AND = 261,
+    LESS_THAN = 262,
+    LESS_EQUAL_THAN = 263,
+    GREATER_THAN = 264,
+    GREATER_EQUAL_THAN = 265,
+    NOT = 266,
+    PLUS = 267,
+    MINUS = 268,
+    ASTERISK = 269,
+    DIV = 270,
+    MODULE = 271,
+    POWER = 272,
+    OPEN_BRACKET = 273,
+    CLOSE_BRACKET = 274,
+    POINTER = 275,
+    DOT = 276,
+    OPEN_PAR = 277,
+    SEMICOLON = 278,
+    CLOSE_PAR = 279,
     ASSIGNMENT = 280,
     T_INT = 281,
     T_CHAR = 282,
@@ -95,15 +95,16 @@ extern int yydebug;
     DONE = 301,
     FOR = 302,
     LET = 303,
-    AT = 304,
-    RIGHT_ARROW = 305,
-    INT = 306,
-    FLOAT = 307,
-    ID = 308,
-    CHAR = 309,
-    STRING = 310,
-    TRUE = 311,
-    FALSE = 312
+    DEF = 304,
+    AT = 305,
+    RIGHT_ARROW = 306,
+    INT = 307,
+    FLOAT = 308,
+    ID = 309,
+    CHAR = 310,
+    STRING = 311,
+    TRUE = 312,
+    FALSE = 313
   };
 #endif
 
@@ -120,7 +121,7 @@ union YYSTYPE
   char  *str;
   char  ch;
 
-#line 124 "parser.tab.h" /* yacc.c:1921  */
+#line 125 "parser.tab.h" /* yacc.c:1921  */
 };
 
 typedef union YYSTYPE YYSTYPE;

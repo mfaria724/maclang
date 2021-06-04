@@ -88,12 +88,18 @@
 %locations
 %start S
 
-%left   DOT
-%right  POINTER
-%left   OPEN_BRACKET CLOSE_BRACKET
-%left   PLUS MINUS
-%left   ASTERISK DIV MODULE
-%right  POWER
+%left       EQUIV NOT_EQUIV
+%left       OR AND 
+%nonassoc   LESS_THAN LESS_EQUAL_THAN GREATER_THAN GREATER_EQUAL_THAN
+%right      NOT
+%left       PLUS MINUS
+%left       ASTERISK DIV MODULE
+%right      POWER
+%left       OPEN_BRACKET CLOSE_BRACKET
+%right      POINTER
+%left       DOT
+%left       OPEN_PAR
+
 
 %token SEMICOLON
 %token OPEN_PAR
@@ -141,6 +147,7 @@
 %token DONE
 %token FOR
 %token LET
+%token DEF
 %token AT
 %token RIGHT_ARROW
 
@@ -150,8 +157,6 @@
 %token <chr>      CHAR
 %token <str>      STRING
 %token <boolean>  TRUE FALSE
-
-%type <integer> Integer
 
 %%
 
@@ -189,19 +194,13 @@ OptAssign   : /* lambda */
             ;
 Assign      : LValue ASSIGNMENT RValue  { ; }
             ;
-RValue      : LValue                    { ; }
-						| Expression                { ; }
-						| FuncCall                  { ; }
-            ;
-Expression  : Number                        { ; }
-						| Bool                          { ; }
-						| Array                         { ; }
-						| STRING                        { ; }
-						| CHAR                          { ; }
+RValue      : Exp                       { ; }
+            | Array                     { ; }
+            | STRING                    { ; }
             ;
 
 /* ======================== TIPOS ======================== */
-Type	: Type OPEN_BRACKET Integer CLOSE_BRACKET   { ; }
+Type	: Type OPEN_BRACKET Exp CLOSE_BRACKET       { ; }
 			| POINTER Type 	                            { ; }
 			| OPEN_PAR Type CLOSE_PAR                   { ; }
       | T_UNIT                                    { ; }
@@ -213,48 +212,39 @@ Type	: Type OPEN_BRACKET Integer CLOSE_BRACKET   { ; }
       ;
 
 /* ======================= LVALUES ======================= */
-LValue	:	LValue OPEN_BRACKET Integer CLOSE_BRACKET   { ; }
-				|	POINTER LValue                              { ; }
-				|	LValue DOT ID                               { ; }
-				| OPEN_PAR LValue CLOSE_PAR                   { ; }
-				|	ID                                          { ; }
+LValue	:	LValue OPEN_BRACKET Exp CLOSE_BRACKET   { ; }
+				|	POINTER LValue                          { ; }
+				|	LValue DOT ID                           { ; }
+				| OPEN_PAR LValue CLOSE_PAR               { ; }
+				|	ID                                      { ; }
         ;
 
-/* ================ EXPRESIONES NUMERICAS ================ */
-Number	:	Number PLUS Number          { ; }
-				|	Number MINUS Number         { ; }
-				|	Number ASTERISK Number      { ; }
-				|	Number DIV Number           { ; }
-				|	Number MODULE Number        { ; }
-				|	MINUS Number                { ; }
-        | PLUS Number                 { ; }
-        | Number POWER Number         { ; }
-				| OPEN_PAR Number CLOSE_PAR   { ; }
-        | LValue                      { ; }
-        | FuncCall                    { ; }
-				|	INT                         { ; }
-				|	FLOAT                       { ; }
-        ;
-
-/* ================ EXPRESIONES BOOLEANAS ================ */
-Bool	:	Bool EQUIV Bool               { ; }
-			|	Bool NOT_EQUIV Bool           { ; }
-			|	Bool OR Bool                  { ; }
-			|	Bool AND Bool                 { ; }
-			|	NOT Bool                      { ; }
-			|	OPEN_PAR Bool CLOSE_PAR       { ; }
-			|	Number Comp Number            { ; }
-			|	TRUE                          { ; }
-			|	FALSE                         { ; }
-			|	LValue                        { ; }
-			|	FuncCall                      { ; }
-      ;
-Comp  : LESS_THAN                     { ; }
-			| LESS_EQUAL_THAN               { ; }
-			| EQUIV                         { ; }
-			| NOT_EQUIV                     { ; }
-			| GREATER_EQUAL_THAN            { ; }
-			| GREATER_THAN                  { ; }
+/* ======================= EXPRESSIONS ======================= */
+Exp   : Exp EQUIV Exp               { ; }
+      | Exp NOT_EQUIV Exp           { ; }
+      | Exp OR Exp                  { ; }
+      | Exp AND Exp                 { ; }
+      | NOT Exp                     { ; }
+      | Exp LESS_THAN Exp           { ; }
+      | Exp LESS_EQUAL_THAN Exp     { ; }
+      | Exp GREATER_THAN Exp        { ; }
+      | Exp GREATER_EQUAL_THAN Exp  { ; }
+      | Exp PLUS Exp                { ; }
+      | Exp MINUS Exp               { ; }
+      | Exp ASTERISK Exp            { ; }
+      | Exp DIV Exp                 { ; }
+      | Exp MODULE Exp              { ; }
+      | MINUS Exp                   { ; }
+      | PLUS Exp                    { ; }
+      | Exp POWER Exp               { ; }
+      | OPEN_PAR Exp CLOSE_PAR      { ; }
+      | LValue                      { ; }
+      | FuncCall                    { ; }
+      | TRUE                        { ; }
+      | FALSE                       { ; }
+      | CHAR                        { ; }
+      | INT                         { ; }
+      | FLOAT                       { ; }
       ;
 
 /* ====================== ARREGLOS ====================== */
@@ -266,21 +256,6 @@ ArrExp    : /* lambda */
 ArrElems	: /* lambda */ 
 					| ArrElems RValue COMMA
           ;
-
-/* ================= EXPRESIONES ENTERAS ================= */
-Integer	:	Integer PLUS Integer        { ; }
-				|	Integer MINUS Integer       { ; }
-				|	Integer ASTERISK Integer    { ; }
-				|	Integer DIV Integer         { ; }         
-				|	Integer MODULE Integer      { ; }
-				|	MINUS Integer               { ; }
-				|	PLUS Integer                { ; }
-        | Integer POWER Integer       { ; }
-				|	OPEN_PAR Integer CLOSE_PAR  { ; }
-        | LValue                      { ; }
-        | FuncCall                    { ; }
-				|	INT                         { ; }
-        ;
 
 /* ================= LLAMADAS A FUNCIONES ================= */
 FuncCall  : ID OPEN_PAR ArgsExp CLOSE_PAR   { ; }
@@ -307,44 +282,44 @@ RegisterBody	: VarDef SEMICOLON                                      { ; }
               ;
 
 /* ===================== CONDICIONALES ===================== */
-Conditional : IF Bool THEN I OptElsif OptElse END   { ; }
+Conditional : IF Exp THEN I OptElsif OptElse END   { ; }
             ;
 OptElsif    : /* lambda */ 
 						| Elsifs                                { ; }
             ;
-Elsifs      : ELSIF Bool THEN I                     { ; }
-						| Elsifs ELSIF Bool THEN I              { ; }
+Elsifs      : ELSIF Exp THEN I                     { ; }
+						| Elsifs ELSIF Exp THEN I              { ; }
             ;
 OptElse     : /* lambda */ 
 						| ELSE I                                { ; }
             ;
 
 /* ======================== BUCLES ======================== */
-LoopWhile : WHILE Bool DO I DONE                                                            { ; }
+LoopWhile : WHILE Exp DO I DONE                                                            { ; }
           ; 
-LoopFor   : FOR OPEN_PAR ID SEMICOLON Number SEMICOLON Number OptStep CLOSE_PAR DO I DONE   { ; }
+LoopFor   : FOR OPEN_PAR ID SEMICOLON Exp SEMICOLON Exp OptStep CLOSE_PAR DO I DONE   { ; }
           ;
 OptStep   : /* lambda */ 
-				  | SEMICOLON Number                                                                { ; }
+				  | SEMICOLON Exp                                                                { ; }
           ;
 
 /* =============== DEFINICION DE SUBRUTINAS =============== */
-RutineDef   : ID OPEN_PAR RutineArgs CLOSE_PAR OptReturn OPEN_C_BRACE Actions CLOSE_C_BRACE { ; }
+RutineDef   : DEF ID OPEN_PAR RutineArgs CLOSE_PAR OptReturn OPEN_C_BRACE Actions CLOSE_C_BRACE { ; }
             ; 
 RutineArgs  : /* lambda */ 
-						| ArgsDef                                                                       { ; }
+						| ArgsDef                                                                           { ; }
             ;
-ArgsDef     : Type OptRef ID OptAssign                                                      { ; }
-						| ArgsDef Type OptRef ID OptAssign                                              { ; }
+ArgsDef     : Type OptRef ID OptAssign                                                          { ; }
+						| ArgsDef Type OptRef ID OptAssign                                                  { ; }
             ;
 OptRef      : /* lambda */
-						| AT                                                                            { ; }
+						| AT                                                                                { ; }
             ;
 OptReturn   : /* lambda */ 
-						| RIGHT_ARROW Type                                                              { ; }
+						| RIGHT_ARROW Type                                                                  { ; }
             ;
-Actions     : Action                                                                        { ; }
-						| Actions Action                                                                { ; }
+Actions     : Action                                                                            { ; }
+						| Actions Action                                                                    { ; }
             ;
 
 %%

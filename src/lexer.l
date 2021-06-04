@@ -74,6 +74,7 @@
 "done"                    { return DONE; }
 "for"                     { return FOR; }
 "let"                     { return LET; }
+"def"                     { return DEF; }
 "@"                       { return AT; }
 "=>"                      { return RIGHT_ARROW; }
 [0-9]+\.[0-9]+            { yylval.flot = atof(yytext); return FLOAT; }
