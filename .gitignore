@@ -1,5 +1,6 @@
 # compiled files
 *.out
+*.output
 
 # flex
 *.yy.c
