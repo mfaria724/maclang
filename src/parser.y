@@ -15,9 +15,6 @@
   // queues for tokens and errors
   extern queue<string> errors;
 
-  // offsets the columns and the rows for multiline comments
-  void setMultiLineOffset(char* text);
-
   // Prints error;
   void yyerror(char *s);
 
