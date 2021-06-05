@@ -1,4 +1,4 @@
-default: parser.y lexer.l
+default: parser.y lexer.l ast.cpp
 	bison -d parser.y 
 	flex lexer.l 
 	g++ ast.cpp parser.tab.c lex.yy.c -g -o parser.out

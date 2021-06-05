@@ -23,6 +23,8 @@
 
   // Prints the queue to std.
   void printQueue(queue<string> queueToPrint);
+
+  node* global;
 %}
 
 %define parse.lac full
@@ -34,7 +36,8 @@
   bool  boolean;
   char  *str;
   char  ch;
-  node *ast;
+  node  *ast;
+  node_S *nS;
 }
 
 %locations
@@ -73,11 +76,6 @@
 %token DIV
 %token ASTERISK
 %token ASSIGNMENT
-%token T_CHAR 
-%token T_BOOL 
-%token T_FLOAT
-%token T_UNIT
-%token T_STRING
 %token OPEN_BRACKET
 %token CLOSE_BRACKET
 %token OPEN_C_BRACE
@@ -110,15 +108,16 @@
 %token <chr>      CHAR
 %token <str>      STRING
 %token <boolean>  TRUE FALSE
-%token <str> T_INT
+%token <str>      T_UNIT T_BOOL T_CHAR T_INT T_FLOAT T_STRING
 
-%type <ast> S I Inst Action VarInst VarDef VarDefBody OptAssign Type
+%type <ast> I Inst Action VarInst VarDef VarDefBody OptAssign Type
+%type <nS> S
 
 %% 
 
 /* =================== GLOBAL RULES =================== */
-S       : I                   { $$ = (node*) new node_S($1); }
-        | /* lambda */ 
+S       : I                   { $$ = new node_S($1); $$->print();  }
+        | /* lambda */        { $$ = NULL; }
         ;
 I       : Inst                { $$ = new node_I($1); }
         | I Inst              { $$ = new node_I($1, $2); }
@@ -156,15 +155,15 @@ RValue      : Exp                       { ; }
             ;
 
 /* ======================== TYPES ======================== */
-Type	: Type OPEN_BRACKET Exp CLOSE_BRACKET { ; }
-			| POINTER Type 	                      { ; }
-			| OPEN_PAR Type CLOSE_PAR             { ; }
-      | T_UNIT                              { ; }
-			| T_BOOL                              { ; }
-      | T_CHAR                              { ; }
+Type	: Type OPEN_BRACKET Exp CLOSE_BRACKET { /*$$ = new node_TypeArrayDef($1, $3)*/; }
+			| POINTER Type 	                      { $$ = new node_TypePointerDef($2); }
+			| OPEN_PAR Type CLOSE_PAR             { $$ = $2; }
+      | T_UNIT                              { $$ = new node_TypePrimitiveDef($1); }
+			| T_BOOL                              { $$ = new node_TypePrimitiveDef($1); }
+      | T_CHAR                              { $$ = new node_TypePrimitiveDef($1); }
       | T_INT                               { $$ = new node_TypePrimitiveDef($1); }
-      | T_FLOAT                             { ; }
-      | T_STRING                            { ; }
+      | T_FLOAT                             { $$ = new node_TypePrimitiveDef($1); }
+      | T_STRING                            { $$ = new node_TypePrimitiveDef($1); }
       ;
 
 /* ======================= LVALUES ======================= */
@@ -308,7 +307,6 @@ int main(int argc, char **argv)
 
   fclose(yyin);
   yyin = fopen(argv[1], "r");
-
 
   // if there are no errors, apply parsing
   if (errors.empty()) {
