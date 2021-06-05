@@ -60,21 +60,6 @@
 %token SEMICOLON
 %token OPEN_PAR
 %token CLOSE_PAR
-%token POWER
-%token AND
-%token OR
-%token NOT_EQUIV
-%token NOT
-%token EQUIV
-%token GREATER_EQUAL_THAN
-%token LESS_EQUAL_THAN
-%token GREATER_THAN
-%token LESS_THAN
-%token PLUS
-%token MINUS
-%token MODULE
-%token DIV
-%token ASTERISK
 %token ASSIGNMENT
 %token OPEN_BRACKET
 %token CLOSE_BRACKET
@@ -104,13 +89,16 @@
 
 %token <integer>  INT
 %token <flot>     FLOAT
-%token <str>      ID
-%token <chr>      CHAR
-%token <str>      STRING
+%token <ch>       CHAR
+%token <str>      STRING ID
 %token <boolean>  TRUE FALSE
 %token <str>      T_UNIT T_BOOL T_CHAR T_INT T_FLOAT T_STRING
+%token <str>      POWER AND OR NOT_EQUIV NOT EQUIV GREATER_EQUAL_THAN 
+%token <str>      LESS_EQUAL_THAN GREATER_THAN LESS_THAN PLUS MINUS 
+%token <str>      MODULE DIV ASTERISK
 
-%type <ast> I Inst Action VarInst VarDef VarDefBody OptAssign Type
+%type <ast> I Inst Action VarInst VarDef VarDefBody OptAssign Type 
+%type <ast> LValue Exp Array ArrayExp ArrayElems
 %type <nS> S
 
 %% 
@@ -149,13 +137,13 @@ OptAssign   : /* lambda */              { $$ = NULL; }
             ;
 Assign      : LValue ASSIGNMENT RValue  { ; }
             ;
-RValue      : Exp                       { ; }
-            | Array                     { ; }
-            | STRING                    { ; }
+RValue      : Exp                       { $$ = $1; }
+            | Array                     { $$ = $1; }
+            | STRING                    { $$ = new node_STRING($1); }
             ;
 
 /* ======================== TYPES ======================== */
-Type	: Type OPEN_BRACKET Exp CLOSE_BRACKET { /*$$ = new node_TypeArrayDef($1, $3)*/; }
+Type	: Type OPEN_BRACKET Exp CLOSE_BRACKET { $$ = new node_TypeArrayDef($1, $3); }
 			| POINTER Type 	                      { $$ = new node_TypePointerDef($2); }
 			| OPEN_PAR Type CLOSE_PAR             { $$ = $2; }
       | T_UNIT                              { $$ = new node_TypePrimitiveDef($1); }
@@ -167,49 +155,49 @@ Type	: Type OPEN_BRACKET Exp CLOSE_BRACKET { /*$$ = new node_TypeArrayDef($1, $3
       ;
 
 /* ======================= LVALUES ======================= */
-LValue	:	LValue OPEN_BRACKET Exp CLOSE_BRACKET   { ; }
-				|	POINTER LValue                          { ; }
-				|	LValue DOT ID                           { ; }
-				| OPEN_PAR LValue CLOSE_PAR               { ; }
-				|	ID                                      { ; }
+LValue	:	LValue OPEN_BRACKET Exp CLOSE_BRACKET   { $$ = new node_ArrayLValue($1, $3); }
+				|	POINTER LValue                          { $$ = new node_PointerLValue($2); }
+				|	LValue DOT ID                           { $$ = new node_DotLValue($1, $3); }
+				| OPEN_PAR LValue CLOSE_PAR               { $$ = $2; }
+				|	ID                                      { $$ = new node_IDLValue($1); }
         ;
 
 /* ======================= EXPRESSIONS ======================= */
-Exp   : Exp EQUIV Exp               { ; }
-      | Exp NOT_EQUIV Exp           { ; }
-      | Exp OR Exp                  { ; }
-      | Exp AND Exp                 { ; }
-      | NOT Exp                     { ; }
-      | Exp LESS_THAN Exp           { ; }
-      | Exp LESS_EQUAL_THAN Exp     { ; }
-      | Exp GREATER_THAN Exp        { ; }
-      | Exp GREATER_EQUAL_THAN Exp  { ; }
-      | Exp PLUS Exp                { ; }
-      | Exp MINUS Exp               { ; }
-      | Exp ASTERISK Exp            { ; }
-      | Exp DIV Exp                 { ; }
-      | Exp MODULE Exp              { ; }
-      | MINUS Exp                   { ; }
-      | PLUS Exp                    { ; }
-      | Exp POWER Exp               { ; }
-      | OPEN_PAR Exp CLOSE_PAR      { ; }
-      | LValue                      { ; }
+Exp   : Exp EQUIV Exp               { $$ = new node_BinaryOperator($1, $2, $3); }
+      | Exp NOT_EQUIV Exp           { $$ = new node_BinaryOperator($1, $2, $3); }
+      | Exp OR Exp                  { $$ = new node_BinaryOperator($1, $2, $3); }
+      | Exp AND Exp                 { $$ = new node_BinaryOperator($1, $2, $3); }
+      | NOT Exp                     { $$ = new node_UnaryOperator($1, $2); }
+      | Exp LESS_THAN Exp           { $$ = new node_BinaryOperator($1, $2, $3); }
+      | Exp LESS_EQUAL_THAN Exp     { $$ = new node_BinaryOperator($1, $2, $3); }
+      | Exp GREATER_THAN Exp        { $$ = new node_BinaryOperator($1, $2, $3); }
+      | Exp GREATER_EQUAL_THAN Exp  { $$ = new node_BinaryOperator($1, $2, $3); }
+      | Exp PLUS Exp                { $$ = new node_BinaryOperator($1, $2, $3); }
+      | Exp MINUS Exp               { $$ = new node_BinaryOperator($1, $2, $3); }
+      | Exp ASTERISK Exp            { $$ = new node_BinaryOperator($1, $2, $3); }
+      | Exp DIV Exp                 { $$ = new node_BinaryOperator($1, $2, $3); }
+      | Exp MODULE Exp              { $$ = new node_BinaryOperator($1, $2, $3); }
+      | MINUS Exp                   { $$ = new node_UnaryOperator($1, $2); }
+      | PLUS Exp                    { $$ = new node_UnaryOperator($1, $2); }
+      | Exp POWER Exp               { $$ = new node_BinaryOperator($1, $2, $3); }
+      | OPEN_PAR Exp CLOSE_PAR      { $$ = $2; }
+      | LValue                      { $$ = $1; }
       | FuncCall                    { ; }
-      | TRUE                        { ; }
-      | FALSE                       { ; }
-      | CHAR                        { ; }
-      | INT                         { ; }
-      | FLOAT                       { ; }
+      | TRUE                        { $$ = new node_BOOL(true); }
+      | FALSE                       { $$ = new node_BOOL(false); }
+      | CHAR                        { $$ = new node_CHAR($1); }
+      | INT                         { $$ = new node_INT($1); }
+      | FLOAT                       { $$ = new node_FLOAT($1); }
       ;
 
 /* ====================== ARRAYS ====================== */
-Array     : OPEN_BRACKET ArrExp CLOSE_BRACKET
+Array     : OPEN_BRACKET ArrExp CLOSE_BRACKET   { $$ = new node_Array($2); }
           ;
-ArrExp    : /* lambda */
-					| ArrElems RValue 
+ArrExp    : /* lambda */                        { $$ = NULL; }
+					| ArrElems RValue                     { $$ = new node_ArrayElems($1, $2); }
           ;
-ArrElems	: /* lambda */ 
-					| ArrElems RValue COMMA
+ArrElems	: /* lambda */                        { $$ = NULL; }
+					| ArrElems RValue COMMA               { $$ = new node_ArrayElems($1, $2)}
           ;
 
 /* ================= FUNCTION CALLS ================= */
