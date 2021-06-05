@@ -348,27 +348,6 @@ void yyerror(char *s)
 }
 
 /*
-  offsets the columns and the rows for multiline comments, as could be the case
-  that after a multiline comment could be a valid code statement.
-*/
-void setMultiLineOffset(char* text)
-{ 
-  for (int i=0; i < strlen(text); i++)
-  {
-    char x = text[i];
-
-    // If there is a line break, reset the column and increment the row.
-    if(x == '\n')
-    {
-      yylineno++;
-      yycolumn = 0;
-    } else {
-      yycolumn++;
-    }
-  }
-}
-
-/*
   Prints the queue to std.
 */
 void printQueue(queue<string> queueToPrint)
