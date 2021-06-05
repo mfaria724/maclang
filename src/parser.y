@@ -124,7 +124,7 @@ Action  : VarInst SEMICOLON   { $$ = $1; }
 				| LoopFor             { $$ = $1; }
         ;
 Def     : UnionDef            { $$ = $1; }
-				| RegDef         { $$ = $1; }
+				| RegDef              { $$ = $1; }
 				| RutineDef           { $$ = $1; }
         ;
 
