@@ -14,7 +14,7 @@ node_CHAR::node_CHAR(char value) {
 }
 
 void node_CHAR::print(void) {
-  cout << this->value;
+  cout << "'" << this->value << "'";
 }
 
 node_INT::node_INT(int value) {
@@ -42,7 +42,7 @@ void node_STRING::print(void) {
 }
 
 /* ======================= EXPRESSION NODES =======================  */
-node_BinaryOperator::node_BinaryOperator(node *left, string op, node *rigth) {
+node_BinaryOperator::node_BinaryOperator(node *left, string op, node *right) {
   this->left = left;
   this->op = op;
   this->right = right;
@@ -106,6 +106,7 @@ node_VarDef::node_VarDef(node *type, string id, node *rvalue) {
 }
 
 void node_VarDef::print(void) {
+  cout << "let ";
   this->type->print();
   cout << " " << this->id;
   if (this->rvalue != NULL) {
@@ -202,17 +203,259 @@ void node_FunctionCall::print(void) {
   }
 }
 
-/* ======================= INSTRUCTIONS NODES =======================  */
-node_I::node_I(node *inst, node *next) {
+void node_FunctionCall::set_end_inst(void) {
+  this->end_inst = true;
+}
+
+node_FunctionCallArgs::node_FunctionCallArgs(node *rvalue, node *head) {
+  this->rvalue = rvalue;
+  this->head = head;
+}
+
+void node_FunctionCallArgs::print(void) {
+  if (this->head != NULL) {
+    this->head->print();
+    cout << ", ";
+  }
+  this->rvalue->print();
+}
+
+/* ======================= UNION DEF NODES ======================= */
+node_UnionDef::node_UnionDef(string id, node *fields) {
+  this->id = id;
+  this->fields = fields;
+}
+
+void node_UnionDef::print(void) {
+  cout << this->id << " {\n";
+  this->fields->print();
+  cout << "}\n";
+}
+
+node_UnionFields::node_UnionFields(node *head, node *field) {
+  this->head = head;
+  this->field = field;
+}
+
+void node_UnionFields::print(void) {
+  if (this->head != NULL) {
+    this->head->print();
+  }
+  cout << "  ";
+  this->field->print();
+}
+
+/* ======================= REGISTER DEF NODES ======================= */
+node_RegDef::node_RegDef(string id, node *fields) {
+  this->id = id;
+  this->fields = fields;
+}
+
+void node_RegDef::print(void) {
+  cout << "register " << this->id << " {\n";
+  this->fields->print();
+  cout << "}\n";
+}
+
+node_RegFields::node_RegFields(node *head, node *type, string id, node *rvalue) {
+  this->head = head;
+  this->type = type;
+  this->id = id;
+  this->rvalue = rvalue;
+}
+
+void node_RegFields::print(void) {
+  if (this->head != NULL) {
+    this->head->print();
+  }
+  cout << "  ";
+  this->type->print();
+  cout << " " << this->id;
+  if (this->rvalue != NULL) {
+    cout << " = ";
+    this->rvalue->print();
+  }
+  cout << ";\n";
+}
+
+/* ======================= CONDITIONAL DEF NODES ======================= */
+node_Conditional::node_Conditional(node *cond, node *body, node *elsifs, node *else_def) {
+  this->cond = cond;
+  this->body = body;
+  this->elsifs = elsifs;
+  this->else_def = else_def;
+}
+
+void node_Conditional::print(void) {
+  cout << "if ";
+  this->cond->print();
+  cout << " then \n";
+  if (this->body != NULL) {
+    this->body->print();
+  }
+  if (this->elsifs != NULL) {
+    this->elsifs->print();
+  }
+  if (this->else_def != NULL) {
+    this->else_def->print();
+  }
+  cout << "end\n";
+}
+
+node_Elsif::node_Elsif(node *head, node *cond, node *body) {
+  this->head = head;
+  this->cond = cond;
+  this->body = body;
+}
+
+void node_Elsif::print(void) {
+  if (this->head != NULL) {
+    this->head->print();
+  }
+  cout << "elsif ";
+  this->cond->print();
+  cout << " then \n";
+  if (this->body != NULL) {
+    this->body->print();
+  }
+}
+
+node_Else::node_Else(node *body) {
+  this->body = body;
+}
+
+void node_Else::print(void) {
+  cout << "else \n";
+  if (this->body != NULL) {
+    this->body->print();
+  }
+}
+
+/* ======================= LOOP NODES =======================  */
+node_While::node_While(node *cond, node *body) {
+  this->cond = cond;
+  this->body = body;
+}
+
+void node_While::print(void) {
+  cout << "while ";
+  this->cond->print();
+  cout << " do\n";
+  if (this->body != NULL) {
+    this->body->print();
+  }
+  cout << "end\n";
+}
+
+node_For::node_For(string iter, node *begin, node *end, node *step, node *body) {
+  this->iter = iter;
+  this->begin = begin;
+  this->end = end;
+  this->step = step;
+  this->body = body;
+}
+
+void node_For::print(void) {
+  cout << "for (" << this->iter << "; ";
+  this->begin->print();
+  cout << "; ";
+  this->end->print();
+  if (this->step != NULL) {
+    cout << "; ";
+    this->step->print();
+  }
+  cout <<") do\n";
+  if (this->body != NULL) {
+    this->body->print();
+  }
+  cout << "done\n";
+}
+
+/* ======================= SUBROUTINE DEF NODES =======================  */
+node_RoutineDef::node_RoutineDef(string id, node *args, node *ret, node *body) {
+  this->id = id;
+  this->args = args;
+  this->ret = ret;
+  this->body = body;
+}
+
+void node_RoutineDef::print(void) {
+  cout << this->id << " (";
+  if (this->args != NULL) {
+    this->args->print();
+  }
+  cout << ") ";
+  if (this->ret != NULL) {
+    cout << "=> ";
+    this->ret->print();
+  }
+  cout << " {\n";
+  if (this->body != NULL) {
+    this->body->print();
+  }
+  cout << "}\n";
+}
+
+node_RoutArgsDef::node_RoutArgsDef(node *head, node *type, bool ref, string id, node *rvalue) {
+  this->head = head;
+  this->type = type;
+  this->ref = ref;
+  this->id = id;
+  this->rvalue = rvalue;
+}
+
+void node_RoutArgsDef::print(void) {
+  if (this->head != NULL) {
+    this->head->print();
+    cout << ", ";
+  }
+  this->type->print();
+  cout << " ";
+  if (this->ref) {
+    cout << "@";
+  }
+  cout << this->id;
+  if (this->rvalue) {
+    cout << " = ";
+    this->rvalue->print();
+  }
+}
+
+node_Actions::node_Actions(node *head, node *inst) {
+  this->head = head;
   this->inst = inst;
-  this->next = next;
+}
+
+void node_Actions::print(void) {
+  if (this->head != NULL) {
+    this->head->print();
+  }
+  this->inst->print();
+}
+
+/* ======================= INSTRUCTION NODES =======================  */
+node_Assign::node_Assign(node *lvalue, node *rvalue) {
+  this->lvalue = lvalue;
+  this->rvalue = rvalue;
+}
+
+void node_Assign::print(void) {
+  this->lvalue->print();
+  cout << " = ";
+  this->rvalue->print();
+  cout << ";\n";
+}
+
+node_I::node_I(node *head, node *inst) {
+  this->head = head;
+  this->inst = inst;
 }
 
 void node_I::print(void) {
-  this->inst->print();
-  if (this->next != NULL) {
-    this->next->print();
+  if (this->head != NULL) {
+    this->head->print();
   }
+  this->inst->print();
 }
 
 node_S::node_S(node *inst) {

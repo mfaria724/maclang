@@ -7,7 +7,6 @@ ${
 
 
 # tipos primitivos
-
 let Int i;          # Entero inicializado pero sin valor asignado.
 let Int j = 1;      # Entero inicializado y con valor asignado.
 let Char c = '1';   # Caracter
@@ -28,5 +27,20 @@ let Char[3] press = ['F'];
 ## registros
 register registro {
   Int numero = 15;
+}
+
+def myfunc(^(^Bool[5]) @ khe, Bool ok) => Int {
+  for (i; -100; 0++100; 4) do 
+    x = x + 1;
+    if (x > 0) then 
+      x = x * 2;
+    elsif (x < -50) then 
+      x = x - 8;
+    else 
+      x = x;
+    done 
+
+    while i < 100 do i = i+++1; done
+  done
 }
 

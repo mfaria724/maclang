@@ -211,6 +211,7 @@ class node_ArrayElems : public node {
 };
 
 /* ======================= FUNCTION CALL NODES ======================= */
+/* Representation of function calls. */
 class node_FunctionCall : public node {
   protected:
     string id;
@@ -221,30 +222,202 @@ class node_FunctionCall : public node {
     node_FunctionCall(string id, node *args, bool end_inst);
 
     void print(void);
+
+    void set_end_inst(void);
 };
 
-class node_FunctionArgs : public node {
+/* Representation of  ->  RValue , FuncArgs. */
+class node_FunctionCallArgs : public node {
   protected:
     node *rvalue;
     node *head;
 
   public:
-    node_FunctionArgs(node *rvalue, node *head = NULL);
+    node_FunctionCallArgs(node *rvalue, node *head = NULL);
 
     void print(void);
-}
+};
 
-/* ======================= INSTRUCTIONS NODES =======================  */
+/* ======================= UNION DEF NODES ======================= */
+/* Representation of union definitions. */
+class node_UnionDef : public node {
+  protected:
+    string id;
+    node *fields;
 
+  public:
+    node_UnionDef(string id, node *fields);
+
+    void print(void);
+};
+
+/* Representation of  -> UnionBody Type ID ;  */
+class node_UnionFields : public node {
+  protected:
+    node *head;
+    node *field;
+
+  public:
+    node_UnionFields(node *head, node *field);
+
+    void print(void);
+};
+
+/* ======================= REGISTER DEF NODES ======================= */
+/* Representation of register definitions. */
+class node_RegDef : public node {
+  protected:
+    string id;
+    node *fields;
+
+  public:
+    node_RegDef(string id, node *fields);
+
+    void print(void);
+};
+
+/* Representation of  -> RegisterBody VarDefBody;  */
+class node_RegFields : public node {
+  protected:
+    node *head;
+    node *type;
+    string id;
+    node *rvalue;
+
+  public:
+    node_RegFields(node *head, node *type, string id, node *rvalue);
+
+    void print(void);
+};
+
+/* ======================= CONDITIONAL DEF NODES ======================= */
+/* Representation of if-elsif-else blocks. */
+class node_Conditional : public node {
+  protected:
+    node *cond;
+    node *body;
+    node *elsifs;
+    node *else_def;
+
+  public:
+    node_Conditional(node *cond, node *body, node *elsifs, node *else_def);
+
+    void print(void);
+};
+
+/* Representation of  -> Elsifs elsif Exp then I. */
+class node_Elsif : public node {
+  protected:
+    node *head;
+    node *cond;
+    node *body;
+
+  public:
+    node_Elsif(node *head, node *cond, node *body);
+
+    void print(void);
+};
+
+/* Representation of  -> else I. */
+class node_Else : public node {
+  protected:
+    node *body;
+
+  public:
+    node_Else(node *body);
+
+    void print(void);
+};
+
+/* ======================= LOOP NODES =======================  */
+/* Representation of while blocks. */
+class node_While : public node {
+  protected:
+    node *cond;
+    node *body;
+
+  public:
+    node_While(node *cond, node *body);
+
+    void print(void);
+};
+
+/* Representation of for blocks. */
+class node_For : public node {
+  protected:
+    string iter;
+    node *begin;
+    node *end;
+    node *step;
+    node *body;
+
+  public:
+    node_For(string iter, node *begin, node *end, node *step, node *body);
+
+    void print(void);
+};
+
+/* ======================= SUBROUTINE DEF NODES =======================  */
+/* Representation of routine definitions. */
+class node_RoutineDef : public node {
+  protected:
+    string id;
+    node *args;
+    node *ret;
+    node *body;
+
+  public:
+    node_RoutineDef(string id, node *args, node *ret, node *body);
+
+    void print(void);
+};
+
+class node_RoutArgsDef : public node {
+  protected:
+    node *head;
+    node *type;
+    bool ref;
+    string id;
+    node *rvalue;
+
+  public:
+    node_RoutArgsDef(node *head, node *type, bool ref, string id, node *rvalue);
+
+    void print(void);
+};
+
+/* Representacion of  -> Actions Action */
+class node_Actions : public node {
+  protected:
+    node *head;
+    node *inst;
+
+  public:
+    node_Actions(node *head, node *inst);
+
+    void print(void);
+};
+
+/* ======================= INSTRUCTION NODES =======================  */
+class node_Assign : public node {
+  protected:
+    node *lvalue;
+    node *rvalue;
+
+  public:
+    node_Assign(node *lvalue, node *rvalue);
+
+    void print(void);
+};
 
 /* Representacion of  -> I Inst */
 class node_I : public node {
   protected:
+    node *head;
     node *inst;
-    node *next;
 
   public:
-    node_I(node *inst, node *next = NULL);
+    node_I(node *head, node *inst);
 
     void print(void);
 };

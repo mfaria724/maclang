@@ -73,7 +73,6 @@
 "then"                    { return THEN; }
 "elsif"                   { return ELSIF; }
 "else"                    { return ELSE; }
-"end"                     { return END; }
 "while"                   { return WHILE; }
 "do"                      { return DO; }
 "done"                    { return DONE; }

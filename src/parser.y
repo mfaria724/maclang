@@ -76,7 +76,6 @@
 %token THEN
 %token ELSIF
 %token ELSE
-%token END
 %token WHILE
 %token DO
 %token DONE
@@ -97,9 +96,14 @@
 %token <str>      LESS_EQUAL_THAN GREATER_THAN LESS_THAN PLUS MINUS 
 %token <str>      MODULE DIV ASTERISK
 
-%type <ast> I Inst Action VarInst VarDef VarDefBody OptAssign Type 
-%type <ast> LValue Exp Array ArrayExp ArrayElems
-%type <nS> S
+%type <ast>     I Inst Action VarInst VarDef OptAssign Type OptReturn
+%type <ast>     LValue Exp Array ArrExp ArrElems FuncCall ArgsExp
+%type <ast>     Args RValue Assign UnionDef UnionBody Def RegDef
+%type <ast>     RegBody Conditional OptElsif Elsifs OptElse 
+%type <ast>     LoopWhile LoopFor OptStep RutineDef RutineArgs ArgsDef 
+%type <ast>     Actions 
+%type <boolean> OptRef
+%type <nS>      S
 
 %% 
 
@@ -107,35 +111,33 @@
 S       : I                   { $$ = new node_S($1); $$->print();  }
         | /* lambda */        { $$ = NULL; }
         ;
-I       : Inst                { $$ = new node_I($1); }
+I       : Inst                { $$ = new node_I(NULL, $1); }
         | I Inst              { $$ = new node_I($1, $2); }
         ;
 Inst    : Action              { $$ = $1; }
-				| Def                 { ; }
+				| Def                 { $$ = $1; }
         ;
 Action  : VarInst SEMICOLON   { $$ = $1; }
-				| FuncCall SEMICOLON  { ; }
-				| Conditional         { ; }
-				| LoopWhile           { ; }
-				| LoopFor             { ; }
+				| FuncCall SEMICOLON  { $$ = $1; ((node_FunctionCall*) $$)->set_end_inst(); }
+				| Conditional         { $$ = $1; }
+				| LoopWhile           { $$ = $1; }
+				| LoopFor             { $$ = $1; }
         ;
-Def     : UnionDef            { ; }
-				| RegisterDef         { ; }
-				| RutineDef           { ; }
+Def     : UnionDef            { $$ = $1; }
+				| RegDef         { $$ = $1; }
+				| RutineDef           { $$ = $1; }
         ;
 
 /* ============ VARIABLES DEFINITION ============ */
 VarInst     : VarDef                    { $$ = $1; }
-						| Assign                    { ; }
+						| Assign                    { $$ = $1; }
             ;
-VarDef      : LET VarDefBody            { $$ = $2; }  
-            ;
-VarDefBody  : Type ID OptAssign         { $$ = new node_VarDef($1, $2, $3); }
+VarDef      : LET Type ID OptAssign     { $$ = new node_VarDef($2, $3, $4); }
             ;   
 OptAssign   : /* lambda */              { $$ = NULL; }
-						| ASSIGNMENT RValue         { ; }
+						| ASSIGNMENT RValue         { $$ = $2; }
             ;
-Assign      : LValue ASSIGNMENT RValue  { ; }
+Assign      : LValue ASSIGNMENT RValue  { $$ = new node_Assign($1, $3); }
             ;
 RValue      : Exp                       { $$ = $1; }
             | Array                     { $$ = $1; }
@@ -182,7 +184,7 @@ Exp   : Exp EQUIV Exp               { $$ = new node_BinaryOperator($1, $2, $3); 
       | Exp POWER Exp               { $$ = new node_BinaryOperator($1, $2, $3); }
       | OPEN_PAR Exp CLOSE_PAR      { $$ = $2; }
       | LValue                      { $$ = $1; }
-      | FuncCall                    { ; }
+      | FuncCall                    { $$ = $1; }
       | TRUE                        { $$ = new node_BOOL(true); }
       | FALSE                       { $$ = new node_BOOL(false); }
       | CHAR                        { $$ = new node_CHAR($1); }
@@ -197,87 +199,113 @@ ArrExp    : /* lambda */                        { $$ = NULL; }
 					| ArrElems RValue                     { $$ = new node_ArrayElems($1, $2); }
           ;
 ArrElems	: /* lambda */                        { $$ = NULL; }
-					| ArrElems RValue COMMA               { $$ = new node_ArrayElems($1, $2)}
+					| ArrElems RValue COMMA               { $$ = new node_ArrayElems($1, $2); }
           ;
 
 /* ================= FUNCTION CALLS ================= */
-FuncCall  : ID OPEN_PAR ArgsExp CLOSE_PAR   { ; }
+FuncCall  : ID OPEN_PAR ArgsExp CLOSE_PAR   { $$ = new node_FunctionCall($1, $3, false); }
           ;
-ArgsExp   : /* lambda */
-					| Args RValue                     { ; }
+ArgsExp   : /* lambda */                    { $$ = NULL; }
+					| Args RValue                     { $$ = new node_FunctionCallArgs($1, $2); }
           ;
-Args      : /* lambda */ 
-					| Args RValue COMMA               { ; }
+Args      : /* lambda */                    { $$ = NULL; }
+					| Args RValue COMMA               { $$ = new node_FunctionCallArgs($1, $2); }
           ;
 
 /* ================= UNION DEFINITION ================= */
-UnionDef  : UNION ID OPEN_C_BRACE UnionBody CLOSE_C_BRACE   { ; }
+UnionDef  : UNION ID OPEN_C_BRACE UnionBody CLOSE_C_BRACE   { $$ = new node_UnionDef($2, $4); }
           ; 
-UnionBody	: Type ID SEMICOLON                               { ; }
-					| UnionBody Type ID SEMICOLON                     { ; }
+UnionBody	: Type ID SEMICOLON                               { 
+                                                              $$ = new node_UnionFields(
+                                                                NULL,
+                                                                new node_VarDef($1, $2, NULL)
+                                                              ); 
+                                                            }
+					| UnionBody Type ID SEMICOLON                     { 
+                                                              $$ = new node_UnionFields(
+                                                                $1,
+                                                                new node_VarDef($2, $3, NULL)
+                                                              ); 
+                                                            }
           ;
 
 /* ================ REGISTER DEFINITION ================ */
-RegisterDef   : REGISTER ID OPEN_C_BRACE RegisterBody CLOSE_C_BRACE   { ; }
-              ;
-RegisterBody	: VarDefBody SEMICOLON                                      { ; }
-							|	RegisterBody VarDefBody SEMICOLON                         { ; }
-              ;
+RegDef  : REGISTER ID OPEN_C_BRACE RegBody 
+          CLOSE_C_BRACE                        { $$ = new node_RegDef($2, $4); }
+        ;
+RegBody	: Type ID OptAssign SEMICOLON          { $$ = new node_RegFields(NULL, $1, $2, $3); }
+				|	RegBody Type ID OptAssign SEMICOLON  { $$ = new node_RegFields($1, $2, $3, $4); }
+        ;
+
+
 
 /* ===================== CONDITIONALS ===================== */
-Conditional : IF Exp THEN I OptElsif OptElse END   { ; }
+Conditional : IF Exp THEN I OptElsif OptElse DONE   { $$ = new node_Conditional($2, $4, $5, $6); }
             ;
-OptElsif    : /* lambda */ 
-						| Elsifs                                { ; }
+OptElsif    : /* lambda */                          { $$ = NULL; }
+						| Elsifs                                { $$ = $1; }
             ;
-Elsifs      : ELSIF Exp THEN I                     { ; }
-						| Elsifs ELSIF Exp THEN I              { ; }
+Elsifs      : ELSIF Exp THEN I                      { $$ = new node_Elsif(NULL, $2, $4); }
+						| Elsifs ELSIF Exp THEN I               { $$ = new node_Elsif($1, $3, $5); }
             ;
-OptElse     : /* lambda */ 
-						| ELSE I                                { ; }
+OptElse     : /* lambda */                          { $$ = NULL; }
+						| ELSE I                                { $$ = new node_Else($2); }
             ;
 
 /* ======================== LOOPS ======================== */
-LoopWhile : WHILE Exp DO I DONE                                            { ; }
+LoopWhile : WHILE Exp DO I DONE                       { $$ = new node_While($2, $4); }
           ; 
-LoopFor   : FOR OPEN_PAR ID SEMICOLON Exp SEMICOLON 
-            Exp OptStep CLOSE_PAR DO I DONE   { ; }
+LoopFor   : FOR OPEN_PAR ID SEMICOLON Exp SEMICOLON   
+            Exp OptStep CLOSE_PAR DO I DONE           { $$ = new node_For($3, $5, $7, $8, $11); }
           ;
-OptStep   : /* lambda */ 
-				  | SEMICOLON Exp                                                  { ; }
+OptStep   : /* lambda */                              { $$ = NULL; }
+				  | SEMICOLON Exp                             { $$ = $2; }
           ;
 
 /* =============== SUBROUTINES DEFINITION =============== */
-RutineDef   : DEF ID OPEN_PAR RutineArgs CLOSE_PAR 
-              OptReturn OPEN_C_BRACE Actions CLOSE_C_BRACE { ; }
+RutineDef   : DEF ID OPEN_PAR RutineArgs CLOSE_PAR OptReturn 
+              OPEN_C_BRACE Actions CLOSE_C_BRACE            { 
+                                                              $$ = new node_RoutineDef(
+                                                                $2, $4, $6, $8
+                                                              ); 
+                                                            }
             ; 
-RutineArgs  : /* lambda */ 
-						| ArgsDef                                                      { ; }
+RutineArgs  : /* lambda */                                  { $$ = NULL; }
+						| ArgsDef                                       { $$ = $1; }
             ;
-ArgsDef     : Type OptRef ID OptAssign                                     { ; }
-						| ArgsDef Type OptRef ID OptAssign                             { ; }
+ArgsDef     : Type OptRef ID OptAssign                      { 
+                                                              $$ = new node_RoutArgsDef(
+                                                                NULL, $1, $2, $3, $4
+                                                              ); 
+                                                            }
+						| ArgsDef COMMA Type OptRef ID OptAssign        { 
+                                                              $$ = new node_RoutArgsDef(
+                                                                $1, $3, $4, $5, $6
+                                                              ); 
+                                                            }
             ;
-OptRef      : /* lambda */
-						| AT                                                           { ; }
+OptRef      : /* lambda */                                  { $$ = false; }
+						| AT                                            { $$ = true; }
             ;
-OptReturn   : /* lambda */ 
-						| RIGHT_ARROW Type                                             { ; }
+OptReturn   : /* lambda */                                  { $$ = NULL; }
+						| RIGHT_ARROW Type                              { $$ = $2; }
             ;
-Actions     : Action                                                       { ; }
-						| Actions Action                                               { ; }
+Actions     : /* lambda */                                  { $$ = NULL; }
+						| Actions Action                                { $$ = new node_Actions($1, $2); }
             ;
 
 %%
 
 int main(int argc, char **argv)
 {
+  
   // Look for input line
   if(argc != 2) 
   {
     cout << "No input file" << endl;
     return -1;
   }
-
+  
   // open file to extract the tokens
   extern FILE *yyin;
   yyin = fopen(argv[1], "r");
