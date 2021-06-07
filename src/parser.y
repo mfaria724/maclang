@@ -1,8 +1,8 @@
 %{
   #include <iostream>
   #include <queue>
-  #include <cstring>
   #include <string>
+  #include <cstring>
   #include "ast.hpp"
 
   using namespace std;
@@ -16,7 +16,7 @@
   extern queue<string> errors;
 
   // Prints error;
-  void yyerror(char *s);
+  void yyerror(string s);
 
   // Prints the queue to std.
   void printQueue(queue<string> queueToPrint);
@@ -341,7 +341,7 @@ int main(int argc, char **argv)
 /*
   Prints error.
 */
-void yyerror(char *s)
+void yyerror(string s)
 {
   fprintf(stderr, "error: %s (%d,%d)\n", s, yylineno, yycolumn);
 }
