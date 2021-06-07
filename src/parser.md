@@ -2,6 +2,7 @@
 
 ## Dependencies
 * flex *(2.6.4)*
+* bison *(3.3.2)*
 * g++ *(8.3.0)*
 
 ## How to run it

@@ -31,6 +31,7 @@ register registro {
 
 def myfunc(^(^Bool[5]) @ khe, Bool ok) => Int {
   for (i; -100; 0++100; 4) do 
+    let ^Int a = new Int;
     x = x + 1;
     if (x > 0) then 
       x = x * 2;
@@ -43,4 +44,6 @@ def myfunc(^(^Bool[5]) @ khe, Bool ok) => Int {
     while i < 100 do i = i+++1; done
   done
 }
+
+myfunc([0,[0,[0]]], new Bool);
 

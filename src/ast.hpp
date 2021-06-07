@@ -91,6 +91,29 @@ class node_UnaryOperator : public node {
     void print(void);
 };
 
+/* ======================= HEAP NODES =======================  */
+/* Representation of  -> new Type. */
+class node_New : public node {
+  protected:
+    node *type;
+
+  public:
+    node_New(node *type);
+
+    void print(void);
+};
+
+/* Representation of  -> forget Type. */
+class node_Forget : public node {
+  protected:
+    node *lvalue;
+
+  public:
+    node_Forget(node *lvalue);
+
+    void print(void);
+};
+
 /* ======================= TYPEDEF NODES =======================  */
 /* Class for defined types. */
 class node_TypePrimitiveDef : public node {
@@ -229,11 +252,11 @@ class node_FunctionCall : public node {
 /* Representation of  ->  RValue , FuncArgs. */
 class node_FunctionCallArgs : public node {
   protected:
-    node *rvalue;
     node *head;
+    node *rvalue;
 
   public:
-    node_FunctionCallArgs(node *rvalue, node *head = NULL);
+    node_FunctionCallArgs(node *head, node *rvalue);
 
     void print(void);
 };

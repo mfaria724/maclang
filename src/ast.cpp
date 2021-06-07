@@ -67,6 +67,25 @@ void node_UnaryOperator::print(void) {
   cout << ")";
 }
 
+/* ======================= HEAP NODES =======================  */
+node_New::node_New(node *type) {
+  this->type = type;
+}
+
+void node_New::print(void) {
+  cout << "new ";
+  this->type->print();
+}
+
+node_Forget::node_Forget(node *lvalue) {
+  this->lvalue = lvalue;
+}
+
+void node_Forget::print(void) {
+  cout << "forget ";
+  this->lvalue->print();
+}
+
 /* ======================= TYPEDEF NODES =======================  */
 node_TypePrimitiveDef::node_TypePrimitiveDef(string id) {
   this->id = id;
@@ -207,9 +226,9 @@ void node_FunctionCall::set_end_inst(void) {
   this->end_inst = true;
 }
 
-node_FunctionCallArgs::node_FunctionCallArgs(node *rvalue, node *head) {
-  this->rvalue = rvalue;
+node_FunctionCallArgs::node_FunctionCallArgs(node *head, node *rvalue) {
   this->head = head;
+  this->rvalue = rvalue;
 }
 
 void node_FunctionCallArgs::print(void) {

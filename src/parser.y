@@ -139,6 +139,8 @@ Assign      : LValue ASSIGNMENT RValue  { $$ = new node_Assign($1, $3); }
 RValue      : Exp                       { $$ = $1; }
             | Array                     { $$ = $1; }
             | STRING                    { $$ = new node_STRING($1); }
+            | NEW Type                  { $$ = new node_New($2); }
+            | FORGET LValue             { $$ = new node_Forget($2); }
             ;
 
 /* ======================== TYPES ======================== */
