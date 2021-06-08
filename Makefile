@@ -1,21 +1,17 @@
-SRC=./src/
+LEXER   = flex 
+PARSER  = bison
+POPT    = -d
+CXX     = g++
+COPT    = -g
 
-default: parser.y lexer.l ast.cpp
-	bison -d parser.y 
-	flex lexer.l 
-	g++ ast.cpp parser.tab.c lex.yy.c -g -o bin/parser.out
+default:
+	(cd src && \
+	$(PARSER) $(POPT) parser.y && \
+	$(LEXER) lexer.l && \
+	$(CXX) $(OPT) ast.cpp parser.tab.c lex.yy.c -o parser.out) || \
+	(echo -e "\n\e[1;31mError. \e[0mCompilation termined." && exit 1)
 	make clean
-
-parser.y:
-	cp src/parser.* .
-
-lexer.l:
-	cp src/lexer.* .
-
-ast.cpp:
-	cp src/ast.* .
-
-
+	echo -e "\n\e[1;36mCompilation successfully.\e[0m"
 
 clean:
-	rm *.c *.h *.cpp *.hpp *.l *.y
+	rm src/*.c src/*.h
