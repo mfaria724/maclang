@@ -9,9 +9,9 @@ ${
 # tipos primitivos
 let Int i;          # Entero inicializado pero sin valor asignado.
 let Int j = 1;      # Entero inicializado y con valor asignado.
-let Char c = '1'';   # Caracter
+let Char c = '1';   # Caracter
 let Bool b;         # Booleano
-let Float f = 1.0;  # Flotante
+let Float f = 1.5;  # Flotante
 
 # tipos complejos
 ## arreglos

@@ -319,7 +319,7 @@ void node_Conditional::print(void) {
   if (this->else_def != NULL) {
     this->else_def->print();
   }
-  cout << "end\n";
+  cout << "done\n";
 }
 
 node_Elsif::node_Elsif(node *head, node *cond, node *body) {
@@ -364,7 +364,7 @@ void node_While::print(void) {
   if (this->body != NULL) {
     this->body->print();
   }
-  cout << "end\n";
+  cout << "done\n";
 }
 
 node_For::node_For(string iter, node *begin, node *end, node *step, node *body) {
