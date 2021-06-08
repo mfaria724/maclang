@@ -43,6 +43,9 @@ def myfunc(^(^Bool[5]) @ khe, Bool ok) => Int {
 
     while i < 100 do i = i+++1; done
   done
+
+  let ^Int a =  new Int;
+  forget a;
 }
 
 myfunc([0,[0,[0]]], new Bool);

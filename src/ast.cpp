@@ -84,6 +84,7 @@ node_Forget::node_Forget(node *lvalue) {
 void node_Forget::print(void) {
   cout << "forget ";
   this->lvalue->print();
+  cout << ";\n";
 }
 
 /* ======================= TYPEDEF NODES =======================  */

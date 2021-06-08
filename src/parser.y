@@ -130,6 +130,7 @@ Def     : UnionDef            { $$ = $1; }
 /* ============ VARIABLES DEFINITION ============ */
 VarInst     : VarDef                    { $$ = $1; }
 						| Assign                    { $$ = $1; }
+            | FORGET LValue             { $$ = new node_Forget($2); }
             ;
 VarDef      : LET Type ID OptAssign     { $$ = new node_VarDef($2, $3, $4); }
             ;   
@@ -142,7 +143,6 @@ RValue      : Exp                       { $$ = $1; }
             | Array                     { $$ = $1; }
             | STRING                    { $$ = new node_STRING($1); }
             | NEW Type                  { $$ = new node_New($2); }
-            | FORGET LValue             { $$ = new node_Forget($2); }
             ;
 
 /* ======================== TYPES ======================== */
