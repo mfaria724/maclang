@@ -102,6 +102,8 @@
 %type <boolean> OptRef
 %type <nS>      S
 
+%expect 1
+
 %% 
 
 /* =================== GLOBAL RULES =================== */
