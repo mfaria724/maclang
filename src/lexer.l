@@ -14,6 +14,8 @@
 
   // queues for tokens and errors
   queue<string> errors;
+  char *filename;
+  string line = "";
   
   // count rows and columns to identify errors
   int yycolumn = 1;
@@ -87,7 +89,6 @@
 [[:digit:]][[:alnum:]_]*  { 
                             /* add error to queue */
                             pushError(); 
-                            return ERROR;
                           }
 [\t]                      { yycolumn++; /* ignore tab */ }
 [ ]                       { /* ignore whitespace */ }
@@ -97,7 +98,6 @@
 .                         { 
                             /* add error to queue */
                             pushError(); 
-                            return ERROR;
                           }
                             
                           
@@ -108,9 +108,13 @@
 */
 void pushError() {
   // duplicate the value of yytext
-  string temp = strdup(yytext);
+  string token = strdup(yytext);
+  string file = strdup(filename);
+
+  string error = "\e[1m" + file + " (" + to_string(yylineno) + ", " + 
+    to_string(yycolumn - yyleng) + "): \e[31merror:\e[0m Unexpected " +
+    "token \"" + token + "\".\n\n";
 
   // add the error to the queue
-  errors.push("Unexpected token " + temp + " at position " + "[" + 
-              to_string(yylineno) + "," + to_string(yycolumn - yyleng) + "]. \n");
+  errors.push(error);
 }

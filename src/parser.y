@@ -11,6 +11,7 @@
   extern int yylineno;
   extern int yycolumn;
   extern char *yytext;
+  extern char *filename;
 
   // queues for tokens and errors
   extern queue<string> errors;
@@ -81,7 +82,6 @@
 %token DEF
 %token AT
 %token RIGHT_ARROW
-%token ERROR
 
 %token <integer>  INT
 %token <flot>     FLOAT
@@ -299,7 +299,7 @@ Actions     : /* lambda */                                  { $$ = NULL; }
 
 int main(int argc, char **argv)
 {
-  
+  filename = argv[1];
   // Look for input line
   if(argc != 2) 
   {
@@ -309,7 +309,7 @@ int main(int argc, char **argv)
   
   // open file to extract the tokens
   extern FILE *yyin;
-  yyin = fopen(argv[1], "r");
+  yyin = fopen(filename, "r");
     
   // check if file was succesfully opened.
   if (!yyin) 
@@ -323,7 +323,7 @@ int main(int argc, char **argv)
   while(tok = yylex());
 
   fclose(yyin);
-  yyin = fopen(argv[1], "r");
+  yyin = fopen(filename, "r");
 
   // if there are no errors, apply parsing
   if (errors.empty()) {
