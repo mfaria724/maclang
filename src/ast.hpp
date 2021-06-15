@@ -1,4 +1,5 @@
 #include <string>
+#include <vector>
 #include <iostream>
 
 using namespace std;
@@ -12,6 +13,8 @@ class node {
     node() {};
     // Print a node representation.
     virtual void print(void) { };
+    // Print a tree representation of the sub-ast.
+    virtual void print_tree(vector<bool> *identation) { };
 };
 
 /* ======================= DATA NODES =======================  */
@@ -23,6 +26,8 @@ class node_BOOL : public node {
     node_BOOL(bool value);
 
     void print(void);
+
+    void print_tree(vector<bool> *identation);
 };
 
 class node_CHAR : public node {
@@ -33,6 +38,8 @@ class node_CHAR : public node {
     node_CHAR(char value);
 
     void print(void);
+
+    void print_tree(vector<bool> *identation);
 };
 
 class node_INT : public node {
@@ -43,6 +50,8 @@ class node_INT : public node {
     node_INT(int value);
 
     void print(void);
+
+    void print_tree(vector<bool> *identation);
 };
 
 class node_FLOAT : public node {
@@ -53,6 +62,8 @@ class node_FLOAT : public node {
     node_FLOAT(float value);
 
     void print(void);
+
+    void print_tree(vector<bool> *identation);
 };
 
 class node_STRING : public node {
@@ -63,6 +74,8 @@ class node_STRING : public node {
     node_STRING(string value);
 
     void print(void);
+
+    void print_tree(vector<bool> *identation);
 };
 
 /* ======================= EXPRESSION NODES =======================  */
@@ -77,6 +90,8 @@ class node_BinaryOperator : public node {
     node_BinaryOperator(node *left, string op, node *rigth);
 
     void print(void);
+
+    // void print_tree(vector<bool> *identation);
 };
 
 /* Representation of unary operations. */
@@ -89,6 +104,8 @@ class node_UnaryOperator : public node {
     node_UnaryOperator(string op, node *exp);
 
     void print(void);
+
+    // void print_tree(vector<bool> *identation);
 };
 
 /* ======================= HEAP NODES =======================  */
@@ -101,6 +118,8 @@ class node_New : public node {
     node_New(node *type);
 
     void print(void);
+
+    // void print_tree(vector<bool> *identation);
 };
 
 /* Representation of  -> forget Type. */
@@ -112,6 +131,8 @@ class node_Forget : public node {
     node_Forget(node *lvalue);
 
     void print(void);
+
+    // void print_tree(vector<bool> *identation);
 };
 
 /* ======================= TYPEDEF NODES =======================  */
@@ -124,6 +145,8 @@ class node_TypePrimitiveDef : public node {
     node_TypePrimitiveDef(string id);
 
     void print(void);
+
+    void print_tree(vector<bool> *identation);
 };
 
 /* Representation of  -> ^ Type. */
@@ -135,6 +158,8 @@ class node_TypePointerDef : public node {
     node_TypePointerDef(node *type);
 
     void print(void);
+
+    void print_tree(vector<bool> *identation);
 };
 
 /* Representation of  -> Type [ Exp ]. */
@@ -147,6 +172,8 @@ class node_TypeArrayDef : public node {
     node_TypeArrayDef(node *type, node *size);
 
     void print(void);
+
+    // void print_tree(vector<bool> *identation);
 };
 
 /* Representation of  -> Type ID = RValue. */
@@ -160,6 +187,8 @@ class node_VarDef : public node {
     node_VarDef(node *type, string id, node *rvalue = NULL);
 
     void print(void);
+
+    void print_tree(vector<bool> *identation);
 };
 
 /* ======================= LVALUE NODES =======================  */
@@ -172,6 +201,8 @@ class node_IDLValue : public node {
     node_IDLValue(string id);
 
     void print(void);
+
+    // void print_tree(vector<bool> *identation);
 };
 
 /* Representation of  -> LValue . ID. */
@@ -184,6 +215,8 @@ class node_DotLValue : public node {
     node_DotLValue(node *lvalue, string id);
 
     void print(void);
+
+    // void print_tree(vector<bool> *identation);
 };
 
 /* Representation of  -> ^ LValue. */
@@ -195,6 +228,8 @@ class node_PointerLValue : public node {
     node_PointerLValue(node *lvalue);
 
     void print(void);
+
+    // void print_tree(vector<bool> *identation);
 };
 
 /* Representation of  -> LValue [ Exp ]. */
@@ -207,6 +242,8 @@ class node_ArrayLValue : public node {
     node_ArrayLValue(node *lvalue, node *size);
 
     void print(void);
+
+    // void print_tree(vector<bool> *identation);
 };
 
 /* ======================= ARRAY NODES =======================  */
@@ -219,6 +256,8 @@ class node_Array : public node {
     node_Array(node *elems);
 
     void print(void);
+
+    // void print_tree(vector<bool> *identation);
 };
 
 /* Representation of  ->  RValue , ArrElems. */
@@ -231,6 +270,8 @@ class node_ArrayElems : public node {
     node_ArrayElems(node *rvalue, node *head = NULL);
 
     void print(void);
+
+    // void print_tree(vector<bool> *identation);
 };
 
 /* ======================= FUNCTION CALL NODES ======================= */
@@ -246,6 +287,8 @@ class node_FunctionCall : public node {
 
     void print(void);
 
+    // void print_tree(vector<bool> *identation);
+
     void set_end_inst(void);
 };
 
@@ -259,6 +302,8 @@ class node_FunctionCallArgs : public node {
     node_FunctionCallArgs(node *head, node *rvalue);
 
     void print(void);
+
+    // void print_tree(vector<bool> *identation);
 };
 
 /* ======================= UNION DEF NODES ======================= */
@@ -272,6 +317,8 @@ class node_UnionDef : public node {
     node_UnionDef(string id, node *fields);
 
     void print(void);
+
+    // void print_tree(vector<bool> *identation);
 };
 
 /* Representation of  -> UnionBody Type ID ;  */
@@ -284,6 +331,8 @@ class node_UnionFields : public node {
     node_UnionFields(node *head, node *field);
 
     void print(void);
+
+    // void print_tree(vector<bool> *identation);
 };
 
 /* ======================= REGISTER DEF NODES ======================= */
@@ -297,6 +346,8 @@ class node_RegDef : public node {
     node_RegDef(string id, node *fields);
 
     void print(void);
+
+    // void print_tree(vector<bool> *identation);
 };
 
 /* Representation of  -> RegisterBody VarDefBody;  */
@@ -311,6 +362,8 @@ class node_RegFields : public node {
     node_RegFields(node *head, node *type, string id, node *rvalue);
 
     void print(void);
+
+    // void print_tree(vector<bool> *identation);
 };
 
 /* ======================= CONDITIONAL DEF NODES ======================= */
@@ -326,6 +379,8 @@ class node_Conditional : public node {
     node_Conditional(node *cond, node *body, node *elsifs, node *else_def);
 
     void print(void);
+
+    // void print_tree(vector<bool> *identation);
 };
 
 /* Representation of  -> Elsifs elsif Exp then I. */
@@ -339,6 +394,8 @@ class node_Elsif : public node {
     node_Elsif(node *head, node *cond, node *body);
 
     void print(void);
+
+    // void print_tree(vector<bool> *identation);
 };
 
 /* Representation of  -> else I. */
@@ -350,6 +407,8 @@ class node_Else : public node {
     node_Else(node *body);
 
     void print(void);
+
+    // void print_tree(vector<bool> *identation);
 };
 
 /* ======================= LOOP NODES =======================  */
@@ -363,6 +422,8 @@ class node_While : public node {
     node_While(node *cond, node *body);
 
     void print(void);
+
+    // void print_tree(vector<bool> *identation);
 };
 
 /* Representation of for blocks. */
@@ -378,6 +439,8 @@ class node_For : public node {
     node_For(string iter, node *begin, node *end, node *step, node *body);
 
     void print(void);
+
+    // void print_tree(vector<bool> *identation);
 };
 
 /* ======================= SUBROUTINE DEF NODES =======================  */
@@ -393,6 +456,8 @@ class node_RoutineDef : public node {
     node_RoutineDef(string id, node *args, node *ret, node *body);
 
     void print(void);
+
+    // void print_tree(vector<bool> *identation);
 };
 
 class node_RoutArgs : public node {
@@ -404,6 +469,8 @@ class node_RoutArgs : public node {
     node_RoutArgs(node *obl_args, node *opt_args);
 
     void print(void);
+
+    // void print_tree(vector<bool> *identation);
 };
 
 class node_RoutArgDef : public node {
@@ -418,6 +485,8 @@ class node_RoutArgDef : public node {
     node_RoutArgDef(node *head, node *type, bool ref, string id, node *rvalue);
 
     void print(void);
+
+    // void print_tree(vector<bool> *identation);
 };
 
 /* Representacion of  -> Actions Action */
@@ -430,6 +499,8 @@ class node_Actions : public node {
     node_Actions(node *head, node *inst);
 
     void print(void);
+
+    // void print_tree(vector<bool> *identation);
 };
 
 /* ======================= INSTRUCTION NODES =======================  */
@@ -442,6 +513,8 @@ class node_Assign : public node {
     node_Assign(node *lvalue, node *rvalue);
 
     void print(void);
+
+    // void print_tree(vector<bool> *identation);
 };
 
 /* Representacion of  -> I Inst */
@@ -454,6 +527,8 @@ class node_I : public node {
     node_I(node *head, node *inst);
 
     void print(void);
+
+    void print_tree(vector<bool> *identation);
 };
 
 /* Root node. */
@@ -465,4 +540,6 @@ class node_S {
     node_S(node *inst);
 
     void print(void);
+
+    void print_tree(vector<bool> *identation);
 };

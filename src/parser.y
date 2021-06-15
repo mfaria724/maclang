@@ -107,7 +107,7 @@
 %% 
 
 /* =================== GLOBAL RULES =================== */
-S       : I                   { $$ = new node_S($1); $$->print();  }
+S       : I                   { $$ = new node_S($1); $$->print_tree(NULL);  }
         | /* lambda */        { $$ = NULL; }
         ;
 I       : Inst                { $$ = new node_I(NULL, $1); }

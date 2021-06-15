@@ -1,5 +1,14 @@
 #include "ast.hpp"
 
+/* ======================= AUXILIARY FUNCTIONS =======================  */
+void print_identation(vector<bool> *identation) {
+  for (bool b : *identation) {
+    if (b) cout << "│";
+    else cout << " ";
+    cout << "   ";
+  }
+}
+
 /* ======================= DATA NODES =======================  */
 node_BOOL::node_BOOL(bool value) {
   this->value = value;
@@ -7,6 +16,10 @@ node_BOOL::node_BOOL(bool value) {
 
 void node_BOOL::print(void) {
   cout << this->value;
+}
+
+void node_BOOL::print_tree(vector<bool> *identation) {
+  cout << "BOOL: " << this->value << "\n";
 }
 
 node_CHAR::node_CHAR(char value) {
@@ -17,12 +30,20 @@ void node_CHAR::print(void) {
   cout << "'" << this->value << "'";
 }
 
+void node_CHAR::print_tree(vector<bool> *identation) {
+  cout << "CHAR: " << this->value << "\n";
+}
+
 node_INT::node_INT(int value) {
   this->value = value;
 }
 
 void node_INT::print(void) {
   cout << this->value;
+}
+
+void node_INT::print_tree(vector<bool> *identation) {
+  cout << "INT: " << this->value << "\n";
 }
 
 node_FLOAT::node_FLOAT(float value) {
@@ -33,12 +54,20 @@ void node_FLOAT::print(void) {
   cout << this->value;
 }
 
+void node_FLOAT::print_tree(vector<bool> *identation) {
+  cout << "FLOAT: " << this->value << "\n";
+}
+
 node_STRING::node_STRING(string value) {
   this->value = value;
 }
 
 void node_STRING::print(void) {
   cout << this->value;
+}
+
+void node_STRING::print_tree(vector<bool> *identation) {
+  cout << "STRING: " << this->value << "\n";
 }
 
 /* ======================= EXPRESSION NODES =======================  */
@@ -96,6 +125,10 @@ void node_TypePrimitiveDef::print(void) {
   cout << this->id;
 }
 
+void node_TypePrimitiveDef::print_tree(vector<bool> *identation) {
+  cout << "Primitive Type: " << this->id << "\n";
+}
+
 node_TypePointerDef::node_TypePointerDef(node *type) {
   this->type = type;
 }
@@ -104,6 +137,19 @@ void node_TypePointerDef::print(void) {
   cout << "^(";
   this->type->print();
   cout << ")";
+}
+
+void node_TypePointerDef::print_tree(vector<bool> *identation) {
+  cout << "\e[1;34mType Pointer\e[0m\n";
+
+  print_identation(identation);
+  cout << "├── ^\n";
+
+  print_identation(identation);
+  identation->push_back(false);
+  cout << "└── ";
+  this->type->print_tree(identation);
+  identation->pop_back();
 }
 
 node_TypeArrayDef::node_TypeArrayDef(node *type, node *size) {
@@ -135,6 +181,37 @@ void node_VarDef::print(void) {
   } 
   cout << ";\n";
 }
+
+void node_VarDef::print_tree(vector<bool> *identation) {
+  cout << "\e[1;34mVariable Definition\e[0m\n";
+
+  print_identation(identation);
+  identation->push_back(true);
+  cout << "├── ";
+  this->type->print_tree(identation);
+  identation->pop_back();
+
+  if (this->rvalue != NULL) {
+    print_identation(identation);
+    identation->push_back(true);
+    cout << "├── ID: " << this->id << "\n";
+    identation->pop_back();
+
+    print_identation(identation);
+    identation->push_back(false);
+    cout << "└── ";
+    this->rvalue->print_tree(identation);
+    identation->pop_back();
+
+  } else {
+    print_identation(identation);
+    identation->push_back(true);
+    cout << "└── ID: " << this->id << "\n";
+    identation->pop_back();
+  }
+}
+
+
 
 /* ======================= LVALUE NODES =======================  */
 node_IDLValue::node_IDLValue(string id) {
@@ -495,6 +572,22 @@ void node_I::print(void) {
   this->inst->print();
 }
 
+void node_I::print_tree(vector<bool> *identation) {
+  cout << "\e[1;34mI\e[0m\n";
+  if (this->head != NULL) {
+    print_identation(identation);
+    identation->push_back(true);
+    cout << "├── ";
+    this->head->print_tree(identation);
+    identation->pop_back();
+  }
+  print_identation(identation);
+  identation->push_back(false);
+  cout << "└── ";
+  this->inst->print_tree(identation);
+  identation->pop_back();
+}
+
 node_S::node_S(node *inst) {
   this->inst = inst;
 }
@@ -502,5 +595,15 @@ node_S::node_S(node *inst) {
 void node_S::print(void) {
   if (this->inst != NULL) {
     this->inst->print();
+  }
+}
+
+void node_S::print_tree(vector<bool> *identation) {
+  cout << "\e[1;34mS\e[0m\n";
+  vector<bool> *new_identation = new vector<bool>;
+  new_identation->push_back(false);
+  if (this->inst != NULL) {
+    cout << "└── ";
+    this->inst->print_tree(new_identation);
   }
 }
