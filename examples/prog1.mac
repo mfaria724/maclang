@@ -9,7 +9,7 @@ ${
 # tipos primitivos
 let Int i;          # Entero inicializado pero sin valor asignado.
 let Int j = 1;      # Entero inicializado y con valor asignado.
-let Char c = '1';   # Caracter
+let Char c = 'A';   # Caracter
 let Bool b;         # Booleano
 let Float f = 1.5;  # Flotante
 let Int y = [x+1,3,x+5];

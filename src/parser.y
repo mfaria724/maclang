@@ -14,13 +14,82 @@
   extern char *filename;
 
   // queues for tokens and errors
+  queue<string> tokens;
   extern queue<string> errors;
+
+  // tokens names for readability of lexer
+  // extern string [] token_names;
 
   // Prints error;
   void yyerror(string s);
 
   // Prints the queue to std.
   void printQueue(queue<string> queueToPrint);
+
+  // main method for parsing.
+  int parser_main(int argc, char **argv);
+
+  // main method for lexing.
+  int lexer_main(int argc, char **argv);
+
+  // token names for readability on lexer
+  string token_names [] = {
+    "SEMICOLON",
+    "OPEN_PAR",
+    "CLOSE_PAR",
+    "ASSIGNMENT",
+    "OPEN_BRACKET",
+    "CLOSE_BRACKET",
+    "OPEN_C_BRACE",
+    "CLOSE_C_BRACE",
+    "COMMA",
+    "REGISTER",
+    "DOT",
+    "UNION",
+    "POINTER",
+    "NEW",
+    "FORGET",
+    "IF",
+    "THEN",
+    "ELSIF",
+    "ELSE",
+    "WHILE",
+    "DO",
+    "DONE",
+    "FOR",
+    "LET",
+    "DEF",
+    "AT",
+    "RIGHT_ARROW",
+    "INT",
+    "FLOAT",
+    "CHAR",
+    "STRING",
+    "ID",
+    "TRUE", 
+    "FALSE",
+    "T_UNIT",
+    "T_BOOL",
+    "T_CHAR",
+    "T_INT",
+    "T_FLOAT",
+    "T_STRING",
+    "POWER",
+    "AND",
+    "OR",
+    "NOT_EQUIV",
+    "NOT",
+    "EQUIV",
+    "GREATER_EQUAL_THAN",
+    "LESS_EQUAL_THAN",
+    "GREATER_THAN",
+    "LESS_THAN",
+    "PLUS",
+    "MINUS",
+    "MODULE", 
+    "DIV",
+    "ASTERISK"
+  };
 
   node* global;
 %}
@@ -55,56 +124,75 @@
 %left       OPEN_PAR
 
 
-%token SEMICOLON
-%token OPEN_PAR
-%token CLOSE_PAR
-%token ASSIGNMENT
-%token OPEN_BRACKET
-%token CLOSE_BRACKET
-%token OPEN_C_BRACE
-%token CLOSE_C_BRACE
-%token COMMA
-%token REGISTER
-%token DOT
-%token UNION
-%token POINTER
-%token NEW
-%token FORGET
-%token IF
-%token THEN
-%token ELSIF
-%token ELSE
-%token WHILE
-%token DO
-%token DONE
-%token FOR
-%token LET
-%token DEF
-%token AT
-%token RIGHT_ARROW
+%token SEMICOLON 1
+%token OPEN_PAR 2
+%token CLOSE_PAR 3
+%token ASSIGNMENT 4
+%token OPEN_BRACKET 5
+%token CLOSE_BRACKET 6
+%token OPEN_C_BRACE 7
+%token CLOSE_C_BRACE 8
+%token COMMA 9
+%token REGISTER 10
+%token DOT 11
+%token UNION 12
+%token POINTER 13
+%token NEW 14
+%token FORGET 15
+%token IF 16
+%token THEN 17
+%token ELSIF 18
+%token ELSE 19
+%token WHILE 20
+%token DO 21
+%token DONE 22
+%token FOR 23
+%token LET 24
+%token DEF 25
+%token AT 26
+%token RIGHT_ARROW 27
 
-%token <integer>  INT
-%token <flot>     FLOAT
-%token <ch>       CHAR
-%token <str>      STRING ID
-%token <boolean>  TRUE FALSE
-%token <str>      T_UNIT T_BOOL T_CHAR T_INT T_FLOAT T_STRING
-%token <str>      POWER AND OR NOT_EQUIV NOT EQUIV GREATER_EQUAL_THAN 
-%token <str>      LESS_EQUAL_THAN GREATER_THAN LESS_THAN PLUS MINUS 
-%token <str>      MODULE DIV ASTERISK
+%token <integer>  INT 28
+%token <flot>     FLOAT 29
+%token <ch>       CHAR 30
+%token <str>      STRING 31
+%token <str>      ID 32
+%token <boolean>  TRUE 33 
+%token <boolean>  FALSE 34
+%token <str>      T_UNIT 35
+%token <str>      T_BOOL 36
+%token <str>      T_CHAR 37
+%token <str>      T_INT 38
+%token <str>      T_FLOAT 39
+%token <str>      T_STRING 40
+%token <str>      POWER 41
+%token <str>      AND 42
+%token <str>      OR 43
+%token <str>      NOT_EQUIV 44
+%token <str>      NOT 45
+%token <str>      EQUIV 46
+%token <str>      GREATER_EQUAL_THAN 47
+%token <str>      LESS_EQUAL_THAN 48
+%token <str>      GREATER_THAN 49
+%token <str>      LESS_THAN 50
+%token <str>      PLUS 51
+%token <str>      MINUS 52
+%token <str>      MODULE 53 
+%token <str>      DIV 54
+%token <str>      ASTERISK 55
 
-%type <ast>     I Inst Action VarInst VarDef OptAssign Type OptReturn
-%type <ast>     LValue Exp Array ArrExp ArrElems FuncCall ArgsExp
-%type <ast>     Args RValue Assign UnionDef UnionBody Def RegDef
-%type <ast>     RegBody Conditional OptElsif Elsifs OptElse 
-%type <ast>     LoopWhile LoopFor OptStep RoutDef OptArgs OblArgs 
-%type <ast>     RoutArgs Actions 
-%type <boolean> OptRef
-%type <nS>      S
+%type <ast>       I Inst Action VarInst VarDef OptAssign Type OptReturn
+%type <ast>       LValue Exp Array ArrExp ArrElems FuncCall ArgsExp
+%type <ast>       Args RValue Assign UnionDef UnionBody Def RegDef
+%type <ast>       RegBody Conditional OptElsif Elsifs OptElse 
+%type <ast>       LoopWhile LoopFor OptStep RoutDef OptArgs OblArgs 
+%type <ast>       RoutArgs Actions 
+%type <boolean>   OptRef
+%type <nS>        S
 
 %expect 1
 
-%% 
+%%
 
 /* =================== GLOBAL RULES =================== */
 S       : I                   { $$ = new node_S($1); $$->print_tree(NULL);  }
@@ -228,7 +316,7 @@ UnionBody	: Type ID SEMICOLON                               {
                                                                 new node_VarDef($2, $3, NULL)
                                                               ); 
                                                             }
-          ;
+        ;
 
 /* ================ REGISTER DEFINITION ================ */
 RegDef  : REGISTER ID OPEN_C_BRACE RegBody 
@@ -313,9 +401,24 @@ Actions   : /* lambda */                                    { $$ = NULL; }
 
 int main(int argc, char **argv)
 {
-  filename = argv[1];
+  // Verify all arguments has been passed
+  if (argc < 3) {
+    cout << "Usage: parser.out METHOD FILE" << endl;
+    cout << "Available Methods: parse, lex" << endl;
+    return 0;
+  } 
+  
+  // Check if provided method is valid
+  if (strcmp(argv[1], "lex") != 0 && strcmp(argv[1], "parse") != 0) {
+    cout << "Invalid method: " << argv[1] << endl;
+    return 0;
+  }
+
+  // lexing
+  filename = argv[2];
+  
   // Look for input line
-  if(argc != 2) 
+  if(argc != 3) 
   {
     cout << "No input file" << endl;
     return -1;
@@ -334,9 +437,49 @@ int main(int argc, char **argv)
 
   // apply lexing
   int tok;
-  while(tok = yylex());
+  while(tok = yylex())
+  {
+    // if token can have multiple values, also print the value of the token
+    switch(tok) {
+      case INT:
+        tokens.push("\e[0;33m" + to_string(tok) + ":\t\e[0m\e[1;34m " + 
+                    token_names[tok-1] + "\e[0m = \e[1;36m" + 
+                    to_string(yylval.integer) + "\n");
+        break;
+      case FLOAT:
+        tokens.push("\e[0;33m" + to_string(tok) + ":\t\e[0m\e[1;32m " + 
+                    token_names[tok-1] + "\e[0m = \e[1;36m" + 
+                    to_string(yylval.flot) + "\n");
+        break;
+      case CHAR:
+        tokens.push("\e[0;33m" + to_string(tok) + ":\t\e[0m\e[1;35m " + 
+                    token_names[tok-1] + "\e[0m = \e[1;36m" + yylval.ch + "\n");
+        break;
+      case STRING:
+      case ID:
+        tokens.push("\e[0;33m" + to_string(tok) + ":\t\e[0m\e[1;31m " + 
+                    token_names[tok-1] + "\e[0m = \e[1;36m" + yylval.str + "\n");
+        break;
+      default:
+        tokens.push("\e[0;33m" + to_string(tok) + ":\t\e[0m\e[1;37m " + 
+                    token_names[tok-1] + "\e[0m\n");
+    }
+  }
 
   fclose(yyin);
+
+  // if were asked just for lexing print the results of the lexer_main
+  // and return
+  if (strcmp(argv[1], "lex") == 0) {
+    if(errors.empty())
+      printQueue(tokens);
+    else
+      printQueue(errors);
+
+    return 0;
+  }
+
+  // parsing
   yyin = fopen(filename, "r");
 
   // if there are no errors, apply parsing
@@ -351,6 +494,7 @@ int main(int argc, char **argv)
   } else {
     printQueue(errors);
   }
+
   return 0;
 }
 
