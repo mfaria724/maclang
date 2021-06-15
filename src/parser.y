@@ -12,6 +12,7 @@
   extern int yycolumn;
   extern char *yytext;
   extern char *filename;
+  node_S *ast;
 
   // queues for tokens and errors
   queue<string> tokens;
@@ -195,7 +196,7 @@
 %%
 
 /* =================== GLOBAL RULES =================== */
-S       : I                   { $$ = new node_S($1); $$->print_tree(NULL);  }
+S       : I                   { $$ = new node_S($1); ast = $$;  }
         | /* lambda */        { $$ = NULL; }
         ;
 I       : Inst                { $$ = new node_I(NULL, $1); }
@@ -304,19 +305,9 @@ Args      : /* lambda */                    { $$ = NULL; }
 /* ================= UNION DEFINITION ================= */
 UnionDef  : UNION ID OPEN_C_BRACE UnionBody CLOSE_C_BRACE   { $$ = new node_UnionDef($2, $4); }
           ; 
-UnionBody	: Type ID SEMICOLON                               { 
-                                                              $$ = new node_UnionFields(
-                                                                NULL,
-                                                                new node_VarDef($1, $2, NULL)
-                                                              ); 
-                                                            }
-					| UnionBody Type ID SEMICOLON                     { 
-                                                              $$ = new node_UnionFields(
-                                                                $1,
-                                                                new node_VarDef($2, $3, NULL)
-                                                              ); 
-                                                            }
-        ;
+UnionBody	: Type ID SEMICOLON                               { $$ = new node_UnionFields(NULL, $1, $2); }
+					| UnionBody Type ID SEMICOLON                     { $$ = new node_UnionFields($1, $2, $3); }
+          ;
 
 /* ================ REGISTER DEFINITION ================ */
 RegDef  : REGISTER ID OPEN_C_BRACE RegBody 
@@ -401,27 +392,44 @@ Actions   : /* lambda */                                    { $$ = NULL; }
 
 int main(int argc, char **argv)
 {
+  bool lex_opt = false;
+  bool parse_opt = false;
+  bool tree_opt = false;
+  bool rep_opt = false;
+
   // Verify all arguments has been passed
-  if (argc < 3) {
-    cout << "Usage: parser.out METHOD FILE" << endl;
-    cout << "Available Methods: parse, lex" << endl;
-    return 0;
+  if (argc < 3 || argc > 4) {
+    cout << "\e[1mSYNOPSIS\n"
+      "\t\e[1mparser.out\e[0m lex \e[4mFILE\e[0m\n"
+      "\t\e[1mparser.out\e[0m parse -t \e[4mFILE\e[0m\n"
+      "\t\e[1mparser.out\e[0m parse -c \e[4mFILE\e[0m\n";
+    return 1;
   } 
   
   // Check if provided method is valid
   if (strcmp(argv[1], "lex") != 0 && strcmp(argv[1], "parse") != 0) {
-    cout << "Invalid method: " << argv[1] << endl;
-    return 0;
-  }
+    cout << "Invalid action: " << argv[1] << endl;
+    return 1;
 
-  // lexing
-  filename = argv[2];
-  
-  // Look for input line
-  if(argc != 3) 
-  {
-    cout << "No input file" << endl;
-    return -1;
+  } else if (strcmp(argv[1], "parse") == 0) {
+    // Parsing.
+
+    parse_opt = true;
+    // Print tree
+    if (strcmp(argv[2], "-t") == 0) { tree_opt = true; }
+    // Print code representation
+    else if (strcmp(argv[2], "-c") == 0) { rep_opt = true; }
+    else {
+      cout << "Invalid flag: " << argv[2] << endl;
+      return 1;
+    }
+    filename = argv[3];
+
+  } else {
+    // Lexing.
+
+    lex_opt = true;
+    filename = argv[2];
   }
   
   // open file to extract the tokens
@@ -470,7 +478,7 @@ int main(int argc, char **argv)
 
   // if were asked just for lexing print the results of the lexer_main
   // and return
-  if (strcmp(argv[1], "lex") == 0) {
+  if (lex_opt) {
     if(errors.empty())
       printQueue(tokens);
     else
@@ -491,6 +499,13 @@ int main(int argc, char **argv)
 
     // start parsing
     yyparse();
+
+    if (tree_opt) {
+      ast->print_tree(NULL);
+    } else {
+      ast->print();
+    }
+
   } else {
     printQueue(errors);
   }

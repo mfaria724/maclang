@@ -42,6 +42,8 @@ def myfunc(^(^Bool[5]) @ khe, Bool ok, Int a = 1, Char c = 2) => Int {
       x = x * 2;
     elsif (x < -50) then 
       x = x - 8;
+    elsif False then 
+      a = -1;
     else 
       x = x;
     done 

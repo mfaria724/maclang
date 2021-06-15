@@ -91,7 +91,7 @@ class node_BinaryOperator : public node {
 
     void print(void);
 
-    // void print_tree(vector<bool> *identation);
+    void print_tree(vector<bool> *identation);
 };
 
 /* Representation of unary operations. */
@@ -105,7 +105,7 @@ class node_UnaryOperator : public node {
 
     void print(void);
 
-    // void print_tree(vector<bool> *identation);
+    void print_tree(vector<bool> *identation);
 };
 
 /* ======================= HEAP NODES =======================  */
@@ -119,7 +119,7 @@ class node_New : public node {
 
     void print(void);
 
-    // void print_tree(vector<bool> *identation);
+    void print_tree(vector<bool> *identation);
 };
 
 /* Representation of  -> forget Type. */
@@ -132,7 +132,7 @@ class node_Forget : public node {
 
     void print(void);
 
-    // void print_tree(vector<bool> *identation);
+    void print_tree(vector<bool> *identation);
 };
 
 /* ======================= TYPEDEF NODES =======================  */
@@ -173,7 +173,7 @@ class node_TypeArrayDef : public node {
 
     void print(void);
 
-    // void print_tree(vector<bool> *identation);
+    void print_tree(vector<bool> *identation);
 };
 
 /* Representation of  -> Type ID = RValue. */
@@ -202,7 +202,7 @@ class node_IDLValue : public node {
 
     void print(void);
 
-    // void print_tree(vector<bool> *identation);
+    void print_tree(vector<bool> *identation);
 };
 
 /* Representation of  -> LValue . ID. */
@@ -216,7 +216,7 @@ class node_DotLValue : public node {
 
     void print(void);
 
-    // void print_tree(vector<bool> *identation);
+    void print_tree(vector<bool> *identation);
 };
 
 /* Representation of  -> ^ LValue. */
@@ -229,7 +229,7 @@ class node_PointerLValue : public node {
 
     void print(void);
 
-    // void print_tree(vector<bool> *identation);
+    void print_tree(vector<bool> *identation);
 };
 
 /* Representation of  -> LValue [ Exp ]. */
@@ -243,7 +243,7 @@ class node_ArrayLValue : public node {
 
     void print(void);
 
-    // void print_tree(vector<bool> *identation);
+    void print_tree(vector<bool> *identation);
 };
 
 /* ======================= ARRAY NODES =======================  */
@@ -257,7 +257,7 @@ class node_Array : public node {
 
     void print(void);
 
-    // void print_tree(vector<bool> *identation);
+    void print_tree(vector<bool> *identation);
 };
 
 /* Representation of  ->  RValue , ArrElems. */
@@ -271,7 +271,7 @@ class node_ArrayElems : public node {
 
     void print(void);
 
-    // void print_tree(vector<bool> *identation);
+    void print_tree(vector<bool> *identation);
 };
 
 /* ======================= FUNCTION CALL NODES ======================= */
@@ -287,7 +287,7 @@ class node_FunctionCall : public node {
 
     void print(void);
 
-    // void print_tree(vector<bool> *identation);
+    void print_tree(vector<bool> *identation);
 
     void set_end_inst(void);
 };
@@ -303,7 +303,7 @@ class node_FunctionCallArgs : public node {
 
     void print(void);
 
-    // void print_tree(vector<bool> *identation);
+    void print_tree(vector<bool> *identation);
 };
 
 /* ======================= UNION DEF NODES ======================= */
@@ -318,21 +318,22 @@ class node_UnionDef : public node {
 
     void print(void);
 
-    // void print_tree(vector<bool> *identation);
+    void print_tree(vector<bool> *identation);
 };
 
 /* Representation of  -> UnionBody Type ID ;  */
 class node_UnionFields : public node {
   protected:
     node *head;
-    node *field;
+    node *type;
+    string id;
 
   public:
-    node_UnionFields(node *head, node *field);
+    node_UnionFields(node *head, node *type, string id);
 
     void print(void);
 
-    // void print_tree(vector<bool> *identation);
+    void print_tree(vector<bool> *identation);
 };
 
 /* ======================= REGISTER DEF NODES ======================= */
@@ -347,7 +348,7 @@ class node_RegDef : public node {
 
     void print(void);
 
-    // void print_tree(vector<bool> *identation);
+    void print_tree(vector<bool> *identation);
 };
 
 /* Representation of  -> RegisterBody VarDefBody;  */
@@ -363,7 +364,7 @@ class node_RegFields : public node {
 
     void print(void);
 
-    // void print_tree(vector<bool> *identation);
+    void print_tree(vector<bool> *identation);
 };
 
 /* ======================= CONDITIONAL DEF NODES ======================= */
@@ -380,7 +381,7 @@ class node_Conditional : public node {
 
     void print(void);
 
-    // void print_tree(vector<bool> *identation);
+    void print_tree(vector<bool> *identation);
 };
 
 /* Representation of  -> Elsifs elsif Exp then I. */
@@ -395,7 +396,7 @@ class node_Elsif : public node {
 
     void print(void);
 
-    // void print_tree(vector<bool> *identation);
+    void print_tree(vector<bool> *identation);
 };
 
 /* Representation of  -> else I. */
@@ -408,7 +409,7 @@ class node_Else : public node {
 
     void print(void);
 
-    // void print_tree(vector<bool> *identation);
+    void print_tree(vector<bool> *identation);
 };
 
 /* ======================= LOOP NODES =======================  */
@@ -423,7 +424,7 @@ class node_While : public node {
 
     void print(void);
 
-    // void print_tree(vector<bool> *identation);
+    void print_tree(vector<bool> *identation);
 };
 
 /* Representation of for blocks. */
@@ -440,7 +441,7 @@ class node_For : public node {
 
     void print(void);
 
-    // void print_tree(vector<bool> *identation);
+    void print_tree(vector<bool> *identation);
 };
 
 /* ======================= SUBROUTINE DEF NODES =======================  */
@@ -457,7 +458,7 @@ class node_RoutineDef : public node {
 
     void print(void);
 
-    // void print_tree(vector<bool> *identation);
+    void print_tree(vector<bool> *identation);
 };
 
 class node_RoutArgs : public node {
@@ -470,7 +471,7 @@ class node_RoutArgs : public node {
 
     void print(void);
 
-    // void print_tree(vector<bool> *identation);
+    void print_tree(vector<bool> *identation);
 };
 
 class node_RoutArgDef : public node {
@@ -486,7 +487,7 @@ class node_RoutArgDef : public node {
 
     void print(void);
 
-    // void print_tree(vector<bool> *identation);
+    void print_tree(vector<bool> *identation);
 };
 
 /* Representacion of  -> Actions Action */
@@ -500,7 +501,7 @@ class node_Actions : public node {
 
     void print(void);
 
-    // void print_tree(vector<bool> *identation);
+    void print_tree(vector<bool> *identation);
 };
 
 /* ======================= INSTRUCTION NODES =======================  */
@@ -514,7 +515,7 @@ class node_Assign : public node {
 
     void print(void);
 
-    // void print_tree(vector<bool> *identation);
+    void print_tree(vector<bool> *identation);
 };
 
 /* Representacion of  -> I Inst */
