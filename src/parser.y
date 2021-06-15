@@ -97,8 +97,8 @@
 %type <ast>     LValue Exp Array ArrExp ArrElems FuncCall ArgsExp
 %type <ast>     Args RValue Assign UnionDef UnionBody Def RegDef
 %type <ast>     RegBody Conditional OptElsif Elsifs OptElse 
-%type <ast>     LoopWhile LoopFor OptStep RutineDef RutineArgs ArgsDef 
-%type <ast>     Actions 
+%type <ast>     LoopWhile LoopFor OptStep RoutDef OptArgs OblArgs 
+%type <ast>     RoutArgs Actions 
 %type <boolean> OptRef
 %type <nS>      S
 
@@ -124,7 +124,7 @@ Action  : VarInst SEMICOLON   { $$ = $1; }
         ;
 Def     : UnionDef            { $$ = $1; }
 				| RegDef              { $$ = $1; }
-				| RutineDef           { $$ = $1; }
+				| RoutDef           { $$ = $1; }
         ;
 
 /* ============ VARIABLES DEFINITION ============ */
@@ -264,36 +264,50 @@ OptStep   : /* lambda */                              { $$ = NULL; }
           ;
 
 /* =============== SUBROUTINES DEFINITION =============== */
-RutineDef   : DEF ID OPEN_PAR RutineArgs CLOSE_PAR OptReturn 
-              OPEN_C_BRACE Actions CLOSE_C_BRACE            { 
+RoutDef   : DEF ID OPEN_PAR RoutArgs CLOSE_PAR OptReturn 
+            OPEN_C_BRACE Actions CLOSE_C_BRACE              { 
                                                               $$ = new node_RoutineDef(
                                                                 $2, $4, $6, $8
                                                               ); 
                                                             }
-            ; 
-RutineArgs  : /* lambda */                                  { $$ = NULL; }
-						| ArgsDef                                       { $$ = $1; }
-            ;
-ArgsDef     : Type OptRef ID OptAssign                      { 
-                                                              $$ = new node_RoutArgsDef(
-                                                                NULL, $1, $2, $3, $4
-                                                              ); 
+          ; 
+
+RoutArgs  : /* lambda */                                    { $$ = NULL; }
+          | OblArgs                                         { $$ = new node_RoutArgs($1, NULL); }
+          | OptArgs                                         { $$ = new node_RoutArgs(NULL, $1); }
+          | OblArgs COMMA OptArgs                           { $$ = new node_RoutArgs($1, $3); }
+          ;
+OblArgs   : Type OptRef ID                                  { 
+                                                              $$ = new node_RoutArgDef(
+                                                                NULL, $1, $2, $3, NULL
+                                                              );
                                                             }
-						| ArgsDef COMMA Type OptRef ID OptAssign        { 
-                                                              $$ = new node_RoutArgsDef(
-                                                                $1, $3, $4, $5, $6
-                                                              ); 
+          | OblArgs COMMA Type OptRef ID                    { 
+                                                              $$ = new node_RoutArgDef(
+                                                                $1, $3, $4, $5, NULL
+                                                              );
                                                             }
-            ;
-OptRef      : /* lambda */                                  { $$ = false; }
-						| AT                                            { $$ = true; }
-            ;
-OptReturn   : /* lambda */                                  { $$ = NULL; }
-						| RIGHT_ARROW Type                              { $$ = $2; }
-            ;
-Actions     : /* lambda */                                  { $$ = NULL; }
-						| Actions Action                                { $$ = new node_Actions($1, $2); }
-            ;
+          ;
+OptArgs   : Type OptRef ID ASSIGNMENT RValue                { 
+                                                              $$ = new node_RoutArgDef(
+                                                                NULL, $1, $2, $3, $5
+                                                              );
+                                                            }
+          | OptArgs COMMA Type OptRef ID ASSIGNMENT RValue  { 
+                                                              $$ = new node_RoutArgDef(
+                                                                $1, $3, $4, $5, $7
+                                                              );
+                                                            }
+          ;
+OptRef    : /* lambda */                                    { $$ = false; }
+					| AT                                              { $$ = true; }
+          ; 
+OptReturn : /* lambda */                                    { $$ = NULL; }
+				  | RIGHT_ARROW Type                                { $$ = $2; }
+          ; 
+Actions   : /* lambda */                                    { $$ = NULL; }
+				  | Actions Action                                  { $$ = new node_Actions($1, $2); }
+          ;
 
 %%
 

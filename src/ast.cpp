@@ -416,7 +416,24 @@ void node_RoutineDef::print(void) {
   cout << "}\n";
 }
 
-node_RoutArgsDef::node_RoutArgsDef(node *head, node *type, bool ref, string id, node *rvalue) {
+node_RoutArgs::node_RoutArgs(node *obl_args, node *opt_args) {
+  this->obl_args = obl_args;
+  this->opt_args = opt_args;
+}
+
+void node_RoutArgs::print(void) {
+  if (this->obl_args != NULL) {
+    this->obl_args->print();
+    if (this->opt_args != NULL) {
+      cout << ", ";
+      this->opt_args->print();
+    }
+  } else if (this->opt_args != NULL) {
+    this->opt_args->print();
+  }
+}
+
+node_RoutArgDef::node_RoutArgDef(node *head, node *type, bool ref, string id, node *rvalue) {
   this->head = head;
   this->type = type;
   this->ref = ref;
@@ -424,7 +441,7 @@ node_RoutArgsDef::node_RoutArgsDef(node *head, node *type, bool ref, string id, 
   this->rvalue = rvalue;
 }
 
-void node_RoutArgsDef::print(void) {
+void node_RoutArgDef::print(void) {
   if (this->head != NULL) {
     this->head->print();
     cout << ", ";

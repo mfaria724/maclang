@@ -395,16 +395,27 @@ class node_RoutineDef : public node {
     void print(void);
 };
 
-class node_RoutArgsDef : public node {
+class node_RoutArgs : public node {
   protected:
-    node *head;
-    node *type;
-    bool ref;
-    string id;
+    node *obl_args;
+    node *opt_args;
+
+  public:
+    node_RoutArgs(node *obl_args, node *opt_args);
+
+    void print(void);
+};
+
+class node_RoutArgDef : public node {
+  protected:
+    node *head; 
+    node *type; 
+    bool ref; 
+    string id; 
     node *rvalue;
 
   public:
-    node_RoutArgsDef(node *head, node *type, bool ref, string id, node *rvalue);
+    node_RoutArgDef(node *head, node *type, bool ref, string id, node *rvalue);
 
     void print(void);
 };

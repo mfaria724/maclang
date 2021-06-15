@@ -1,6 +1,6 @@
 LEXER   = flex 
 PARSER  = bison
-POPT    = -d
+POPT    = -vd
 CXX     = g++
 COPT    = -g
 
