@@ -30,6 +30,10 @@ register registro {
   Int numero = 15;
 }
 
+def myfunction(Bool myBool) => Int {
+  let Int myInt;
+}
+
 def myfunc(^(^Bool[5]) @ khe, Bool ok, Int a = 1, Char c = 2) => Int {
   for (i; -100; 0++100; 4) do 
     let ^Int a = new Int;
@@ -53,6 +57,8 @@ def myfunc(^(^Bool[5]) @ khe, Bool ok, Int a = 1, Char c = 2) => Int {
 
   let ^Int a =  new Int;
   forget a;
+
+  let Int p;
 }
 
 myfunc([0,[0,[0]]], new Bool);

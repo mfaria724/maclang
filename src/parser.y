@@ -4,6 +4,7 @@
   #include <string>
   #include <cstring>
   #include "ast.hpp" 
+  #include "table.hpp"
 
   using namespace std;
 
@@ -18,8 +19,7 @@
   queue<string> tokens;
   extern queue<string> errors;
 
-  // tokens names for readability of lexer
-  // extern string [] token_names;
+  symbols_table table;
 
   // Prints error;
   void yyerror(string s);
@@ -221,7 +221,11 @@ VarInst     : VarDef                    { $$ = $1; }
 						| Assign                    { $$ = $1; }
             | FORGET LValue             { $$ = new node_Forget($2); }
             ;
-VarDef      : LET Type ID OptAssign     { $$ = new node_VarDef($2, $3, $4); }
+VarDef      : LET Type ID OptAssign     { 
+                                          $$ = new node_VarDef($2, $3, $4);
+                                          cout << "Inserting symbol " << $3 << " in the table" << endl;
+                                          table.insert($3);
+                                        }
             ;   
 OptAssign   : /* lambda */              { $$ = NULL; }
 						| ASSIGNMENT RValue         { $$ = $2; }
@@ -320,23 +324,47 @@ RegBody	: Type ID OptAssign SEMICOLON          { $$ = new node_RegFields(NULL, $
 
 
 /* ===================== CONDITIONALS ===================== */
-Conditional : IF Exp THEN I OptElsif OptElse DONE   { $$ = new node_Conditional($2, $4, $5, $6); }
+Conditional : IF Exp THEN I OptElsif OptElse DONE   { 
+                                                      table.new_scope();
+                                                      $$ = new node_Conditional($2, $4, $5, $6);
+                                                      table.exit_scope();
+                                                    }
             ;
 OptElsif    : /* lambda */                          { $$ = NULL; }
 						| Elsifs                                { $$ = $1; }
             ;
-Elsifs      : ELSIF Exp THEN I                      { $$ = new node_Elsif(NULL, $2, $4); }
-						| Elsifs ELSIF Exp THEN I               { $$ = new node_Elsif($1, $3, $5); }
+Elsifs      : ELSIF Exp THEN I                      { 
+                                                      table.new_scope();
+                                                      $$ = new node_Elsif(NULL, $2, $4); 
+                                                      table.exit_scope();
+                                                    }
+						| Elsifs ELSIF Exp THEN I               { 
+                                                      table.new_scope();
+                                                      $$ = new node_Elsif($1, $3, $5); 
+                                                      table.exit_scope();
+                                                    }
             ;
 OptElse     : /* lambda */                          { $$ = NULL; }
-						| ELSE I                                { $$ = new node_Else($2); }
+						| ELSE I                                { 
+                                                      table.new_scope();
+                                                      $$ = new node_Else($2); 
+                                                      table.exit_scope();
+                                                    }
             ;
 
 /* ======================== LOOPS ======================== */
-LoopWhile : WHILE Exp DO I DONE                       { $$ = new node_While($2, $4); }
+LoopWhile : WHILE Exp DO I DONE                       { 
+                                                        table.new_scope();
+                                                        $$ = new node_While($2, $4); 
+                                                        table.exit_scope();
+                                                      }
           ; 
 LoopFor   : FOR OPEN_PAR ID SEMICOLON Exp SEMICOLON   
-            Exp OptStep CLOSE_PAR DO I DONE           { $$ = new node_For($3, $5, $7, $8, $11); }
+            Exp OptStep CLOSE_PAR DO I DONE           { 
+                                                        table.new_scope();
+                                                        $$ = new node_For($3, $5, $7, $8, $11); 
+                                                        table.exit_scope();
+                                                      }
           ;
 OptStep   : /* lambda */                              { $$ = NULL; }
 				  | SEMICOLON Exp                             { $$ = $2; }
@@ -345,9 +373,15 @@ OptStep   : /* lambda */                              { $$ = NULL; }
 /* =============== SUBROUTINES DEFINITION =============== */
 RoutDef   : DEF ID OPEN_PAR RoutArgs CLOSE_PAR OptReturn 
             OPEN_C_BRACE Actions CLOSE_C_BRACE              { 
+                                                              cout << "Incrementing scope " << endl;
+                                                              table.new_scope();
+                                                              table.printScopeStack();
                                                               $$ = new node_RoutineDef(
                                                                 $2, $4, $6, $8
                                                               ); 
+                                                              cout << "Decrementing scope " << endl;
+                                                              table.exit_scope();
+                                                              table.printScopeStack();
                                                             }
           ; 
 
@@ -506,6 +540,7 @@ int main(int argc, char **argv)
       ast->print();
     }
 
+    table.print_table();
   } else {
     printQueue(errors);
   }

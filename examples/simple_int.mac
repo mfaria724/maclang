@@ -1,2 +1,6 @@
-let ^^^^Int a;
-let ^^^^Int a;
+# let ^^^^Int a;
+# let ^^^^Int a;
+
+def myfunction(Bool myBool) => Int {
+  let Int myInt;
+}

@@ -4,3 +4,6 @@
 
 # flex
 *.yy.c
+
+# editor
+.vscode/
