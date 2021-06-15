@@ -12,6 +12,7 @@ let Int j = 1;      # Entero inicializado y con valor asignado.
 let Char c = 'A';   # Caracter
 let Bool b;         # Booleano
 let Float f = 1.5;  # Flotante
+let Int x;
 let Int y = [x+1,3,x+5];
 
 # tipos complejos
@@ -30,25 +31,24 @@ register registro {
   Int numero = 15;
 }
 
-register registro {
-    Int numero = 15;
-  }
-
 def myfunction(Bool myBool) => Int {
   let Int myInt;
 }
 
 if True then 
-  let Int a = 1;              # @@@@@@@@@@@@@@@@@@@@@@@@@@@
+  let Int a = 1;              
   register registro {
     Int numero = 15;
   }
 done
 
-def myfunc(^(^Bool[5]) @ khe, Bool ok, Int a = 1, Char c = 2) => Int { # @@@@@@@@@@@@@@@@@@@@@@@@@@@
+let Int ppp;
+
+def myfunc(^(^Bool[5]) @ khe, Bool ok, Int a = 1, Char c = 2) => Int { 
   for (i; -100; 0++100; 4) do 
-    let ^Int a = new Int;                               # @@@@@@@@@@@@@@@@@@@@@@@@@@@
-    x = (((((x))))).y + 1 + (x.y).z;
+    let ^Int z = new Int;   
+    let Int k;                            
+    x = (((((x))))).y + 1 + (x.y).z + ppp();
     ^x[^y**4] = 1;
     ^(x[^(y.z) + ^(z.z) * ^(k.k)]) = 42;
     ^^^^((((x)))) = ^y;
@@ -58,7 +58,7 @@ def myfunc(^(^Bool[5]) @ khe, Bool ok, Int a = 1, Char c = 2) => Int { # @@@@@@@
     elsif (x < -50) then 
       x = x - 8;
     elsif False then 
-      let Int a = -1;                                 # @@@@@@@@@@@@@@@@@@@@@@@@@@@
+      let Int a = -1;                                 
     else 
       x = x;
     done 
@@ -66,22 +66,17 @@ def myfunc(^(^Bool[5]) @ khe, Bool ok, Int a = 1, Char c = 2) => Int { # @@@@@@@
     while i < 100 do i = i+++1; done
   done
 
-  let ^Int a =  new Int;                          # @@@@@@@@@@@@@@@@@@@@@@@@@@@
   forget a;
 
   let Int p;
 }
 
 if True then 
-  let Int a = 1;                            # @@@@@@@@@@@@@@@@@@@@@@@@@@@
+  let Int a = 1;                            
   register registro {
     Int numero = 15;
   }
 done
-
-def myfunction(Bool myBool) => Int {
-  let Int myInt;
-}
 
 myfunc([0,[0,[0]]], new Bool);
 

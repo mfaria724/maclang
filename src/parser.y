@@ -38,6 +38,9 @@
   // add redefinitions errors.
   void redefinition_error(string id);
 
+  // add undefined error.
+  void undefined_error(string id);
+
   // token names for readability on lexer
   string token_names [] = {
     "SEMICOLON",
@@ -194,7 +197,7 @@
 %type <ast>       LoopWhile LoopFor OptStep RoutDef OptArgs OblArgs 
 %type <ast>       RoutArgs Actions 
 %type <boolean>   OptRef
-%type <str>       IdDef IdFor
+%type <str>       IdDef IdFor UnionId RegId RoutId
 %type <nS>        S
 
 %expect 1
@@ -266,7 +269,12 @@ LValue	:	LValue OPEN_BRACKET Exp CLOSE_BRACKET   { $$ = new node_ArrayLValue($1,
 				|	POINTER LValue                          { $$ = new node_PointerLValue($2); }
 				|	LValue DOT ID                           { $$ = new node_DotLValue($1, $3); }
 				| OPEN_PAR LValue CLOSE_PAR               { $$ = $2; }
-				|	ID                                      { $$ = new node_IDLValue($1); }
+				|	ID                                      { 
+                                                    if (table.lookup($1) == NULL) {
+                                                      undefined_error($1);
+                                                    }
+                                                    $$ = new node_IDLValue($1); 
+                                                  }
         ;
 
 /* ======================= EXPRESSIONS ======================= */
@@ -308,7 +316,12 @@ ArrElems	: /* lambda */                        { $$ = NULL; }
           ;
 
 /* ================= FUNCTION CALLS ================= */
-FuncCall  : ID OPEN_PAR ArgsExp CLOSE_PAR   { $$ = new node_FunctionCall($1, $3, false); }
+FuncCall  : ID OPEN_PAR ArgsExp CLOSE_PAR   { 
+                                              if (table.lookup($1) == NULL) {
+                                                undefined_error($1);
+                                              }
+                                              $$ = new node_FunctionCall($1, $3, false); 
+                                            }
           ;
 ArgsExp   : /* lambda */                    { $$ = NULL; }
 					| Args RValue                     { $$ = new node_FunctionCallArgs($1, $2); }
@@ -318,16 +331,13 @@ Args      : /* lambda */                    { $$ = NULL; }
           ;
 
 /* ================= UNION DEFINITION ================= */
-UnionDef  : Union ID OPEN_C_BRACE UnionBody CLOSE_C_BRACE   { 
-                                                              $$ = new node_UnionDef($2, $4);
+UnionDef  : UnionId OPEN_C_BRACE UnionBody CLOSE_C_BRACE    { 
+                                                              $$ = new node_UnionDef($1, $3);
                                                               table.exit_scope(); 
-                                                              if (! table.verify_insert($2)) {
-                                                                redefinition_error($2);
-                                                              }
-                                                              table.insert($2);
+                                                              table.insert($1);
                                                             }
           ;
-Union     : UNION                                           { table.new_scope(); }
+UnionId   : UNION IdDef                                     { table.new_scope(); $$ = $2; }
           ;  
 UnionBody	: Type IdDef SEMICOLON                            { 
                                                               $$ = new node_UnionFields(NULL, $1, $2); 
@@ -340,26 +350,22 @@ UnionBody	: Type IdDef SEMICOLON                            {
           ;
 
 /* ================ REGISTER DEFINITION ================ */
-RegDef    : Register ID OPEN_C_BRACE RegBody 
-            CLOSE_C_BRACE                           { 
-                                                      $$ = new node_RegDef($2, $4);
-                                                      table.exit_scope();
-                                                      if (! table.verify_insert($2)) {
-                                                        redefinition_error($2);
+RegDef    : RegId OPEN_C_BRACE RegBody CLOSE_C_BRACE  { 
+                                                        $$ = new node_RegDef($1, $3);
+                                                        table.exit_scope();
+                                                        table.insert($1);
                                                       }
-                                                      table.insert($2);
-                                                    }
+          ;   
+RegId     : REGISTER IdDef                            { table.new_scope(); $$ = $2; }
           ; 
-Register  : REGISTER                                { table.new_scope(); }
-          ; 
-RegBody	  : Type IdDef OptAssign SEMICOLON          { 
-                                                      $$ = new node_RegFields(NULL, $1, $2, $3);
-                                                      table.insert($2);
-                                                    }
-				  |	RegBody Type IdDef OptAssign SEMICOLON  { 
-                                                      $$ = new node_RegFields($1, $2, $3, $4);
-                                                      table.insert($3);
-                                                    }
+RegBody	  : Type IdDef OptAssign SEMICOLON            { 
+                                                        $$ = new node_RegFields(NULL, $1, $2, $3);
+                                                        table.insert($2);
+                                                      }
+				  |	RegBody Type IdDef OptAssign SEMICOLON    { 
+                                                        $$ = new node_RegFields($1, $2, $3, $4);
+                                                        table.insert($3);
+                                                      }
           ;
 
 
@@ -415,20 +421,19 @@ OptStep   : /* lambda */                              { $$ = NULL; }
           ;
 
 /* =============== SUBROUTINES DEFINITION =============== */
-RoutDef   : DefRout ID OPEN_PAR RoutArgs CLOSE_PAR OptReturn 
+RoutDef   : RoutId OPEN_PAR RoutArgs CLOSE_PAR OptReturn 
             OPEN_C_BRACE Actions CLOSE_C_BRACE                  { 
                                                                   $$ = new node_RoutineDef(
-                                                                    $2, $4, $6, $8
+                                                                    $1, $3, $5, $7
                                                                   ); 
                                                                   table.exit_scope();
-                                                                  if (! table.verify_insert($2)) {
-                                                                    redefinition_error($2);
-                                                                  }
-                                                                  table.insert($2);
                                                                 }
-          ;     
-DefRout   : DEF                                                 { table.new_scope(); }
-          ;   
+          ;  
+RoutId    : DEF IdDef                                           {
+                                                                  table.insert($2);
+                                                                  table.new_scope();
+                                                                }
+          ;    
 RoutArgs  : /* lambda */                                        { $$ = NULL; }
           | OblArgs                                             { $$ = new node_RoutArgs($1, NULL); }
           | OptArgs                                             { $$ = new node_RoutArgs(NULL, $1); }
@@ -649,3 +654,18 @@ void redefinition_error(string id) {
   // add the error to the queue
   errors.push(error);
 }
+
+/*
+  Add a undefined error to vector errors.
+*/
+void undefined_error(string id) {
+  string file = strdup(filename);
+
+  string error = "\e[1m" + file + " (" + to_string(yylineno) + ", " + 
+    to_string(yycolumn) + "): \e[31mError:\e[0m \"" + id + "\" was not " +
+    "declared.\n\n";
+
+  // add the error to the queue
+  errors.push(error);
+}
+
