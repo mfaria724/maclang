@@ -18,14 +18,18 @@ class symbol_entry {
 
 class symbols_table {
   private:
-    map<string, deque<symbol_entry>> sym_table;
+    map<string, deque<symbol_entry*>> sym_table;
     vector<int> scope_stack;
     int last_scope;
 
   public:
     symbols_table();
 
-    bool insert(string id);
+    void insert(string id);
+
+    bool verify_insert(string id);
+
+    symbol_entry* lookup(string name);
 
     void print_table();
     int new_scope();

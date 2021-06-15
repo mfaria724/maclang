@@ -112,7 +112,7 @@ void pushError() {
   string file = strdup(filename);
 
   string error = "\e[1m" + file + " (" + to_string(yylineno) + ", " + 
-    to_string(yycolumn - yyleng) + "): \e[31merror:\e[0m Unexpected " +
+    to_string(yycolumn - yyleng) + "): \e[31mLexical error:\e[0m Unexpected " +
     "token \"" + token + "\".\n\n";
 
   // add the error to the queue

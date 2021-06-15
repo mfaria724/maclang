@@ -30,13 +30,24 @@ register registro {
   Int numero = 15;
 }
 
+register registro {
+    Int numero = 15;
+  }
+
 def myfunction(Bool myBool) => Int {
   let Int myInt;
 }
 
-def myfunc(^(^Bool[5]) @ khe, Bool ok, Int a = 1, Char c = 2) => Int {
+if True then 
+  let Int a = 1;              # @@@@@@@@@@@@@@@@@@@@@@@@@@@
+  register registro {
+    Int numero = 15;
+  }
+done
+
+def myfunc(^(^Bool[5]) @ khe, Bool ok, Int a = 1, Char c = 2) => Int { # @@@@@@@@@@@@@@@@@@@@@@@@@@@
   for (i; -100; 0++100; 4) do 
-    let ^Int a = new Int;
+    let ^Int a = new Int;                               # @@@@@@@@@@@@@@@@@@@@@@@@@@@
     x = (((((x))))).y + 1 + (x.y).z;
     ^x[^y**4] = 1;
     ^(x[^(y.z) + ^(z.z) * ^(k.k)]) = 42;
@@ -47,7 +58,7 @@ def myfunc(^(^Bool[5]) @ khe, Bool ok, Int a = 1, Char c = 2) => Int {
     elsif (x < -50) then 
       x = x - 8;
     elsif False then 
-      a = -1;
+      let Int a = -1;                                 # @@@@@@@@@@@@@@@@@@@@@@@@@@@
     else 
       x = x;
     done 
@@ -55,10 +66,21 @@ def myfunc(^(^Bool[5]) @ khe, Bool ok, Int a = 1, Char c = 2) => Int {
     while i < 100 do i = i+++1; done
   done
 
-  let ^Int a =  new Int;
+  let ^Int a =  new Int;                          # @@@@@@@@@@@@@@@@@@@@@@@@@@@
   forget a;
 
   let Int p;
+}
+
+if True then 
+  let Int a = 1;                            # @@@@@@@@@@@@@@@@@@@@@@@@@@@
+  register registro {
+    Int numero = 15;
+  }
+done
+
+def myfunction(Bool myBool) => Int {
+  let Int myInt;
 }
 
 myfunc([0,[0,[0]]], new Bool);

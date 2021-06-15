@@ -9,21 +9,51 @@ symbol_entry::symbol_entry(string id, int scope, string type) {
 }
 
 symbols_table::symbols_table() {
-  this->last_scope = 0;
+  this->last_scope = 1;
   this->scope_stack.push_back(this->last_scope);
 }
 
-bool symbols_table::insert(string id) {
-  
-  
+void symbols_table::insert(string id) {
   if (this->sym_table.find(id) == this->sym_table.end()) {
     this->sym_table[id];
   }
 
-  // TODO: revisar si el elemento ya existe en la tabla
+  this->sym_table[id].push_front(new symbol_entry(id, this->scope_stack.back(), "")); 
+}
 
-  this->sym_table[id].push_front(symbol_entry(id, this->scope_stack.back(), "")); 
+bool symbols_table::verify_insert(string id) {
+  symbol_entry *look = this->lookup(id);
+  if ((look != NULL) && (look->scope == this->scope_stack.back())) { return false; }
   return true;
+}
+
+symbol_entry* symbols_table::lookup(string name) {
+  symbol_entry *pervasive = NULL;
+  symbol_entry *best = NULL;
+
+  for (symbol_entry *entry : this->sym_table[name]) {
+    if (entry->id == name) {
+      if (entry->scope == 0) { 
+        pervasive = entry; 
+      } else {
+        for (
+          vector<int>::reverse_iterator it = this->scope_stack.rbegin(); 
+          it < this->scope_stack.rend();
+          it++
+        ) {
+          if (*it == entry->scope) {
+            best = entry;
+            break;
+          } else if (best != NULL && *it == best->scope) {
+            break;
+          }
+        }
+      }
+    }
+  }
+
+  if (best != NULL) { return best; }
+  return pervasive;
 }
 
 void symbol_entry::print() {
@@ -34,10 +64,10 @@ void symbol_entry::print() {
 void symbols_table::print_table() {
   cout << "\n\e[1;32m***Imprimiendo la tabla de símbolos***\e[0m" << endl;
 
-  for (map<string, deque<symbol_entry>>::iterator i = this->sym_table.begin(); i != this->sym_table.end(); ++i) {
+  for (map<string, deque<symbol_entry*>>::iterator i = this->sym_table.begin(); i != this->sym_table.end(); ++i) {
     cout << "\e[1;33mVariable:\e[0m " << i->first << " \n => [";
-    for (deque<symbol_entry>::iterator qi = i->second.begin(); qi != i->second.end(); qi++) {
-      qi->print();
+    for (deque<symbol_entry*>::iterator qi = i->second.begin(); qi != i->second.end(); qi++) {
+      (*qi)->print();
       if (qi+1 != i->second.end()) 
         cout << ", ";
     }

@@ -13,6 +13,8 @@
   extern int yycolumn;
   extern char *yytext;
   extern char *filename;
+  // queues for tokens and errors
+  extern queue<string> errors;
   node_S *ast;
 
   // queues for tokens and errors
@@ -32,6 +34,9 @@
 
   // main method for lexing.
   int lexer_main(int argc, char **argv);
+
+  // add redefinitions errors.
+  void redefinition_error(string id);
 
   // token names for readability on lexer
   string token_names [] = {
@@ -189,6 +194,7 @@
 %type <ast>       LoopWhile LoopFor OptStep RoutDef OptArgs OblArgs 
 %type <ast>       RoutArgs Actions 
 %type <boolean>   OptRef
+%type <str>       IdDef IdFor
 %type <nS>        S
 
 %expect 1
@@ -213,7 +219,7 @@ Action  : VarInst SEMICOLON   { $$ = $1; }
         ;
 Def     : UnionDef            { $$ = $1; }
 				| RegDef              { $$ = $1; }
-				| RoutDef           { $$ = $1; }
+				| RoutDef             { $$ = $1; }
         ;
 
 /* ============ VARIABLES DEFINITION ============ */
@@ -221,12 +227,17 @@ VarInst     : VarDef                    { $$ = $1; }
 						| Assign                    { $$ = $1; }
             | FORGET LValue             { $$ = new node_Forget($2); }
             ;
-VarDef      : LET Type ID OptAssign     { 
+VarDef      : LET Type IdDef OptAssign  { 
                                           $$ = new node_VarDef($2, $3, $4);
-                                          cout << "Inserting symbol " << $3 << " in the table" << endl;
                                           table.insert($3);
                                         }
             ;   
+IdDef       : ID                        {
+                                          if (! table.verify_insert($1)) {
+                                            redefinition_error($1);
+                                          }
+                                          $$ = $1; 
+                                        }
 OptAssign   : /* lambda */              { $$ = NULL; }
 						| ASSIGNMENT RValue         { $$ = $2; }
             ;
@@ -307,110 +318,147 @@ Args      : /* lambda */                    { $$ = NULL; }
           ;
 
 /* ================= UNION DEFINITION ================= */
-UnionDef  : UNION ID OPEN_C_BRACE UnionBody CLOSE_C_BRACE   { $$ = new node_UnionDef($2, $4); }
-          ; 
-UnionBody	: Type ID SEMICOLON                               { $$ = new node_UnionFields(NULL, $1, $2); }
-					| UnionBody Type ID SEMICOLON                     { $$ = new node_UnionFields($1, $2, $3); }
+UnionDef  : Union ID OPEN_C_BRACE UnionBody CLOSE_C_BRACE   { 
+                                                              $$ = new node_UnionDef($2, $4);
+                                                              table.exit_scope(); 
+                                                              if (! table.verify_insert($2)) {
+                                                                redefinition_error($2);
+                                                              }
+                                                              table.insert($2);
+                                                            }
+          ;
+Union     : UNION                                           { table.new_scope(); }
+          ;  
+UnionBody	: Type IdDef SEMICOLON                            { 
+                                                              $$ = new node_UnionFields(NULL, $1, $2); 
+                                                              table.insert($2);
+                                                            }
+					| UnionBody Type IdDef SEMICOLON                  { 
+                                                              $$ = new node_UnionFields($1, $2, $3); 
+                                                              table.insert($3);
+                                                            }
           ;
 
 /* ================ REGISTER DEFINITION ================ */
-RegDef  : REGISTER ID OPEN_C_BRACE RegBody 
-          CLOSE_C_BRACE                        { $$ = new node_RegDef($2, $4); }
-        ;
-RegBody	: Type ID OptAssign SEMICOLON          { $$ = new node_RegFields(NULL, $1, $2, $3); }
-				|	RegBody Type ID OptAssign SEMICOLON  { $$ = new node_RegFields($1, $2, $3, $4); }
-        ;
+RegDef    : Register ID OPEN_C_BRACE RegBody 
+            CLOSE_C_BRACE                           { 
+                                                      $$ = new node_RegDef($2, $4);
+                                                      table.exit_scope();
+                                                      if (! table.verify_insert($2)) {
+                                                        redefinition_error($2);
+                                                      }
+                                                      table.insert($2);
+                                                    }
+          ; 
+Register  : REGISTER                                { table.new_scope(); }
+          ; 
+RegBody	  : Type IdDef OptAssign SEMICOLON          { 
+                                                      $$ = new node_RegFields(NULL, $1, $2, $3);
+                                                      table.insert($2);
+                                                    }
+				  |	RegBody Type IdDef OptAssign SEMICOLON  { 
+                                                      $$ = new node_RegFields($1, $2, $3, $4);
+                                                      table.insert($3);
+                                                    }
+          ;
 
 
 
 /* ===================== CONDITIONALS ===================== */
-Conditional : IF Exp THEN I OptElsif OptElse DONE   { 
-                                                      table.new_scope();
+Conditional : If Exp THEN I OptElsif OptElse DONE   { 
                                                       $$ = new node_Conditional($2, $4, $5, $6);
-                                                      table.exit_scope();
+                                                      table.exit_scope(); 
                                                     }
+            ;
+If          : IF                                    { table.new_scope(); }
             ;
 OptElsif    : /* lambda */                          { $$ = NULL; }
 						| Elsifs                                { $$ = $1; }
             ;
-Elsifs      : ELSIF Exp THEN I                      { 
-                                                      table.new_scope();
-                                                      $$ = new node_Elsif(NULL, $2, $4); 
+Elsifs      : Elsif Exp THEN I                      { $$ = new node_Elsif(NULL, $2, $4); }
+						| Elsifs Elsif Exp THEN I               { $$ = new node_Elsif($1, $3, $5); }
+            ;
+Elsif       : ELSIF                                 { 
                                                       table.exit_scope();
-                                                    }
-						| Elsifs ELSIF Exp THEN I               { 
-                                                      table.new_scope();
-                                                      $$ = new node_Elsif($1, $3, $5); 
-                                                      table.exit_scope();
+                                                      table.new_scope(); 
                                                     }
             ;
 OptElse     : /* lambda */                          { $$ = NULL; }
-						| ELSE I                                { 
-                                                      table.new_scope();
-                                                      $$ = new node_Else($2); 
+						| Else I                                { $$ = new node_Else($2); }
+            ;
+Else        : ELSE                                  { 
                                                       table.exit_scope();
+                                                      table.new_scope(); 
                                                     }
             ;
 
 /* ======================== LOOPS ======================== */
-LoopWhile : WHILE Exp DO I DONE                       { 
-                                                        table.new_scope();
+LoopWhile : While Exp DO I DONE                       { 
                                                         $$ = new node_While($2, $4); 
                                                         table.exit_scope();
                                                       }
           ; 
-LoopFor   : FOR OPEN_PAR ID SEMICOLON Exp SEMICOLON   
+While     : WHILE                                     { table.new_scope(); }
+          ;
+LoopFor   : For OPEN_PAR IdFor SEMICOLON Exp SEMICOLON   
             Exp OptStep CLOSE_PAR DO I DONE           { 
-                                                        table.new_scope();
-                                                        $$ = new node_For($3, $5, $7, $8, $11); 
+                                                        $$ = new node_For($3, $5, $7, $8, $11);
                                                         table.exit_scope();
                                                       }
+          ;
+IdFor     : IdDef                                     { table.insert($1); $$ = $1; }
+          ;
+For       : FOR                                       { table.new_scope(); }
           ;
 OptStep   : /* lambda */                              { $$ = NULL; }
 				  | SEMICOLON Exp                             { $$ = $2; }
           ;
 
 /* =============== SUBROUTINES DEFINITION =============== */
-RoutDef   : DEF ID OPEN_PAR RoutArgs CLOSE_PAR OptReturn 
-            OPEN_C_BRACE Actions CLOSE_C_BRACE              { 
-                                                              cout << "Incrementing scope " << endl;
-                                                              table.new_scope();
-                                                              table.printScopeStack();
-                                                              $$ = new node_RoutineDef(
-                                                                $2, $4, $6, $8
-                                                              ); 
-                                                              cout << "Decrementing scope " << endl;
-                                                              table.exit_scope();
-                                                              table.printScopeStack();
-                                                            }
-          ; 
-
-RoutArgs  : /* lambda */                                    { $$ = NULL; }
-          | OblArgs                                         { $$ = new node_RoutArgs($1, NULL); }
-          | OptArgs                                         { $$ = new node_RoutArgs(NULL, $1); }
-          | OblArgs COMMA OptArgs                           { $$ = new node_RoutArgs($1, $3); }
-          ;
-OblArgs   : Type OptRef ID                                  { 
-                                                              $$ = new node_RoutArgDef(
-                                                                NULL, $1, $2, $3, NULL
-                                                              );
-                                                            }
-          | OblArgs COMMA Type OptRef ID                    { 
-                                                              $$ = new node_RoutArgDef(
-                                                                $1, $3, $4, $5, NULL
-                                                              );
-                                                            }
-          ;
-OptArgs   : Type OptRef ID ASSIGNMENT RValue                { 
-                                                              $$ = new node_RoutArgDef(
-                                                                NULL, $1, $2, $3, $5
-                                                              );
-                                                            }
-          | OptArgs COMMA Type OptRef ID ASSIGNMENT RValue  { 
-                                                              $$ = new node_RoutArgDef(
-                                                                $1, $3, $4, $5, $7
-                                                              );
-                                                            }
+RoutDef   : DefRout ID OPEN_PAR RoutArgs CLOSE_PAR OptReturn 
+            OPEN_C_BRACE Actions CLOSE_C_BRACE                  { 
+                                                                  $$ = new node_RoutineDef(
+                                                                    $2, $4, $6, $8
+                                                                  ); 
+                                                                  table.exit_scope();
+                                                                  if (! table.verify_insert($2)) {
+                                                                    redefinition_error($2);
+                                                                  }
+                                                                  table.insert($2);
+                                                                }
+          ;     
+DefRout   : DEF                                                 { table.new_scope(); }
+          ;   
+RoutArgs  : /* lambda */                                        { $$ = NULL; }
+          | OblArgs                                             { $$ = new node_RoutArgs($1, NULL); }
+          | OptArgs                                             { $$ = new node_RoutArgs(NULL, $1); }
+          | OblArgs COMMA OptArgs                               { $$ = new node_RoutArgs($1, $3); }
+          ;   
+OblArgs   : Type OptRef IdDef                                   { 
+                                                                  $$ = new node_RoutArgDef(
+                                                                    NULL, $1, $2, $3, NULL
+                                                                  );
+                                                                  table.insert($3);
+                                                                }
+          | OblArgs COMMA Type OptRef IdDef                     { 
+                                                                  $$ = new node_RoutArgDef(
+                                                                    $1, $3, $4, $5, NULL
+                                                                  );
+                                                                  table.insert($5);
+                                                                }
+          ;   
+OptArgs   : Type OptRef IdDef ASSIGNMENT RValue                 { 
+                                                                  $$ = new node_RoutArgDef(
+                                                                    NULL, $1, $2, $3, $5
+                                                                  );
+                                                                  table.insert($3);
+                                                                }
+          | OptArgs COMMA Type OptRef IdDef ASSIGNMENT RValue   { 
+                                                                  $$ = new node_RoutArgDef(
+                                                                    $1, $3, $4, $5, $7
+                                                                  );
+                                                                  table.insert($5);
+                                                                }
           ;
 OptRef    : /* lambda */                                    { $$ = false; }
 					| AT                                              { $$ = true; }
@@ -428,20 +476,22 @@ int main(int argc, char **argv)
 {
   bool lex_opt = false;
   bool parse_opt = false;
+  bool symbols_opt = false;
   bool tree_opt = false;
   bool rep_opt = false;
 
   // Verify all arguments has been passed
   if (argc < 3 || argc > 4) {
     cout << "\e[1mSYNOPSIS\n"
-      "\t\e[1mparser.out\e[0m lex \e[4mFILE\e[0m\n"
-      "\t\e[1mparser.out\e[0m parse -t \e[4mFILE\e[0m\n"
-      "\t\e[1mparser.out\e[0m parse -c \e[4mFILE\e[0m\n";
+      "\t\e[1mmaclang\e[0m lex \e[4mFILE\e[0m\n"
+      "\t\e[1mmaclang\e[0m parse -t \e[4mFILE\e[0m\n"
+      "\t\e[1mmaclang\e[0m parse -c \e[4mFILE\e[0m\n"
+      "\t\e[1mmaclang\e[0m symbols \e[4mFILE\e[0m\n";
     return 1;
   } 
   
   // Check if provided method is valid
-  if (strcmp(argv[1], "lex") != 0 && strcmp(argv[1], "parse") != 0) {
+  if (strcmp(argv[1], "lex") && strcmp(argv[1], "parse") && strcmp(argv[1], "symbols")) {
     cout << "Invalid action: " << argv[1] << endl;
     return 1;
 
@@ -459,10 +509,16 @@ int main(int argc, char **argv)
     }
     filename = argv[3];
 
-  } else {
+  } else if (strcmp(argv[1], "lex") == 0) {
     // Lexing.
 
     lex_opt = true;
+    filename = argv[2];
+
+  } else {
+    // Sumbols table 
+
+    symbols_opt = true;
     filename = argv[2];
   }
   
@@ -534,13 +590,21 @@ int main(int argc, char **argv)
     // start parsing
     yyparse();
 
-    if (tree_opt) {
-      ast->print_tree(NULL);
+    if (errors.empty()) {
+      if (parse_opt) {
+        if (tree_opt) {
+          ast->print_tree(NULL);
+        } else {
+          ast->print();
+        }
+      } else {
+        table.print_table();
+      }
+
     } else {
-      ast->print();
+      printQueue(errors);
     }
 
-    table.print_table();
   } else {
     printQueue(errors);
   }
@@ -553,7 +617,12 @@ int main(int argc, char **argv)
 */
 void yyerror(string s)
 {
-  fprintf(stderr, "error: %s (%d,%d)\n", s, yylineno, yycolumn);
+  string file = strdup(filename);
+
+  cout << "\e[1m" + file + " (" + to_string(yylineno) + ", " + 
+    to_string(yycolumn) + "): \e[31mSyntax error:\e[0m Unexpected " +
+    "token \"" + yytext + "\".\n\n";
+  exit(1);
 }
 
 /*
@@ -565,4 +634,18 @@ void printQueue(queue<string> queueToPrint)
     cout << queueToPrint.front();
     queueToPrint.pop();
   }
+}
+
+/*
+  Add a redefinition error to vector errors.
+*/
+void redefinition_error(string id) {
+  string file = strdup(filename);
+
+  string error = "\e[1m" + file + " (" + to_string(yylineno) + ", " + 
+    to_string(yycolumn) + "): \e[31mError:\e[0m Redefinition of " +
+    "\"" + id + "\".\n\n";
+
+  // add the error to the queue
+  errors.push(error);
 }
