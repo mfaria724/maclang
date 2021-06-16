@@ -42,7 +42,7 @@ if True then
   }
 done
 
-let Int ppp;
+let Int ppp; 
 
 def myfunc(^(^Bool[5]) @ khe, Bool ok, Int a = 1, Char c = 2) => Int { 
   for (i; -100; 0++100; 4) do 
@@ -80,3 +80,6 @@ done
 
 myfunc([0,[0,[0]]], new Bool);
 
+def A() {
+  A();
+}

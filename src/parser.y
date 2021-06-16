@@ -232,7 +232,9 @@ VarInst     : VarDef                    { $$ = $1; }
             ;
 VarDef      : LET Type IdDef OptAssign  { 
                                           $$ = new node_VarDef($2, $3, $4);
-                                          table.insert($3);
+                                          int s = table.current_scope();
+                                          entry *e = new entry($3, s, "");
+                                          table.insert(e);
                                         }
             ;   
 IdDef       : ID                        {
@@ -331,40 +333,52 @@ Args      : /* lambda */                    { $$ = NULL; }
           ;
 
 /* ================= UNION DEFINITION ================= */
-UnionDef  : UnionId OPEN_C_BRACE UnionBody CLOSE_C_BRACE    { 
-                                                              $$ = new node_UnionDef($1, $3);
-                                                              table.exit_scope(); 
-                                                              table.insert($1);
-                                                            }
+UnionDef  : UnionId OPEN_C_BRACE UnionBody CLOSE_C_BRACE  { 
+                                                            $$ = new node_UnionDef($1, $3);
+                                                            table.exit_scope(); 
+                                                            int s = table.current_scope();
+                                                            entry *e = new entry($1, s, "");
+                                                            table.insert(e);
+                                                          }
           ;
-UnionId   : UNION IdDef                                     { table.new_scope(); $$ = $2; }
+UnionId   : UNION IdDef                                   { table.new_scope(); $$ = $2; }
           ;  
-UnionBody	: Type IdDef SEMICOLON                            { 
-                                                              $$ = new node_UnionFields(NULL, $1, $2); 
-                                                              table.insert($2);
-                                                            }
-					| UnionBody Type IdDef SEMICOLON                  { 
-                                                              $$ = new node_UnionFields($1, $2, $3); 
-                                                              table.insert($3);
-                                                            }
+UnionBody	: Type IdDef SEMICOLON                          { 
+                                                            $$ = new node_UnionFields(NULL, $1, $2); 
+                                                            int s = table.current_scope();
+                                                            entry *e = new entry($2, s, "");
+                                                            table.insert(e);
+                                                          }
+					| UnionBody Type IdDef SEMICOLON                { 
+                                                            $$ = new node_UnionFields($1, $2, $3); 
+                                                            int s = table.current_scope();
+                                                            entry *e = new entry($3, s, "");
+                                                            table.insert(e);
+                                                          }
           ;
 
 /* ================ REGISTER DEFINITION ================ */
 RegDef    : RegId OPEN_C_BRACE RegBody CLOSE_C_BRACE  { 
                                                         $$ = new node_RegDef($1, $3);
                                                         table.exit_scope();
-                                                        table.insert($1);
+                                                        int s = table.current_scope();
+                                                        entry *e = new entry($1, s, "");
+                                                        table.insert(e);
                                                       }
           ;   
 RegId     : REGISTER IdDef                            { table.new_scope(); $$ = $2; }
           ; 
 RegBody	  : Type IdDef OptAssign SEMICOLON            { 
                                                         $$ = new node_RegFields(NULL, $1, $2, $3);
-                                                        table.insert($2);
+                                                        int s = table.current_scope();
+                                                        entry *e = new entry($2, s, "");
+                                                        table.insert(e);
                                                       }
 				  |	RegBody Type IdDef OptAssign SEMICOLON    { 
                                                         $$ = new node_RegFields($1, $2, $3, $4);
-                                                        table.insert($3);
+                                                        int s = table.current_scope();
+                                                        entry *e = new entry($3, s, "");
+                                                        table.insert(e);
                                                       }
           ;
 
@@ -412,7 +426,12 @@ LoopFor   : For OPEN_PAR IdFor SEMICOLON Exp SEMICOLON
                                                         table.exit_scope();
                                                       }
           ;
-IdFor     : IdDef                                     { table.insert($1); $$ = $1; }
+IdFor     : IdDef                                     { 
+                                                        int s = table.current_scope();
+                                                        entry *e = new entry($1, s, "");
+                                                        table.insert(e); 
+                                                        $$ = $1; 
+                                                      }
           ;
 For       : FOR                                       { table.new_scope(); }
           ;
@@ -422,57 +441,68 @@ OptStep   : /* lambda */                              { $$ = NULL; }
 
 /* =============== SUBROUTINES DEFINITION =============== */
 RoutDef   : RoutId OPEN_PAR RoutArgs CLOSE_PAR OptReturn 
-            OPEN_C_BRACE Actions CLOSE_C_BRACE                  { 
-                                                                  $$ = new node_RoutineDef(
-                                                                    $1, $3, $5, $7
-                                                                  ); 
-                                                                  table.exit_scope();
-                                                                }
+            OPEN_C_BRACE Actions CLOSE_C_BRACE            { 
+                                                            $$ = new node_RoutineDef(
+                                                              $1, $3, $5, $7
+                                                            ); 
+                                                            table.exit_scope();
+                                                          }
           ;  
-RoutId    : DEF IdDef                                           {
-                                                                  table.insert($2);
-                                                                  table.new_scope();
-                                                                }
+RoutId    : DEF IdDef                                     {
+                                                            int s = table.current_scope();
+                                                            entry *e = new entry($2, s, "");
+                                                            table.insert(e);
+                                                            table.new_scope();
+                                                          }
           ;    
-RoutArgs  : /* lambda */                                        { $$ = NULL; }
-          | OblArgs                                             { $$ = new node_RoutArgs($1, NULL); }
-          | OptArgs                                             { $$ = new node_RoutArgs(NULL, $1); }
-          | OblArgs COMMA OptArgs                               { $$ = new node_RoutArgs($1, $3); }
+RoutArgs  : /* lambda */                                  { $$ = NULL; }
+          | OblArgs                                       { $$ = new node_RoutArgs($1, NULL); }
+          | OptArgs                                       { $$ = new node_RoutArgs(NULL, $1); }
+          | OblArgs COMMA OptArgs                         { $$ = new node_RoutArgs($1, $3); }
           ;   
-OblArgs   : Type OptRef IdDef                                   { 
-                                                                  $$ = new node_RoutArgDef(
-                                                                    NULL, $1, $2, $3, NULL
-                                                                  );
-                                                                  table.insert($3);
-                                                                }
-          | OblArgs COMMA Type OptRef IdDef                     { 
-                                                                  $$ = new node_RoutArgDef(
-                                                                    $1, $3, $4, $5, NULL
-                                                                  );
-                                                                  table.insert($5);
-                                                                }
+OblArgs   : Type OptRef IdDef                             { 
+                                                            $$ = new node_RoutArgDef(
+                                                              NULL, $1, $2, $3, NULL
+                                                            );
+                                                            int s = table.current_scope();
+                                                            entry *e = new entry($3, s, "");
+                                                            table.insert(e);
+                                                          }
+          | OblArgs COMMA Type OptRef IdDef               { 
+                                                            $$ = new node_RoutArgDef(
+                                                              $1, $3, $4, $5, NULL
+                                                            );
+                                                            int s = table.current_scope();
+                                                            entry *e = new entry($5, s, "");
+                                                            table.insert(e);
+                                                          }
           ;   
-OptArgs   : Type OptRef IdDef ASSIGNMENT RValue                 { 
-                                                                  $$ = new node_RoutArgDef(
-                                                                    NULL, $1, $2, $3, $5
-                                                                  );
-                                                                  table.insert($3);
-                                                                }
-          | OptArgs COMMA Type OptRef IdDef ASSIGNMENT RValue   { 
-                                                                  $$ = new node_RoutArgDef(
-                                                                    $1, $3, $4, $5, $7
-                                                                  );
-                                                                  table.insert($5);
-                                                                }
+OptArgs   : Type OptRef IdDef ASSIGNMENT RValue           { 
+                                                            $$ = new node_RoutArgDef(
+                                                              NULL, $1, $2, $3, $5
+                                                            );
+                                                            int s = table.current_scope();
+                                                            entry *e = new entry($3, s, "");
+                                                            table.insert(e);
+                                                          }
+          | OptArgs COMMA Type OptRef IdDef 
+            ASSIGNMENT RValue                             { 
+                                                            $$ = new node_RoutArgDef(
+                                                              $1, $3, $4, $5, $7
+                                                            );
+                                                            int s = table.current_scope();
+                                                            entry *e = new entry($5, s, "");
+                                                            table.insert(e);
+                                                          }
           ;
-OptRef    : /* lambda */                                    { $$ = false; }
-					| AT                                              { $$ = true; }
+OptRef    : /* lambda */                                  { $$ = false; }
+					| AT                                            { $$ = true; }
           ; 
-OptReturn : /* lambda */                                    { $$ = NULL; }
-				  | RIGHT_ARROW Type                                { $$ = $2; }
+OptReturn : /* lambda */                                  { $$ = NULL; }
+				  | RIGHT_ARROW Type                              { $$ = $2; }
           ; 
-Actions   : /* lambda */                                    { $$ = NULL; }
-				  | Actions Action                                  { $$ = new node_Actions($1, $2); }
+Actions   : /* lambda */                                  { $$ = NULL; }
+				  | Actions Action                                { $$ = new node_Actions($1, $2); }
           ;
 
 %%
