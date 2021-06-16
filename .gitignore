@@ -1,6 +1,7 @@
 # compiled files
 *.out
 *.output
+maclang
 
 # flex
 *.yy.c

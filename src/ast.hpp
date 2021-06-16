@@ -8,539 +8,539 @@ using namespace std;
   "Abstract" class that is parent of all nodes classes in the 
   Abstract Syntax Tree.
 */
-class node {
+class Node {
   public:
-    node() {};
+    Node() {};
     // Print a node representation.
     virtual void print(void) { };
     // Print a tree representation of the sub-ast.
-    virtual void print_tree(vector<bool> *identation) { };
+    virtual void printTree(vector<bool> *identation) { };
 };
 
 /* ======================= DATA NODES =======================  */
-class node_BOOL : public node {
+class NodeBOOL : public Node {
   protected:
     bool value;
 
   public:
-    node_BOOL(bool value);
+    NodeBOOL(bool value);
 
     void print(void);
 
-    void print_tree(vector<bool> *identation);
+    void printTree(vector<bool> *identation);
 };
 
-class node_CHAR : public node {
+class NodeCHAR : public Node {
   protected:
     char value;
 
   public:
-    node_CHAR(char value);
+    NodeCHAR(char value);
 
     void print(void);
 
-    void print_tree(vector<bool> *identation);
+    void printTree(vector<bool> *identation);
 };
 
-class node_INT : public node {
+class NodeINT : public Node {
   protected:
     int value;
 
   public:
-    node_INT(int value);
+    NodeINT(int value);
 
     void print(void);
 
-    void print_tree(vector<bool> *identation);
+    void printTree(vector<bool> *identation);
 };
 
-class node_FLOAT : public node {
+class NodeFLOAT : public Node {
   protected:
     float value;
 
   public:
-    node_FLOAT(float value);
+    NodeFLOAT(float value);
 
     void print(void);
 
-    void print_tree(vector<bool> *identation);
+    void printTree(vector<bool> *identation);
 };
 
-class node_STRING : public node {
+class NodeSTRING : public Node {
   protected:
     string value;
 
   public:
-    node_STRING(string value);
+    NodeSTRING(string value);
 
     void print(void);
 
-    void print_tree(vector<bool> *identation);
+    void printTree(vector<bool> *identation);
 };
 
 /* ======================= EXPRESSION NODES =======================  */
 /* Representation o binary operators. */
-class node_BinaryOperator : public node {
+class NodeBinaryOperator : public Node {
   protected:
-    node* left;
+    Node *left;
     string op;
-    node* right;
+    Node *right;
 
   public:
-    node_BinaryOperator(node *left, string op, node *rigth);
+    NodeBinaryOperator(Node *left, string op, Node *rigth);
 
     void print(void);
 
-    void print_tree(vector<bool> *identation);
+    void printTree(vector<bool> *identation);
 };
 
 /* Representation of unary operations. */
-class node_UnaryOperator : public node {
+class NodeUnaryOperator : public Node {
   protected:
     string op;
-    node *exp;
+    Node *exp;
 
   public:
-    node_UnaryOperator(string op, node *exp);
+    NodeUnaryOperator(string op, Node *exp);
 
     void print(void);
 
-    void print_tree(vector<bool> *identation);
+    void printTree(vector<bool> *identation);
 };
 
 /* ======================= HEAP NODES =======================  */
 /* Representation of  -> new Type. */
-class node_New : public node {
+class NodeNew : public Node {
   protected:
-    node *type;
+    Node *type;
 
   public:
-    node_New(node *type);
+    NodeNew(Node *type);
 
     void print(void);
 
-    void print_tree(vector<bool> *identation);
+    void printTree(vector<bool> *identation);
 };
 
 /* Representation of  -> forget Type. */
-class node_Forget : public node {
+class NodeForget : public Node {
   protected:
-    node *lvalue;
+    Node *lvalue;
 
   public:
-    node_Forget(node *lvalue);
+    NodeForget(Node *lvalue);
 
     void print(void);
 
-    void print_tree(vector<bool> *identation);
+    void printTree(vector<bool> *identation);
 };
 
 /* ======================= TYPEDEF NODES =======================  */
 /* Class for defined types. */
-class node_TypePrimitiveDef : public node {
+class NodeTypePrimitiveDef : public Node {
   protected:
     string id;
 
   public:
-    node_TypePrimitiveDef(string id);
+    NodeTypePrimitiveDef(string id);
 
     void print(void);
 
-    void print_tree(vector<bool> *identation);
+    void printTree(vector<bool> *identation);
 };
 
 /* Representation of  -> ^ Type. */
-class node_TypePointerDef : public node {
+class NodeTypePointerDef : public Node {
   protected:
-    node *type;
+    Node *type;
 
   public:
-    node_TypePointerDef(node *type);
+    NodeTypePointerDef(Node *type);
 
     void print(void);
 
-    void print_tree(vector<bool> *identation);
+    void printTree(vector<bool> *identation);
 };
 
 /* Representation of  -> Type [ Exp ]. */
-class node_TypeArrayDef : public node {
+class NodeTypeArrayDef : public Node {
   protected:
-    node *type;
-    node *size;
+    Node *type;
+    Node *size;
 
   public:
-    node_TypeArrayDef(node *type, node *size);
+    NodeTypeArrayDef(Node *type, Node *size);
 
     void print(void);
 
-    void print_tree(vector<bool> *identation);
+    void printTree(vector<bool> *identation);
 };
 
 /* Representation of  -> Type ID = RValue. */
-class node_VarDef : public node {
+class NodeVarDef : public Node {
   protected:
-    node *type;
+    Node *type;
     string id;
-    node *rvalue;
+    Node *rvalue;
 
   public:
-    node_VarDef(node *type, string id, node *rvalue = NULL);
+    NodeVarDef(Node *type, string id, Node *rvalue = NULL);
 
     void print(void);
 
-    void print_tree(vector<bool> *identation);
+    void printTree(vector<bool> *identation);
 };
 
 /* ======================= LVALUE NODES =======================  */
 /* Class for defined id lvalues. */
-class node_IDLValue : public node {
+class NodeIDLValue : public Node {
   protected:
     string id;
 
   public:
-    node_IDLValue(string id);
+    NodeIDLValue(string id);
 
     void print(void);
 
-    void print_tree(vector<bool> *identation);
+    void printTree(vector<bool> *identation);
 };
 
 /* Representation of  -> LValue . ID. */
-class node_DotLValue : public node {
+class NodeDotLValue : public Node {
   protected:
-    node *lvalue;
+    Node *lvalue;
     string id;
 
   public:
-    node_DotLValue(node *lvalue, string id);
+    NodeDotLValue(Node *lvalue, string id);
 
     void print(void);
 
-    void print_tree(vector<bool> *identation);
+    void printTree(vector<bool> *identation);
 };
 
 /* Representation of  -> ^ LValue. */
-class node_PointerLValue : public node {
+class NodePointerLValue : public Node {
   protected:
-    node *lvalue;
+    Node *lvalue;
 
   public:
-    node_PointerLValue(node *lvalue);
+    NodePointerLValue(Node *lvalue);
 
     void print(void);
 
-    void print_tree(vector<bool> *identation);
+    void printTree(vector<bool> *identation);
 };
 
 /* Representation of  -> LValue [ Exp ]. */
-class node_ArrayLValue : public node {
+class NodeArrayLValue : public Node {
   protected:
-    node *lvalue;
-    node *size;
+    Node *lvalue;
+    Node *size;
 
   public:
-    node_ArrayLValue(node *lvalue, node *size);
+    NodeArrayLValue(Node *lvalue, Node *size);
 
     void print(void);
 
-    void print_tree(vector<bool> *identation);
+    void printTree(vector<bool> *identation);
 };
 
 /* ======================= ARRAY NODES =======================  */
 /* Representation of arrays. */
-class node_Array : public node {
+class NodeArray : public Node {
   protected:
-    node *elems;
+    Node *elems;
 
   public:
-    node_Array(node *elems);
+    NodeArray(Node *elems);
 
     void print(void);
 
-    void print_tree(vector<bool> *identation);
+    void printTree(vector<bool> *identation);
 };
 
 /* Representation of  ->  RValue , ArrElems. */
-class node_ArrayElems : public node {
+class NodeArrayElems : public Node {
   protected:
-    node *rvalue;
-    node *head;
+    Node *rvalue;
+    Node *head;
 
   public:
-    node_ArrayElems(node *rvalue, node *head = NULL);
+    NodeArrayElems(Node *rvalue, Node *head = NULL);
 
     void print(void);
 
-    void print_tree(vector<bool> *identation);
+    void printTree(vector<bool> *identation);
 };
 
 /* ======================= FUNCTION CALL NODES ======================= */
 /* Representation of function calls. */
-class node_FunctionCall : public node {
+class NodeFunctionCall : public Node {
   protected:
     string id;
-    node *args;
-    bool end_inst;
+    Node *args;
+    bool bEndInst;
 
   public:
-    node_FunctionCall(string id, node *args, bool end_inst);
+    NodeFunctionCall(string id, Node *args, bool bEndInst);
 
     void print(void);
 
-    void print_tree(vector<bool> *identation);
+    void printTree(vector<bool> *identation);
 
-    void set_end_inst(void);
+    void setEndInst(void);
 };
 
 /* Representation of  ->  RValue , FuncArgs. */
-class node_FunctionCallArgs : public node {
+class NodeFunctionCallArgs : public Node {
   protected:
-    node *head;
-    node *rvalue;
+    Node *head;
+    Node *rvalue;
 
   public:
-    node_FunctionCallArgs(node *head, node *rvalue);
+    NodeFunctionCallArgs(Node *head, Node *rvalue);
 
     void print(void);
 
-    void print_tree(vector<bool> *identation);
+    void printTree(vector<bool> *identation);
 };
 
 /* ======================= UNION DEF NODES ======================= */
 /* Representation of union definitions. */
-class node_UnionDef : public node {
+class NodeUnionDef : public Node {
   protected:
     string id;
-    node *fields;
+    Node *fields;
 
   public:
-    node_UnionDef(string id, node *fields);
+    NodeUnionDef(string id, Node *fields);
 
     void print(void);
 
-    void print_tree(vector<bool> *identation);
+    void printTree(vector<bool> *identation);
 };
 
 /* Representation of  -> UnionBody Type ID ;  */
-class node_UnionFields : public node {
+class NodeUnionFields : public Node {
   protected:
-    node *head;
-    node *type;
+    Node *head;
+    Node *type;
     string id;
 
   public:
-    node_UnionFields(node *head, node *type, string id);
+    NodeUnionFields(Node *head, Node *type, string id);
 
     void print(void);
 
-    void print_tree(vector<bool> *identation);
+    void printTree(vector<bool> *identation);
 };
 
 /* ======================= REGISTER DEF NODES ======================= */
 /* Representation of register definitions. */
-class node_RegDef : public node {
+class NodeRegDef : public Node {
   protected:
     string id;
-    node *fields;
+    Node *fields;
 
   public:
-    node_RegDef(string id, node *fields);
+    NodeRegDef(string id, Node *fields);
 
     void print(void);
 
-    void print_tree(vector<bool> *identation);
+    void printTree(vector<bool> *identation);
 };
 
 /* Representation of  -> RegisterBody VarDefBody;  */
-class node_RegFields : public node {
+class NodeRegFields : public Node {
   protected:
-    node *head;
-    node *type;
+    Node *head;
+    Node *type;
     string id;
-    node *rvalue;
+    Node *rvalue;
 
   public:
-    node_RegFields(node *head, node *type, string id, node *rvalue);
+    NodeRegFields(Node *head, Node *type, string id, Node *rvalue);
 
     void print(void);
 
-    void print_tree(vector<bool> *identation);
+    void printTree(vector<bool> *identation);
 };
 
 /* ======================= CONDITIONAL DEF NODES ======================= */
 /* Representation of if-elsif-else blocks. */
-class node_Conditional : public node {
+class NodeConditional : public Node {
   protected:
-    node *cond;
-    node *body;
-    node *elsifs;
-    node *else_def;
+    Node *cond;
+    Node *body;
+    Node *elsifs;
+    Node *elseDef;
 
   public:
-    node_Conditional(node *cond, node *body, node *elsifs, node *else_def);
+    NodeConditional(Node *cond, Node *body, Node *elsifs, Node *elseDef);
 
     void print(void);
 
-    void print_tree(vector<bool> *identation);
+    void printTree(vector<bool> *identation);
 };
 
 /* Representation of  -> Elsifs elsif Exp then I. */
-class node_Elsif : public node {
+class NodeElsif : public Node {
   protected:
-    node *head;
-    node *cond;
-    node *body;
+    Node *head;
+    Node *cond;
+    Node *body;
 
   public:
-    node_Elsif(node *head, node *cond, node *body);
+    NodeElsif(Node *head, Node *cond, Node *body);
 
     void print(void);
 
-    void print_tree(vector<bool> *identation);
+    void printTree(vector<bool> *identation);
 };
 
 /* Representation of  -> else I. */
-class node_Else : public node {
+class NodeElse : public Node {
   protected:
-    node *body;
+    Node *body;
 
   public:
-    node_Else(node *body);
+    NodeElse(Node *body);
 
     void print(void);
 
-    void print_tree(vector<bool> *identation);
+    void printTree(vector<bool> *identation);
 };
 
 /* ======================= LOOP NODES =======================  */
 /* Representation of while blocks. */
-class node_While : public node {
+class NodeWhile : public Node {
   protected:
-    node *cond;
-    node *body;
+    Node *cond;
+    Node *body;
 
   public:
-    node_While(node *cond, node *body);
+    NodeWhile(Node *cond, Node *body);
 
     void print(void);
 
-    void print_tree(vector<bool> *identation);
+    void printTree(vector<bool> *identation);
 };
 
 /* Representation of for blocks. */
-class node_For : public node {
+class NodeFor : public Node {
   protected:
     string iter;
-    node *begin;
-    node *end;
-    node *step;
-    node *body;
+    Node *begin;
+    Node *end;
+    Node *step;
+    Node *body;
 
   public:
-    node_For(string iter, node *begin, node *end, node *step, node *body);
+    NodeFor(string iter, Node *begin, Node *end, Node *step, Node *body);
 
     void print(void);
 
-    void print_tree(vector<bool> *identation);
+    void printTree(vector<bool> *identation);
 };
 
 /* ======================= SUBROUTINE DEF NODES =======================  */
 /* Representation of routine definitions. */
-class node_RoutineDef : public node {
+class NodeRoutineDef : public Node {
   protected:
     string id;
-    node *args;
-    node *ret;
-    node *body;
+    Node *args;
+    Node *ret;
+    Node *body;
 
   public:
-    node_RoutineDef(string id, node *args, node *ret, node *body);
+    NodeRoutineDef(string id, Node *args, Node *ret, Node *body);
 
     void print(void);
 
-    void print_tree(vector<bool> *identation);
+    void printTree(vector<bool> *identation);
 };
 
-class node_RoutArgs : public node {
+class NodeRoutArgs : public Node {
   protected:
-    node *obl_args;
-    node *opt_args;
+    Node *oblArgs;
+    Node *optArgs;
 
   public:
-    node_RoutArgs(node *obl_args, node *opt_args);
+    NodeRoutArgs(Node *oblArgs, Node *optArgs);
 
     void print(void);
 
-    void print_tree(vector<bool> *identation);
+    void printTree(vector<bool> *identation);
 };
 
-class node_RoutArgDef : public node {
+class NodeRoutArgDef : public Node {
   protected:
-    node *head; 
-    node *type; 
+    Node *head; 
+    Node *type; 
     bool ref; 
     string id; 
-    node *rvalue;
+    Node *rvalue;
 
   public:
-    node_RoutArgDef(node *head, node *type, bool ref, string id, node *rvalue);
+    NodeRoutArgDef(Node *head, Node *type, bool ref, string id, Node *rvalue);
 
     void print(void);
 
-    void print_tree(vector<bool> *identation);
+    void printTree(vector<bool> *identation);
 };
 
 /* Representacion of  -> Actions Action */
-class node_Actions : public node {
+class NodeActions : public Node {
   protected:
-    node *head;
-    node *inst;
+    Node *head;
+    Node *inst;
 
   public:
-    node_Actions(node *head, node *inst);
+    NodeActions(Node *head, Node *inst);
 
     void print(void);
 
-    void print_tree(vector<bool> *identation);
+    void printTree(vector<bool> *identation);
 };
 
 /* ======================= INSTRUCTION NODES =======================  */
-class node_Assign : public node {
+class NodeAssign : public Node {
   protected:
-    node *lvalue;
-    node *rvalue;
+    Node *lvalue;
+    Node *rvalue;
 
   public:
-    node_Assign(node *lvalue, node *rvalue);
+    NodeAssign(Node *lvalue, Node *rvalue);
 
     void print(void);
 
-    void print_tree(vector<bool> *identation);
+    void printTree(vector<bool> *identation);
 };
 
 /* Representacion of  -> I Inst */
-class node_I : public node {
+class NodeI : public Node {
   protected:
-    node *head;
-    node *inst;
+    Node *head;
+    Node *inst;
 
   public:
-    node_I(node *head, node *inst);
+    NodeI(Node *head, Node *inst);
 
     void print(void);
 
-    void print_tree(vector<bool> *identation);
+    void printTree(vector<bool> *identation);
 };
 
 /* Root node. */
-class node_S {
+class NodeS {
   protected:
-    node *inst;
+    Node *inst;
 
   public:
-    node_S(node *inst);
+    NodeS(Node *inst);
 
     void print(void);
 
-    void print_tree(vector<bool> *identation);
+    void printTree(vector<bool> *identation);
 };

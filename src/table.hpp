@@ -6,10 +6,9 @@
 using namespace std;
 
 /*
-  "Abstract" class that is parent of all entries classes in the 
-  Symbols Table.
+  "Abstract" class that is parent of all entries classes in the Symbols Table.
 */
-class entry {
+class Entry {
   public:
     // Variable identification.
     string id;
@@ -18,7 +17,7 @@ class entry {
     // Variable type
     string type;
   
-    entry(string id, int scope, string type);
+    Entry(string id, int scope, string type);
 
     // Prints the variable information
     virtual void print(void);
@@ -27,36 +26,38 @@ class entry {
 /*
   Symbols Table implementation.
 */
-class symbols_table {
+class SymbolsTable {
   private:
     // Dictionary:  Name -> Entries
-    map<string, deque<entry*>> sym_table;
-    vector<int> scope_stack;
+    map<string, deque<Entry*>> symTable;
+    vector<int> scopeStack;
     // Last scope added
-    int last_scope;
+    int lastScope;
 
   public:
-    symbols_table(void);
+    SymbolsTable(void);
 
     // Insert a new entry
-    void insert(entry *e);
+    void insert(Entry *e);
 
-    int current_scope(void);
+    int currentScope(void);
 
     // Verify if a ID can be added
-    bool verify_insert(string id);
+    bool verifyInsert(string id);
 
     // Find a variable
-    entry* lookup(string id);
+    Entry* lookup(string id);
 
     // Add a new scope
-    int new_scope(void);
+    int newScope(void);
 
     // Delete the last scope
-    void exit_scope(void);
+    void exitScope(void);
 
-    void print_table(void);
+    // Prints representation of the symbols table
+    void printTable(void);
 
-    void print_scope_stack(void);
+    // Prints representation of the scope stack 
+    void printScopeStack(void);
 };
 

@@ -13,15 +13,17 @@
   extern int yycolumn;
   extern char *yytext;
   extern char *filename;
+
   // queues for tokens and errors
   extern queue<string> errors;
-  node_S *ast;
+  NodeS *ast;
 
   // queues for tokens and errors
   queue<string> tokens;
   extern queue<string> errors;
 
-  symbols_table table;
+  // Leblanc-Cook's Symbols Table
+  SymbolsTable table;
 
   // Prints error;
   void yyerror(string s);
@@ -29,20 +31,14 @@
   // Prints the queue to std.
   void printQueue(queue<string> queueToPrint);
 
-  // main method for parsing.
-  int parser_main(int argc, char **argv);
-
-  // main method for lexing.
-  int lexer_main(int argc, char **argv);
-
   // add redefinitions errors.
-  void redefinition_error(string id);
+  void redefinitionError(string id);
 
   // add undefined error.
-  void undefined_error(string id);
+  void undefinedError(string id);
 
   // token names for readability on lexer
-  string token_names [] = {
+  string tokenNames [] = {
     "SEMICOLON",
     "OPEN_PAR",
     "CLOSE_PAR",
@@ -100,7 +96,7 @@
     "ASTERISK"
   };
 
-  node* global;
+  Node *global;
 %}
 
 %define parse.lac full
@@ -112,8 +108,8 @@
   bool  boolean;
   char  *str;
   char  ch;
-  node  *ast;
-  node_S *nS;
+  Node  *ast;
+  NodeS *nS;
 }
 
 %locations
@@ -205,17 +201,17 @@
 %%
 
 /* =================== GLOBAL RULES =================== */
-S       : I                   { $$ = new node_S($1); ast = $$;  }
+S       : I                   { $$ = new NodeS($1); ast = $$;  }
         | /* lambda */        { $$ = NULL; }
         ;
-I       : Inst                { $$ = new node_I(NULL, $1); }
-        | I Inst              { $$ = new node_I($1, $2); }
+I       : Inst                { $$ = new NodeI(NULL, $1); }
+        | I Inst              { $$ = new NodeI($1, $2); }
         ;
 Inst    : Action              { $$ = $1; }
 				| Def                 { $$ = $1; }
         ;
 Action  : VarInst SEMICOLON   { $$ = $1; }
-				| FuncCall SEMICOLON  { $$ = $1; ((node_FunctionCall*) $$)->set_end_inst(); }
+				| FuncCall SEMICOLON  { $$ = $1; ((NodeFunctionCall*) $$)->setEndInst(); }
 				| Conditional         { $$ = $1; }
 				| LoopWhile           { $$ = $1; }
 				| LoopFor             { $$ = $1; }
@@ -228,156 +224,156 @@ Def     : UnionDef            { $$ = $1; }
 /* ============ VARIABLES DEFINITION ============ */
 VarInst     : VarDef                    { $$ = $1; }
 						| Assign                    { $$ = $1; }
-            | FORGET LValue             { $$ = new node_Forget($2); }
+            | FORGET LValue             { $$ = new NodeForget($2); }
             ;
 VarDef      : LET Type IdDef OptAssign  { 
-                                          $$ = new node_VarDef($2, $3, $4);
-                                          int s = table.current_scope();
-                                          entry *e = new entry($3, s, "");
+                                          $$ = new NodeVarDef($2, $3, $4);
+                                          int s = table.currentScope();
+                                          Entry *e = new Entry($3, s, "");
                                           table.insert(e);
                                         }
             ;   
 IdDef       : ID                        {
-                                          if (! table.verify_insert($1)) {
-                                            redefinition_error($1);
+                                          if (! table.verifyInsert($1)) {
+                                            redefinitionError($1);
                                           }
                                           $$ = $1; 
                                         }
 OptAssign   : /* lambda */              { $$ = NULL; }
 						| ASSIGNMENT RValue         { $$ = $2; }
             ;
-Assign      : LValue ASSIGNMENT RValue  { $$ = new node_Assign($1, $3); }
+Assign      : LValue ASSIGNMENT RValue  { $$ = new NodeAssign($1, $3); }
             ;
 RValue      : Exp                       { $$ = $1; }
             | Array                     { $$ = $1; }
-            | STRING                    { $$ = new node_STRING($1); }
-            | NEW Type                  { $$ = new node_New($2); }
+            | STRING                    { $$ = new NodeSTRING($1); }
+            | NEW Type                  { $$ = new NodeNew($2); }
             ;
 
 /* ======================== TYPES ======================== */
-Type	: Type OPEN_BRACKET Exp CLOSE_BRACKET { $$ = new node_TypeArrayDef($1, $3); }
-			| POINTER Type 	                      { $$ = new node_TypePointerDef($2); }
+Type	: Type OPEN_BRACKET Exp CLOSE_BRACKET { $$ = new NodeTypeArrayDef($1, $3); }
+			| POINTER Type 	                      { $$ = new NodeTypePointerDef($2); }
 			| OPEN_PAR Type CLOSE_PAR             { $$ = $2; }
-      | T_UNIT                              { $$ = new node_TypePrimitiveDef($1); }
-			| T_BOOL                              { $$ = new node_TypePrimitiveDef($1); }
-      | T_CHAR                              { $$ = new node_TypePrimitiveDef($1); }
-      | T_INT                               { $$ = new node_TypePrimitiveDef($1); }
-      | T_FLOAT                             { $$ = new node_TypePrimitiveDef($1); }
-      | T_STRING                            { $$ = new node_TypePrimitiveDef($1); }
+      | T_UNIT                              { $$ = new NodeTypePrimitiveDef($1); }
+			| T_BOOL                              { $$ = new NodeTypePrimitiveDef($1); }
+      | T_CHAR                              { $$ = new NodeTypePrimitiveDef($1); }
+      | T_INT                               { $$ = new NodeTypePrimitiveDef($1); }
+      | T_FLOAT                             { $$ = new NodeTypePrimitiveDef($1); }
+      | T_STRING                            { $$ = new NodeTypePrimitiveDef($1); }
       ;
 
 /* ======================= LVALUES ======================= */
-LValue	:	LValue OPEN_BRACKET Exp CLOSE_BRACKET   { $$ = new node_ArrayLValue($1, $3); }
-				|	POINTER LValue                          { $$ = new node_PointerLValue($2); }
-				|	LValue DOT ID                           { $$ = new node_DotLValue($1, $3); }
+LValue	:	LValue OPEN_BRACKET Exp CLOSE_BRACKET   { $$ = new NodeArrayLValue($1, $3); }
+				|	POINTER LValue                          { $$ = new NodePointerLValue($2); }
+				|	LValue DOT ID                           { $$ = new NodeDotLValue($1, $3); }
 				| OPEN_PAR LValue CLOSE_PAR               { $$ = $2; }
 				|	ID                                      { 
                                                     if (table.lookup($1) == NULL) {
-                                                      undefined_error($1);
+                                                      undefinedError($1);
                                                     }
-                                                    $$ = new node_IDLValue($1); 
+                                                    $$ = new NodeIDLValue($1); 
                                                   }
         ;
 
 /* ======================= EXPRESSIONS ======================= */
-Exp   : Exp EQUIV Exp               { $$ = new node_BinaryOperator($1, $2, $3); }
-      | Exp NOT_EQUIV Exp           { $$ = new node_BinaryOperator($1, $2, $3); }
-      | Exp OR Exp                  { $$ = new node_BinaryOperator($1, $2, $3); }
-      | Exp AND Exp                 { $$ = new node_BinaryOperator($1, $2, $3); }
-      | NOT Exp                     { $$ = new node_UnaryOperator($1, $2); }
-      | Exp LESS_THAN Exp           { $$ = new node_BinaryOperator($1, $2, $3); }
-      | Exp LESS_EQUAL_THAN Exp     { $$ = new node_BinaryOperator($1, $2, $3); }
-      | Exp GREATER_THAN Exp        { $$ = new node_BinaryOperator($1, $2, $3); }
-      | Exp GREATER_EQUAL_THAN Exp  { $$ = new node_BinaryOperator($1, $2, $3); }
-      | Exp PLUS Exp                { $$ = new node_BinaryOperator($1, $2, $3); }
-      | Exp MINUS Exp               { $$ = new node_BinaryOperator($1, $2, $3); }
-      | Exp ASTERISK Exp            { $$ = new node_BinaryOperator($1, $2, $3); }
-      | Exp DIV Exp                 { $$ = new node_BinaryOperator($1, $2, $3); }
-      | Exp MODULE Exp              { $$ = new node_BinaryOperator($1, $2, $3); }
-      | MINUS Exp                   { $$ = new node_UnaryOperator($1, $2); }
-      | PLUS Exp                    { $$ = new node_UnaryOperator($1, $2); }
-      | Exp POWER Exp               { $$ = new node_BinaryOperator($1, $2, $3); }
+Exp   : Exp EQUIV Exp               { $$ = new NodeBinaryOperator($1, $2, $3); }
+      | Exp NOT_EQUIV Exp           { $$ = new NodeBinaryOperator($1, $2, $3); }
+      | Exp OR Exp                  { $$ = new NodeBinaryOperator($1, $2, $3); }
+      | Exp AND Exp                 { $$ = new NodeBinaryOperator($1, $2, $3); }
+      | NOT Exp                     { $$ = new NodeUnaryOperator($1, $2); }
+      | Exp LESS_THAN Exp           { $$ = new NodeBinaryOperator($1, $2, $3); }
+      | Exp LESS_EQUAL_THAN Exp     { $$ = new NodeBinaryOperator($1, $2, $3); }
+      | Exp GREATER_THAN Exp        { $$ = new NodeBinaryOperator($1, $2, $3); }
+      | Exp GREATER_EQUAL_THAN Exp  { $$ = new NodeBinaryOperator($1, $2, $3); }
+      | Exp PLUS Exp                { $$ = new NodeBinaryOperator($1, $2, $3); }
+      | Exp MINUS Exp               { $$ = new NodeBinaryOperator($1, $2, $3); }
+      | Exp ASTERISK Exp            { $$ = new NodeBinaryOperator($1, $2, $3); }
+      | Exp DIV Exp                 { $$ = new NodeBinaryOperator($1, $2, $3); }
+      | Exp MODULE Exp              { $$ = new NodeBinaryOperator($1, $2, $3); }
+      | MINUS Exp                   { $$ = new NodeUnaryOperator($1, $2); }
+      | PLUS Exp                    { $$ = new NodeUnaryOperator($1, $2); }
+      | Exp POWER Exp               { $$ = new NodeBinaryOperator($1, $2, $3); }
       | OPEN_PAR Exp CLOSE_PAR      { $$ = $2; }
       | LValue                      { $$ = $1; }
       | FuncCall                    { $$ = $1; }
-      | TRUE                        { $$ = new node_BOOL(true); }
-      | FALSE                       { $$ = new node_BOOL(false); }
-      | CHAR                        { $$ = new node_CHAR($1); }
-      | INT                         { $$ = new node_INT($1); }
-      | FLOAT                       { $$ = new node_FLOAT($1); }
+      | TRUE                        { $$ = new NodeBOOL(true); }
+      | FALSE                       { $$ = new NodeBOOL(false); }
+      | CHAR                        { $$ = new NodeCHAR($1); }
+      | INT                         { $$ = new NodeINT($1); }
+      | FLOAT                       { $$ = new NodeFLOAT($1); }
       ;
 
 /* ====================== ARRAYS ====================== */
-Array     : OPEN_BRACKET ArrExp CLOSE_BRACKET   { $$ = new node_Array($2); }
+Array     : OPEN_BRACKET ArrExp CLOSE_BRACKET   { $$ = new NodeArray($2); }
           ;
 ArrExp    : /* lambda */                        { $$ = NULL; }
-					| ArrElems RValue                     { $$ = new node_ArrayElems($1, $2); }
+					| ArrElems RValue                     { $$ = new NodeArrayElems($1, $2); }
           ;
 ArrElems	: /* lambda */                        { $$ = NULL; }
-					| ArrElems RValue COMMA               { $$ = new node_ArrayElems($1, $2); }
+					| ArrElems RValue COMMA               { $$ = new NodeArrayElems($1, $2); }
           ;
 
 /* ================= FUNCTION CALLS ================= */
 FuncCall  : ID OPEN_PAR ArgsExp CLOSE_PAR   { 
                                               if (table.lookup($1) == NULL) {
-                                                undefined_error($1);
+                                                undefinedError($1);
                                               }
-                                              $$ = new node_FunctionCall($1, $3, false); 
+                                              $$ = new NodeFunctionCall($1, $3, false); 
                                             }
           ;
 ArgsExp   : /* lambda */                    { $$ = NULL; }
-					| Args RValue                     { $$ = new node_FunctionCallArgs($1, $2); }
+					| Args RValue                     { $$ = new NodeFunctionCallArgs($1, $2); }
           ;
 Args      : /* lambda */                    { $$ = NULL; }
-					| Args RValue COMMA               { $$ = new node_FunctionCallArgs($1, $2); }
+					| Args RValue COMMA               { $$ = new NodeFunctionCallArgs($1, $2); }
           ;
 
 /* ================= UNION DEFINITION ================= */
 UnionDef  : UnionId OPEN_C_BRACE UnionBody CLOSE_C_BRACE  { 
-                                                            $$ = new node_UnionDef($1, $3);
-                                                            table.exit_scope(); 
-                                                            int s = table.current_scope();
-                                                            entry *e = new entry($1, s, "");
+                                                            $$ = new NodeUnionDef($1, $3);
+                                                            table.exitScope(); 
+                                                            int s = table.currentScope();
+                                                            Entry *e = new Entry($1, s, "");
                                                             table.insert(e);
                                                           }
           ;
-UnionId   : UNION IdDef                                   { table.new_scope(); $$ = $2; }
+UnionId   : UNION IdDef                                   { table.newScope(); $$ = $2; }
           ;  
 UnionBody	: Type IdDef SEMICOLON                          { 
-                                                            $$ = new node_UnionFields(NULL, $1, $2); 
-                                                            int s = table.current_scope();
-                                                            entry *e = new entry($2, s, "");
+                                                            $$ = new NodeUnionFields(NULL, $1, $2); 
+                                                            int s = table.currentScope();
+                                                            Entry *e = new Entry($2, s, "");
                                                             table.insert(e);
                                                           }
 					| UnionBody Type IdDef SEMICOLON                { 
-                                                            $$ = new node_UnionFields($1, $2, $3); 
-                                                            int s = table.current_scope();
-                                                            entry *e = new entry($3, s, "");
+                                                            $$ = new NodeUnionFields($1, $2, $3); 
+                                                            int s = table.currentScope();
+                                                            Entry *e = new Entry($3, s, "");
                                                             table.insert(e);
                                                           }
           ;
 
 /* ================ REGISTER DEFINITION ================ */
 RegDef    : RegId OPEN_C_BRACE RegBody CLOSE_C_BRACE  { 
-                                                        $$ = new node_RegDef($1, $3);
-                                                        table.exit_scope();
-                                                        int s = table.current_scope();
-                                                        entry *e = new entry($1, s, "");
+                                                        $$ = new NodeRegDef($1, $3);
+                                                        table.exitScope();
+                                                        int s = table.currentScope();
+                                                        Entry *e = new Entry($1, s, "");
                                                         table.insert(e);
                                                       }
           ;   
-RegId     : REGISTER IdDef                            { table.new_scope(); $$ = $2; }
+RegId     : REGISTER IdDef                            { table.newScope(); $$ = $2; }
           ; 
 RegBody	  : Type IdDef OptAssign SEMICOLON            { 
-                                                        $$ = new node_RegFields(NULL, $1, $2, $3);
-                                                        int s = table.current_scope();
-                                                        entry *e = new entry($2, s, "");
+                                                        $$ = new NodeRegFields(NULL, $1, $2, $3);
+                                                        int s = table.currentScope();
+                                                        Entry *e = new Entry($2, s, "");
                                                         table.insert(e);
                                                       }
 				  |	RegBody Type IdDef OptAssign SEMICOLON    { 
-                                                        $$ = new node_RegFields($1, $2, $3, $4);
-                                                        int s = table.current_scope();
-                                                        entry *e = new entry($3, s, "");
+                                                        $$ = new NodeRegFields($1, $2, $3, $4);
+                                                        int s = table.currentScope();
+                                                        Entry *e = new Entry($3, s, "");
                                                         table.insert(e);
                                                       }
           ;
@@ -386,54 +382,54 @@ RegBody	  : Type IdDef OptAssign SEMICOLON            {
 
 /* ===================== CONDITIONALS ===================== */
 Conditional : If Exp THEN I OptElsif OptElse DONE   { 
-                                                      $$ = new node_Conditional($2, $4, $5, $6);
-                                                      table.exit_scope(); 
+                                                      $$ = new NodeConditional($2, $4, $5, $6);
+                                                      table.exitScope(); 
                                                     }
             ;
-If          : IF                                    { table.new_scope(); }
+If          : IF                                    { table.newScope(); }
             ;
 OptElsif    : /* lambda */                          { $$ = NULL; }
 						| Elsifs                                { $$ = $1; }
             ;
-Elsifs      : Elsif Exp THEN I                      { $$ = new node_Elsif(NULL, $2, $4); }
-						| Elsifs Elsif Exp THEN I               { $$ = new node_Elsif($1, $3, $5); }
+Elsifs      : Elsif Exp THEN I                      { $$ = new NodeElsif(NULL, $2, $4); }
+						| Elsifs Elsif Exp THEN I               { $$ = new NodeElsif($1, $3, $5); }
             ;
 Elsif       : ELSIF                                 { 
-                                                      table.exit_scope();
-                                                      table.new_scope(); 
+                                                      table.exitScope();
+                                                      table.newScope(); 
                                                     }
             ;
 OptElse     : /* lambda */                          { $$ = NULL; }
-						| Else I                                { $$ = new node_Else($2); }
+						| Else I                                { $$ = new NodeElse($2); }
             ;
 Else        : ELSE                                  { 
-                                                      table.exit_scope();
-                                                      table.new_scope(); 
+                                                      table.exitScope();
+                                                      table.newScope(); 
                                                     }
             ;
 
 /* ======================== LOOPS ======================== */
 LoopWhile : While Exp DO I DONE                       { 
-                                                        $$ = new node_While($2, $4); 
-                                                        table.exit_scope();
+                                                        $$ = new NodeWhile($2, $4); 
+                                                        table.exitScope();
                                                       }
           ; 
-While     : WHILE                                     { table.new_scope(); }
+While     : WHILE                                     { table.newScope(); }
           ;
 LoopFor   : For OPEN_PAR IdFor SEMICOLON Exp SEMICOLON   
             Exp OptStep CLOSE_PAR DO I DONE           { 
-                                                        $$ = new node_For($3, $5, $7, $8, $11);
-                                                        table.exit_scope();
+                                                        $$ = new NodeFor($3, $5, $7, $8, $11);
+                                                        table.exitScope();
                                                       }
           ;
 IdFor     : IdDef                                     { 
-                                                        int s = table.current_scope();
-                                                        entry *e = new entry($1, s, "");
+                                                        int s = table.currentScope();
+                                                        Entry *e = new Entry($1, s, "");
                                                         table.insert(e); 
                                                         $$ = $1; 
                                                       }
           ;
-For       : FOR                                       { table.new_scope(); }
+For       : FOR                                       { table.newScope(); }
           ;
 OptStep   : /* lambda */                              { $$ = NULL; }
 				  | SEMICOLON Exp                             { $$ = $2; }
@@ -442,56 +438,56 @@ OptStep   : /* lambda */                              { $$ = NULL; }
 /* =============== SUBROUTINES DEFINITION =============== */
 RoutDef   : RoutId OPEN_PAR RoutArgs CLOSE_PAR OptReturn 
             OPEN_C_BRACE Actions CLOSE_C_BRACE            { 
-                                                            $$ = new node_RoutineDef(
+                                                            $$ = new NodeRoutineDef(
                                                               $1, $3, $5, $7
                                                             ); 
-                                                            table.exit_scope();
+                                                            table.exitScope();
                                                           }
           ;  
 RoutId    : DEF IdDef                                     {
-                                                            int s = table.current_scope();
-                                                            entry *e = new entry($2, s, "");
+                                                            int s = table.currentScope();
+                                                            Entry *e = new Entry($2, s, "");
                                                             table.insert(e);
-                                                            table.new_scope();
+                                                            table.newScope();
                                                           }
           ;    
 RoutArgs  : /* lambda */                                  { $$ = NULL; }
-          | OblArgs                                       { $$ = new node_RoutArgs($1, NULL); }
-          | OptArgs                                       { $$ = new node_RoutArgs(NULL, $1); }
-          | OblArgs COMMA OptArgs                         { $$ = new node_RoutArgs($1, $3); }
+          | OblArgs                                       { $$ = new NodeRoutArgs($1, NULL); }
+          | OptArgs                                       { $$ = new NodeRoutArgs(NULL, $1); }
+          | OblArgs COMMA OptArgs                         { $$ = new NodeRoutArgs($1, $3); }
           ;   
 OblArgs   : Type OptRef IdDef                             { 
-                                                            $$ = new node_RoutArgDef(
+                                                            $$ = new NodeRoutArgDef(
                                                               NULL, $1, $2, $3, NULL
                                                             );
-                                                            int s = table.current_scope();
-                                                            entry *e = new entry($3, s, "");
+                                                            int s = table.currentScope();
+                                                            Entry *e = new Entry($3, s, "");
                                                             table.insert(e);
                                                           }
           | OblArgs COMMA Type OptRef IdDef               { 
-                                                            $$ = new node_RoutArgDef(
+                                                            $$ = new NodeRoutArgDef(
                                                               $1, $3, $4, $5, NULL
                                                             );
-                                                            int s = table.current_scope();
-                                                            entry *e = new entry($5, s, "");
+                                                            int s = table.currentScope();
+                                                            Entry *e = new Entry($5, s, "");
                                                             table.insert(e);
                                                           }
           ;   
 OptArgs   : Type OptRef IdDef ASSIGNMENT RValue           { 
-                                                            $$ = new node_RoutArgDef(
+                                                            $$ = new NodeRoutArgDef(
                                                               NULL, $1, $2, $3, $5
                                                             );
-                                                            int s = table.current_scope();
-                                                            entry *e = new entry($3, s, "");
+                                                            int s = table.currentScope();
+                                                            Entry *e = new Entry($3, s, "");
                                                             table.insert(e);
                                                           }
           | OptArgs COMMA Type OptRef IdDef 
             ASSIGNMENT RValue                             { 
-                                                            $$ = new node_RoutArgDef(
+                                                            $$ = new NodeRoutArgDef(
                                                               $1, $3, $4, $5, $7
                                                             );
-                                                            int s = table.current_scope();
-                                                            entry *e = new entry($5, s, "");
+                                                            int s = table.currentScope();
+                                                            Entry *e = new Entry($5, s, "");
                                                             table.insert(e);
                                                           }
           ;
@@ -502,18 +498,19 @@ OptReturn : /* lambda */                                  { $$ = NULL; }
 				  | RIGHT_ARROW Type                              { $$ = $2; }
           ; 
 Actions   : /* lambda */                                  { $$ = NULL; }
-				  | Actions Action                                { $$ = new node_Actions($1, $2); }
+				  | Actions Action                                { $$ = new NodeActions($1, $2); }
           ;
 
 %%
 
 int main(int argc, char **argv)
 {
-  bool lex_opt = false;
-  bool parse_opt = false;
-  bool symbols_opt = false;
-  bool tree_opt = false;
-  bool rep_opt = false;
+  // Booleans for options
+  bool bLexOpt = false;
+  bool bParseOpt = false;
+  bool bSymbolsOpt = false;
+  bool bTreeOpt = false;
+  bool bRepOpt = false;
 
   // Verify all arguments has been passed
   if (argc < 3 || argc > 4) {
@@ -533,11 +530,11 @@ int main(int argc, char **argv)
   } else if (strcmp(argv[1], "parse") == 0) {
     // Parsing.
 
-    parse_opt = true;
+    bParseOpt = true;
     // Print tree
-    if (strcmp(argv[2], "-t") == 0) { tree_opt = true; }
+    if (strcmp(argv[2], "-t") == 0) { bTreeOpt = true; }
     // Print code representation
-    else if (strcmp(argv[2], "-c") == 0) { rep_opt = true; }
+    else if (strcmp(argv[2], "-c") == 0) { bRepOpt = true; }
     else {
       cout << "Invalid flag: " << argv[2] << endl;
       return 1;
@@ -547,13 +544,13 @@ int main(int argc, char **argv)
   } else if (strcmp(argv[1], "lex") == 0) {
     // Lexing.
 
-    lex_opt = true;
+    bLexOpt = true;
     filename = argv[2];
 
   } else {
     // Sumbols table 
 
-    symbols_opt = true;
+    bSymbolsOpt = true;
     filename = argv[2];
   }
   
@@ -576,34 +573,33 @@ int main(int argc, char **argv)
     switch(tok) {
       case INT:
         tokens.push("\e[0;33m" + to_string(tok) + ":\t\e[0m\e[1;34m " + 
-                    token_names[tok-1] + "\e[0m = \e[1;36m" + 
+                    tokenNames[tok-1] + "\e[0m = \e[1;36m" + 
                     to_string(yylval.integer) + "\n");
         break;
       case FLOAT:
         tokens.push("\e[0;33m" + to_string(tok) + ":\t\e[0m\e[1;32m " + 
-                    token_names[tok-1] + "\e[0m = \e[1;36m" + 
+                    tokenNames[tok-1] + "\e[0m = \e[1;36m" + 
                     to_string(yylval.flot) + "\n");
         break;
       case CHAR:
         tokens.push("\e[0;33m" + to_string(tok) + ":\t\e[0m\e[1;35m " + 
-                    token_names[tok-1] + "\e[0m = \e[1;36m" + yylval.ch + "\n");
+                    tokenNames[tok-1] + "\e[0m = \e[1;36m" + yylval.ch + "\n");
         break;
       case STRING:
       case ID:
         tokens.push("\e[0;33m" + to_string(tok) + ":\t\e[0m\e[1;31m " + 
-                    token_names[tok-1] + "\e[0m = \e[1;36m" + yylval.str + "\n");
+                    tokenNames[tok-1] + "\e[0m = \e[1;36m" + yylval.str + "\n");
         break;
       default:
         tokens.push("\e[0;33m" + to_string(tok) + ":\t\e[0m\e[1;37m " + 
-                    token_names[tok-1] + "\e[0m\n");
+                    tokenNames[tok-1] + "\e[0m\n");
     }
   }
 
   fclose(yyin);
 
-  // if were asked just for lexing print the results of the lexer_main
-  // and return
-  if (lex_opt) {
+  // if were asked just for lexing print the results of it and return
+  if (bLexOpt) {
     if(errors.empty())
       printQueue(tokens);
     else
@@ -626,16 +622,15 @@ int main(int argc, char **argv)
     yyparse();
 
     if (errors.empty()) {
-      if (parse_opt) {
-        if (tree_opt) {
-          ast->print_tree(NULL);
+      if (bParseOpt) {
+        if (bTreeOpt) {
+          ast->printTree(NULL);
         } else {
           ast->print();
         }
       } else {
-        table.print_table();
+        table.printTable();
       }
-
     } else {
       printQueue(errors);
     }
@@ -674,7 +669,7 @@ void printQueue(queue<string> queueToPrint)
 /*
   Add a redefinition error to vector errors.
 */
-void redefinition_error(string id) {
+void redefinitionError(string id) {
   string file = strdup(filename);
 
   string error = "\e[1m" + file + " (" + to_string(yylineno) + ", " + 
@@ -688,7 +683,7 @@ void redefinition_error(string id) {
 /*
   Add a undefined error to vector errors.
 */
-void undefined_error(string id) {
+void undefinedError(string id) {
   string file = strdup(filename);
 
   string error = "\e[1m" + file + " (" + to_string(yylineno) + ", " + 
