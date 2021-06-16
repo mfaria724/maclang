@@ -7,7 +7,7 @@ ${
 
 
 # tipos primitivos
-let Int i;          # Entero inicializado pero sin valor asignado.
+let Int i = "aa";          # Entero inicializado pero sin valor asignado.
 let Int j = 1;      # Entero inicializado y con valor asignado.
 let Char c = 'A';   # Caracter
 let Bool b;         # Booleano
@@ -29,6 +29,9 @@ let Char[3] press = ['F'];
 ## registros
 register registro {
   Int numero = 15;
+  Int numero2;
+  Int numero3 = 42;
+  Int numero4;
 }
 
 def myfunction(Bool myBool) => Int {
@@ -42,7 +45,7 @@ if True then
   }
 done
 
-let Int ppp; 
+let Int ppp~; 
 
 def myfunc(^(^Bool[5]) @ khe, Bool ok, Int a = 1, Char c = 2) => Int { 
   for (i; -100; 0++100; 4) do 
@@ -55,7 +58,7 @@ def myfunc(^(^Bool[5]) @ khe, Bool ok, Int a = 1, Char c = 2) => Int {
     ^x.y = 1;
     if (x > 0) then 
       x = x * 2;
-    elsif (x < -50) then 
+    elsif (x < -50) then  ~
       x = x - 8;
     elsif False then 
       let Int a = -1;                                 
@@ -78,8 +81,16 @@ if True then
   }
 done
 
-myfunc([0,[0,[0]]], new Bool);
+myfunc([0,[0,[0]]], 1);~
 
+0xcbxb
 def A() {
-  A();
-}
+  B();
+  while True do do
+    for (i; 0; 100; 0.1) do
+      if 1 < 2 then 
+        A();
+      done 
+    done 
+  done
+} 0gfhg

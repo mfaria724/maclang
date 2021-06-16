@@ -567,7 +567,7 @@ int main(int argc, char **argv)
 
   // apply lexing
   int tok;
-  while(tok = yylex())
+  while(false && (tok = yylex()))
   {
     // if token can have multiple values, also print the value of the token
     switch(tok) {
@@ -599,7 +599,7 @@ int main(int argc, char **argv)
   fclose(yyin);
 
   // if were asked just for lexing print the results of it and return
-  if (bLexOpt) {
+  if (false && bLexOpt) {
     if(errors.empty())
       printQueue(tokens);
     else
@@ -652,7 +652,6 @@ void yyerror(string s)
   cout << "\e[1m" + file + " (" + to_string(yylineno) + ", " + 
     to_string(yycolumn) + "): \e[31mSyntax error:\e[0m Unexpected " +
     "token \"" + yytext + "\".\n\n";
-  exit(1);
 }
 
 /*
