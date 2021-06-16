@@ -460,12 +460,12 @@ void node_FunctionCall::print_tree(vector<bool> *identation) {
   if (this->args != NULL) {
     print_identation(identation);
     identation->push_back(false);
-    cout << "└── \e[1;34mArguments: \e[0m";
+    cout << "└── ";
     this->args->print_tree(identation);
     identation->pop_back();
   } else {
     print_identation(identation);
-    cout << "└── \e[1;34mArguments: \e[0mNULL\n";
+    cout << "└── \e[1;34mFunction Call Arguments: \e[0mNULL\n";
   }
 }
 
@@ -690,23 +690,23 @@ void node_Conditional::print_tree(vector<bool> *identation) {
   if (this->elsifs != NULL) {
     print_identation(identation);
     identation->push_back(true);
-    cout << "├── \e[1;34mElsif Def: \e[0m";
+    cout << "├── ";
     this->elsifs->print_tree(identation);
     identation->pop_back();
   } else {
     print_identation(identation);
-    cout << "├── \e[1;34mElsif Def: \e[0mNULL\n";
+    cout << "├── \e[1;34mElsif: \e[0mNULL\n";
   }
 
   if (this->else_def != NULL) {
     print_identation(identation);
     identation->push_back(false);
-    cout << "└── \e[1;34mElse Def: \e[0m";
+    cout << "└── ";
     this->else_def->print_tree(identation);
     identation->pop_back();
   }  else {
     print_identation(identation);
-    cout << "└── \e[1;34mElse Def: \e[0mNULL\n";
+    cout << "└── \e[1;34mElse: \e[0mNULL\n";
   }
 }
 
