@@ -565,9 +565,10 @@ int main(int argc, char **argv)
     return -1;
   }
 
-  // apply lexing
+  // apply lexing if lexing option is passed
+  // if not, yyparse will call yylex.
   int tok;
-  while(false && (tok = yylex()))
+  while(bLexOpt && (tok = yylex()))
   {
     // if token can have multiple values, also print the value of the token
     switch(tok) {
@@ -599,7 +600,7 @@ int main(int argc, char **argv)
   fclose(yyin);
 
   // if were asked just for lexing print the results of it and return
-  if (false && bLexOpt) {
+  if (bLexOpt) {
     if(errors.empty())
       printQueue(tokens);
     else
@@ -611,32 +612,28 @@ int main(int argc, char **argv)
   // parsing
   yyin = fopen(filename, "r");
 
-  // if there are no errors, apply parsing
+  // reset lines and columns
+  yylineno = 1; 
+  yycolumn = 1;
+
+  // start parsing
+  yyparse();
+
   if (errors.empty()) {
-    
-    // reset lines and columns
-    yylineno = 1; 
-    yycolumn = 1;
-
-    // start parsing
-    yyparse();
-
-    if (errors.empty()) {
-      if (bParseOpt) {
-        if (bTreeOpt) {
-          ast->printTree(NULL);
-        } else {
-          ast->print();
-        }
+    if (bParseOpt) {
+      if (bTreeOpt) {
+        ast->printTree(NULL);
       } else {
-        table.printTable();
+        ast->print();
       }
     } else {
-      printQueue(errors);
+      table.printTable();
     }
-
   } else {
+    // print all errors
     printQueue(errors);
+
+    return 1;
   }
 
   return 0;
@@ -648,10 +645,16 @@ int main(int argc, char **argv)
 void yyerror(string s)
 {
   string file = strdup(filename);
-
-  cout << "\e[1m" + file + " (" + to_string(yylineno) + ", " + 
+    
+  // Add syntax error
+  string error = "\e[1m" + file + " (" + to_string(yylineno) + ", " + 
     to_string(yycolumn) + "): \e[31mSyntax error:\e[0m Unexpected " +
     "token \"" + yytext + "\".\n\n";
+
+  errors.push(error);
+
+  // read the remaining file for more lexical errors.
+  while(yylex());
 }
 
 /*
