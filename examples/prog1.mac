@@ -14,11 +14,22 @@ let Bool b;         # Booleano
 let Float f = 1.5;  # Flotante
 let Int x;
 let Int y = [x+1,3,x+5];
+let Int q4 = y + (^x - b);
+
+# ERROR Redefinicion
+# let Char c;
+# ERROR No definido
+# q = 1;
+# ERROR No es una funcion
+# q4();
+# ERROR No es un tipo 
+# let ^^^c[1] w;
 
 # tipos complejos
 ## arreglos
 let Bool[4] array;
-let Int[6] integers = [1, 1, 2, 42, 69];
+let Int[6] integers = [[1, 1], 2, 42, 69];
+let Int[6] set_numbers = [[],   [[]],   [[[]], []],   [[[[]], []], [[]], []]];
 
 ## strings
 let String hello = "world";
@@ -38,13 +49,28 @@ register registro {
 union unio {
   Int entero;
   Bool booleano;
+  registro r;
+  ^^(^registro[3])[10] rpp;
 }
 
-def myfunction(Bool myBool) => Int {
+# ERROR No es una variable 
+# let Int q42 = unio;
+# ERROR No es una funcion 
+# unio();
+
+def myfunction(unio U) => Int {
   let Int myInt;
 }
 
-if True then 
+# ERROR Redefinicion
+# def registro() {}
+
+# ERROR No es una variable
+# let unio q69 = myfunction;
+# ERROR No es un tipo
+# let myfunction wtf;
+
+if ! True && (42**6 >= False) && ^x[^y**4] || press == (array != !!!!!!! (0/0 < hello)) then 
   let Int a = 1;              
   register registro {
     Int numero = 15;
@@ -57,7 +83,7 @@ def myfunc(^(^Bool[5]) @ khe, Bool ok, Int a = 1, Char c = 2) => Int {
   for (i; -100; 0++100; 4) do 
     let ^Int z = new Int;   
     let Int k;                            
-    x = (((((x))))).y + 1 + (x.y).z + ppp();
+    x = (((((x))))).y + 1 + (x.y).z + ppp;
     ^x[^y**4] = 1;
     ^(x[^(y.z) + ^(z.z) * ^(k.k)]) = 42;
     ^^^^((((x)))) = ^y;

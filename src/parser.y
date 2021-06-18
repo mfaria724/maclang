@@ -31,11 +31,8 @@
   // Prints the queue to std.
   void printQueue(queue<string> queueToPrint);
 
-  // add redefinitions errors.
-  void redefinitionError(string id);
-
-  // add undefined error.
-  void undefinedError(string id);
+  // add a error.
+  void addError(string id, string error);
 
   // token names for readability on lexer
   string tokenNames [] = {
@@ -229,13 +226,13 @@ VarInst     : VarDef                    { $$ = $1; }
 VarDef      : LET Type IdDef OptAssign  { 
                                           $$ = new NodeVarDef($2, $3, $4);
                                           int s = table.currentScope();
-                                          Entry *e = new Entry($3, s, "");
+                                          Entry *e = new Entry($3, s, "Var");
                                           table.insert(e);
                                         }
             ;   
 IdDef       : ID                        {
                                           if (! table.verifyInsert($1)) {
-                                            redefinitionError($1);
+                                            addError($1, (string) "Redefinition of \"" + $1 + "\".");
                                           }
                                           $$ = $1; 
                                         }
@@ -254,6 +251,15 @@ RValue      : Exp                       { $$ = $1; }
 Type	: Type OPEN_BRACKET Exp CLOSE_BRACKET { $$ = new NodeTypeArrayDef($1, $3); }
 			| POINTER Type 	                      { $$ = new NodeTypePointerDef($2); }
 			| OPEN_PAR Type CLOSE_PAR             { $$ = $2; }
+      | ID                                  {
+                                              Entry *e;
+                                              if ((e = table.lookup($1)) == NULL) {
+                                                addError($1, (string) "\"" + $1 + "\" was not declared.");
+                                              } else if (e->type != "Type") {
+                                                addError($1, (string) "\"" + $1 + "\" is not a type.");
+                                              }
+                                              $$ = new NodeTypePrimitiveDef($1);
+                                            }
       | T_UNIT                              { $$ = new NodeTypePrimitiveDef($1); }
 			| T_BOOL                              { $$ = new NodeTypePrimitiveDef($1); }
       | T_CHAR                              { $$ = new NodeTypePrimitiveDef($1); }
@@ -268,8 +274,11 @@ LValue	:	LValue OPEN_BRACKET Exp CLOSE_BRACKET   { $$ = new NodeArrayLValue($1, 
 				|	LValue DOT ID                           { $$ = new NodeDotLValue($1, $3); }
 				| OPEN_PAR LValue CLOSE_PAR               { $$ = $2; }
 				|	ID                                      { 
-                                                    if (table.lookup($1) == NULL) {
-                                                      undefinedError($1);
+                                                    Entry *e;
+                                                    if ((e = table.lookup($1)) == NULL) {
+                                                      addError($1, (string) "\"" + $1 + "\" was not declared.");
+                                                    } else if (e->type != "Var") {
+                                                      addError($1, (string) "\"" + $1 + "\" is not a variable.");
                                                     }
                                                     $$ = new NodeIDLValue($1); 
                                                   }
@@ -315,8 +324,11 @@ ArrElems	: /* lambda */                        { $$ = NULL; }
 
 /* ================= FUNCTION CALLS ================= */
 FuncCall  : ID OPEN_PAR ArgsExp CLOSE_PAR   { 
-                                              if (table.lookup($1) == NULL) {
-                                                undefinedError($1);
+                                              Entry *e;
+                                              if ((e = table.lookup($1)) == NULL) {
+                                                addError($1, (string) "\"" + $1 + "\" was not declared.");
+                                              } else if (e->type != "Function") {
+                                                addError($1, (string) "\"" + $1 + "\" is not a function.");
                                               }
                                               $$ = new NodeFunctionCall($1, $3, false); 
                                             }
@@ -333,7 +345,7 @@ UnionDef  : UnionId OPEN_C_BRACE UnionBody CLOSE_C_BRACE  {
                                                             $$ = new NodeUnionDef($1, $3);
                                                             table.exitScope(); 
                                                             int s = table.currentScope();
-                                                            Entry *e = new Entry($1, s, "");
+                                                            Entry *e = new Entry($1, s, "Type");
                                                             table.insert(e);
                                                           }
           ;
@@ -358,7 +370,7 @@ RegDef    : RegId OPEN_C_BRACE RegBody CLOSE_C_BRACE  {
                                                         $$ = new NodeRegDef($1, $3);
                                                         table.exitScope();
                                                         int s = table.currentScope();
-                                                        Entry *e = new Entry($1, s, "");
+                                                        Entry *e = new Entry($1, s, "Type");
                                                         table.insert(e);
                                                       }
           ;   
@@ -424,7 +436,7 @@ LoopFor   : For OPEN_PAR IdFor SEMICOLON Exp SEMICOLON
           ;
 IdFor     : IdDef                                     { 
                                                         int s = table.currentScope();
-                                                        Entry *e = new Entry($1, s, "");
+                                                        Entry *e = new Entry($1, s, "Var");
                                                         table.insert(e); 
                                                         $$ = $1; 
                                                       }
@@ -446,7 +458,7 @@ RoutDef   : RoutId OPEN_PAR RoutArgs CLOSE_PAR OptReturn
           ;  
 RoutId    : DEF IdDef                                     {
                                                             int s = table.currentScope();
-                                                            Entry *e = new Entry($2, s, "");
+                                                            Entry *e = new Entry($2, s, "Function");
                                                             table.insert(e);
                                                             table.newScope();
                                                           }
@@ -461,7 +473,7 @@ OblArgs   : Type OptRef IdDef                             {
                                                               NULL, $1, $2, $3, NULL
                                                             );
                                                             int s = table.currentScope();
-                                                            Entry *e = new Entry($3, s, "");
+                                                            Entry *e = new Entry($3, s, "Var");
                                                             table.insert(e);
                                                           }
           | OblArgs COMMA Type OptRef IdDef               { 
@@ -469,7 +481,7 @@ OblArgs   : Type OptRef IdDef                             {
                                                               $1, $3, $4, $5, NULL
                                                             );
                                                             int s = table.currentScope();
-                                                            Entry *e = new Entry($5, s, "");
+                                                            Entry *e = new Entry($5, s, "Var");
                                                             table.insert(e);
                                                           }
           ;   
@@ -478,7 +490,7 @@ OptArgs   : Type OptRef IdDef ASSIGNMENT RValue           {
                                                               NULL, $1, $2, $3, $5
                                                             );
                                                             int s = table.currentScope();
-                                                            Entry *e = new Entry($3, s, "");
+                                                            Entry *e = new Entry($3, s, "Var");
                                                             table.insert(e);
                                                           }
           | OptArgs COMMA Type OptRef IdDef 
@@ -487,7 +499,7 @@ OptArgs   : Type OptRef IdDef ASSIGNMENT RValue           {
                                                               $1, $3, $4, $5, $7
                                                             );
                                                             int s = table.currentScope();
-                                                            Entry *e = new Entry($5, s, "");
+                                                            Entry *e = new Entry($5, s, "Var");
                                                             table.insert(e);
                                                           }
           ;
@@ -669,30 +681,14 @@ void printQueue(queue<string> queueToPrint)
 }
 
 /*
-  Add a redefinition error to vector errors.
+  Add a error to vector errors.
 */
-void redefinitionError(string id) {
+void addError(string id, string error) {
   string file = strdup(filename);
 
-  string error = "\e[1m" + file + " (" + to_string(yylineno) + ", " + 
-    to_string(yycolumn) + "): \e[31mError:\e[0m Redefinition of " +
-    "\"" + id + "\".\n\n";
+  string err = "\e[1m" + file + " (" + to_string(yylineno) + ", " + 
+    to_string(yycolumn) + "): \e[31mError:\e[0m " + error + "\n\n";
 
   // add the error to the queue
-  errors.push(error);
+  errors.push(err);
 }
-
-/*
-  Add a undefined error to vector errors.
-*/
-void undefinedError(string id) {
-  string file = strdup(filename);
-
-  string error = "\e[1m" + file + " (" + to_string(yylineno) + ", " + 
-    to_string(yycolumn) + "): \e[31mError:\e[0m \"" + id + "\" was not " +
-    "declared.\n\n";
-
-  // add the error to the queue
-  errors.push(error);
-}
-
