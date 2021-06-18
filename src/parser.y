@@ -354,13 +354,13 @@ UnionId   : UNION IdDef                                   { table.newScope(); $$
 UnionBody	: Type IdDef SEMICOLON                          { 
                                                             $$ = new NodeUnionFields(NULL, $1, $2); 
                                                             int s = table.currentScope();
-                                                            Entry *e = new Entry($2, s, "");
+                                                            Entry *e = new Entry($2, s, "Field");
                                                             table.insert(e);
                                                           }
 					| UnionBody Type IdDef SEMICOLON                { 
                                                             $$ = new NodeUnionFields($1, $2, $3); 
                                                             int s = table.currentScope();
-                                                            Entry *e = new Entry($3, s, "");
+                                                            Entry *e = new Entry($3, s, "Field");
                                                             table.insert(e);
                                                           }
           ;
@@ -379,13 +379,13 @@ RegId     : REGISTER IdDef                            { table.newScope(); $$ = $
 RegBody	  : Type IdDef OptAssign SEMICOLON            { 
                                                         $$ = new NodeRegFields(NULL, $1, $2, $3);
                                                         int s = table.currentScope();
-                                                        Entry *e = new Entry($2, s, "");
+                                                        Entry *e = new Entry($2, s, "Field");
                                                         table.insert(e);
                                                       }
 				  |	RegBody Type IdDef OptAssign SEMICOLON    { 
                                                         $$ = new NodeRegFields($1, $2, $3, $4);
                                                         int s = table.currentScope();
-                                                        Entry *e = new Entry($3, s, "");
+                                                        Entry *e = new Entry($3, s, "Field");
                                                         table.insert(e);
                                                       }
           ;

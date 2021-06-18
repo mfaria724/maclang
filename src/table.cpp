@@ -13,7 +13,8 @@ Entry::Entry(string id, int scope, string type) {
 */
 void Entry::print(void) {
   cout << "\e[1;31m(\e[1;34mScope:\e[0m " << this->scope;
-  cout << ", \e[1;34mID:\e[0m " << this->id <<"\e[1;31m)\e[0m";
+  cout << ", \e[1;34mID:\e[0m " << this->id;
+  cout << ", \e[1;34mType:\e[0m " << this->type <<"\e[1;31m)\e[0m";
 }
 
 SymbolsTable::SymbolsTable() {
@@ -138,7 +139,7 @@ void SymbolsTable::printTable() {
       // Prints the representation of the table.
       (*qi)->print();
       if (qi+1 != i->second.end()) 
-        cout << ", ";
+        cout << ",\n           ";
     }
 
     cout << "]" << endl;

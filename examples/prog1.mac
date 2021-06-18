@@ -71,7 +71,7 @@ def myfunction(unio U) => Int {
 # let myfunction wtf;
 
 if ! True && (42**6 >= False) && ^x[^y**4] || press == (array != !!!!!!! (0/0 < hello)) then 
-  let Int a = 1;              
+  def a() {}              
   register registro {
     Int numero = 15;
   }
@@ -86,7 +86,7 @@ def myfunc(^(^Bool[5]) @ khe, Bool ok, Int a = 1, Char c = 2) => Int {
     x = (((((x))))).y + 1 + (x.y).z + ppp;
     ^x[^y**4] = 1;
     ^(x[^(y.z) + ^(z.z) * ^(k.k)]) = 42;
-    ^^^^((((x)))) = ^y;
+    ^^^^(((((((((x))))))))) = ^y;
     ^x.y = 1;
     if (x > 0) then 
       x = x * 2;
