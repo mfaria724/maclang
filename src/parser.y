@@ -461,6 +461,7 @@ RoutId    : DEF IdDef                                     {
                                                             Entry *e = new Entry($2, s, "Function");
                                                             table.insert(e);
                                                             table.newScope();
+                                                            $$ = $2;
                                                           }
           ;    
 RoutArgs  : /* lambda */                                  { $$ = NULL; }
