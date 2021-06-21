@@ -130,7 +130,7 @@ void SymbolsTable::printTable() {
   map<string, deque<Entry*>>::iterator end = this->symTable.end();
   for (map<string, deque<Entry*>>::iterator i = begin; i != end; i++) {
 
-    cout << "\e[1;33mVariable:\e[0m " << i->first << " \n   =====> [";
+    cout << "\e[1;33mName:\e[0m " << i->first << " \n   =====> [";
 
     // Iterates over each element of a list in a table entry.
     deque<Entry*>::iterator qbegin = i->second.begin();
