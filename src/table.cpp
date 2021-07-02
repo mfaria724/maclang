@@ -2,10 +2,11 @@
 
 using namespace std;
 
-Entry::Entry(string id, int scope, string type) {
+Entry::Entry(string id, int scope, Type *type, string category) {
   this->id = id;
   this->scope = scope;
   this->type = type;
+  this->category = category;
 }
 
 /*
@@ -14,7 +15,7 @@ Entry::Entry(string id, int scope, string type) {
 void Entry::print(void) {
   cout << "\e[1;31m(\e[1;34mScope:\e[0m " << this->scope;
   cout << ", \e[1;34mID:\e[0m " << this->id;
-  cout << ", \e[1;34mType:\e[0m " << this->type; 
+  cout << ", \e[1;34mType:\e[0m " << this->type->print(); 
   cout << "\e[1;31m)\e[0m";
 }
 

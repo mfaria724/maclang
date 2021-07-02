@@ -3,11 +3,14 @@
 %option yylineno
 
 %{
+  #ifndef
+  #include "ast.hpp"
+  #endif
+
   #include <string>
   #include <vector>
   #include <queue>
   #include <iostream>
-  #include "ast.hpp"
   #include "parser.tab.h"
 
   using namespace std;

@@ -2,6 +2,7 @@
 #include <deque>
 #include <vector>
 #include <iostream>
+#include "types.hpp"
 
 using namespace std;
 
@@ -15,9 +16,11 @@ class Entry {
     // Scope where variable was defined.
     int scope;
     // Variable type
-    string type;
+    Type *type;
+    // Category of the entry
+    string category;
   
-    Entry(string id, int scope, string type);
+    Entry(string id, int scope, Type *type, string category);
 
     // Prints the variable information
     virtual void print(void);

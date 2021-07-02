@@ -1,9 +1,13 @@
 %{
+  #ifndef AST
+  #include "ast.hpp" 
+  #endif
+  
   #include <iostream>
   #include <queue>
   #include <string>
   #include <cstring>
-  #include "ast.hpp" 
+
   #include "table.hpp"
 
   using namespace std;
@@ -255,17 +259,17 @@ Type	: Type OPEN_BRACKET Exp CLOSE_BRACKET { $$ = new NodeTypeArrayDef($1, $3); 
                                               Entry *e;
                                               if ((e = table.lookup($1)) == NULL) {
                                                 addError($1, (string) "\"" + $1 + "\" was not declared.");
-                                              } else if (e->type != "Type") {
+                                              } else if (e->category != "Type") {
                                                 addError($1, (string) "\"" + $1 + "\" is not a type.");
                                               }
-                                              $$ = new NodeTypePrimitiveDef($1);
+                                              $$ = new Type($1);
                                             }
-      | T_UNIT                              { $$ = new NodeTypePrimitiveDef($1); }
-			| T_BOOL                              { $$ = new NodeTypePrimitiveDef($1); }
-      | T_CHAR                              { $$ = new NodeTypePrimitiveDef($1); }
-      | T_INT                               { $$ = new NodeTypePrimitiveDef($1); }
-      | T_FLOAT                             { $$ = new NodeTypePrimitiveDef($1); }
-      | T_STRING                            { $$ = new NodeTypePrimitiveDef($1); }
+      | T_UNIT                              { $$ = new Type($1); }
+			| T_BOOL                              { $$ = new Type($1); }
+      | T_CHAR                              { $$ = new Type($1); }
+      | T_INT                               { $$ = new Type($1); }
+      | T_FLOAT                             { $$ = new Type($1); }
+      | T_STRING                            { $$ = new Type($1); }
       ;
 
 /* ======================= LVALUES ======================= */
@@ -277,7 +281,7 @@ LValue	:	LValue OPEN_BRACKET Exp CLOSE_BRACKET   { $$ = new NodeArrayLValue($1, 
                                                     Entry *e;
                                                     if ((e = table.lookup($1)) == NULL) {
                                                       addError($1, (string) "\"" + $1 + "\" was not declared.");
-                                                    } else if (e->type != "Var") {
+                                                    } else if (e->category != "Var") {
                                                       addError($1, (string) "\"" + $1 + "\" is not a variable.");
                                                     }
                                                     $$ = new NodeIDLValue($1); 
@@ -327,7 +331,7 @@ FuncCall  : ID OPEN_PAR ArgsExp CLOSE_PAR   {
                                               Entry *e;
                                               if ((e = table.lookup($1)) == NULL) {
                                                 addError($1, (string) "\"" + $1 + "\" was not declared.");
-                                              } else if (e->type != "Function") {
+                                              } else if (e->category != "Function") {
                                                 addError($1, (string) "\"" + $1 + "\" is not a function.");
                                               }
                                               $$ = new NodeFunctionCall($1, $3, false); 
