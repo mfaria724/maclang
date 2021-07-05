@@ -1,9 +1,9 @@
-%{
+%{  
   #include <iostream>
   #include <queue>
   #include <string>
   #include <cstring>
-  #include "ast.hpp" 
+  
   #include "table.hpp"
 
   using namespace std;
@@ -107,6 +107,7 @@
   char  ch;
   Node  *ast;
   NodeS *nS;
+  Type *t;
 }
 
 %locations
@@ -183,12 +184,13 @@
 %token <str>      DIV 54
 %token <str>      ASTERISK 55
 
-%type <ast>       I Inst Action VarInst VarDef OptAssign Type OptReturn
+%type <ast>       I Inst Action VarInst VarDef OptAssign
 %type <ast>       LValue Exp Array ArrExp ArrElems FuncCall ArgsExp
 %type <ast>       Args RValue Assign UnionDef UnionBody Def RegDef
 %type <ast>       RegBody Conditional OptElsif Elsifs OptElse 
 %type <ast>       LoopWhile LoopFor OptStep RoutDef OptArgs OblArgs 
 %type <ast>       RoutArgs Actions 
+%type <t>         Type OptReturn
 %type <boolean>   OptRef
 %type <str>       IdDef IdFor UnionId RegId RoutId
 %type <nS>        S
@@ -226,7 +228,7 @@ VarInst     : VarDef                    { $$ = $1; }
 VarDef      : LET Type IdDef OptAssign  { 
                                           $$ = new NodeVarDef($2, $3, $4);
                                           int s = table.currentScope();
-                                          Entry *e = new Entry($3, s, "Var");
+                                          Entry *e = new VarEntry($3, s, "Var", $2);
                                           table.insert(e);
                                         }
             ;   
@@ -248,24 +250,24 @@ RValue      : Exp                       { $$ = $1; }
             ;
 
 /* ======================== TYPES ======================== */
-Type	: Type OPEN_BRACKET Exp CLOSE_BRACKET { $$ = new NodeTypeArrayDef($1, $3); }
-			| POINTER Type 	                      { $$ = new NodeTypePointerDef($2); }
+Type	: Type OPEN_BRACKET Exp CLOSE_BRACKET { $$ = new ArrayType($1, $3); }
+			| POINTER Type 	                      { $$ = new PointerType($2); }
 			| OPEN_PAR Type CLOSE_PAR             { $$ = $2; }
       | ID                                  {
                                               Entry *e;
                                               if ((e = table.lookup($1)) == NULL) {
                                                 addError($1, (string) "\"" + $1 + "\" was not declared.");
-                                              } else if (e->type != "Type") {
+                                              } else if (e->category != "Type") {
                                                 addError($1, (string) "\"" + $1 + "\" is not a type.");
                                               }
-                                              $$ = new NodeTypePrimitiveDef($1);
+                                              $$ = new PrimitiveType($1);
                                             }
-      | T_UNIT                              { $$ = new NodeTypePrimitiveDef($1); }
-			| T_BOOL                              { $$ = new NodeTypePrimitiveDef($1); }
-      | T_CHAR                              { $$ = new NodeTypePrimitiveDef($1); }
-      | T_INT                               { $$ = new NodeTypePrimitiveDef($1); }
-      | T_FLOAT                             { $$ = new NodeTypePrimitiveDef($1); }
-      | T_STRING                            { $$ = new NodeTypePrimitiveDef($1); }
+      | T_UNIT                              { $$ = new PrimitiveType($1); }
+			| T_BOOL                              { $$ = new PrimitiveType($1); }
+      | T_CHAR                              { $$ = new PrimitiveType($1); }
+      | T_INT                               { $$ = new PrimitiveType($1); }
+      | T_FLOAT                             { $$ = new PrimitiveType($1); }
+      | T_STRING                            { $$ = new PrimitiveType($1); }
       ;
 
 /* ======================= LVALUES ======================= */
@@ -277,7 +279,7 @@ LValue	:	LValue OPEN_BRACKET Exp CLOSE_BRACKET   { $$ = new NodeArrayLValue($1, 
                                                     Entry *e;
                                                     if ((e = table.lookup($1)) == NULL) {
                                                       addError($1, (string) "\"" + $1 + "\" was not declared.");
-                                                    } else if (e->type != "Var") {
+                                                    } else if (e->category != "Var") {
                                                       addError($1, (string) "\"" + $1 + "\" is not a variable.");
                                                     }
                                                     $$ = new NodeIDLValue($1); 
@@ -327,7 +329,7 @@ FuncCall  : ID OPEN_PAR ArgsExp CLOSE_PAR   {
                                               Entry *e;
                                               if ((e = table.lookup($1)) == NULL) {
                                                 addError($1, (string) "\"" + $1 + "\" was not declared.");
-                                              } else if (e->type != "Function") {
+                                              } else if (e->category != "Function") {
                                                 addError($1, (string) "\"" + $1 + "\" is not a function.");
                                               }
                                               $$ = new NodeFunctionCall($1, $3, false); 
@@ -343,9 +345,10 @@ Args      : /* lambda */                    { $$ = NULL; }
 /* ================= UNION DEFINITION ================= */
 UnionDef  : UnionId OPEN_C_BRACE UnionBody CLOSE_C_BRACE  { 
                                                             $$ = new NodeUnionDef($1, $3);
+                                                            int def_s = table.currentScope();
                                                             table.exitScope(); 
                                                             int s = table.currentScope();
-                                                            Entry *e = new Entry($1, s, "Type");
+                                                            Entry *e = new StructureEntry($1, s, "Type", def_s);
                                                             table.insert(e);
                                                           }
           ;
@@ -354,13 +357,13 @@ UnionId   : UNION IdDef                                   { table.newScope(); $$
 UnionBody	: Type IdDef SEMICOLON                          { 
                                                             $$ = new NodeUnionFields(NULL, $1, $2); 
                                                             int s = table.currentScope();
-                                                            Entry *e = new Entry($2, s, "Field");
+                                                            Entry *e = new VarEntry($2, s, "Field", $1);
                                                             table.insert(e);
                                                           }
 					| UnionBody Type IdDef SEMICOLON                { 
                                                             $$ = new NodeUnionFields($1, $2, $3); 
                                                             int s = table.currentScope();
-                                                            Entry *e = new Entry($3, s, "Field");
+                                                            Entry *e = new VarEntry($3, s, "Field", $2);
                                                             table.insert(e);
                                                           }
           ;
@@ -368,9 +371,10 @@ UnionBody	: Type IdDef SEMICOLON                          {
 /* ================ REGISTER DEFINITION ================ */
 RegDef    : RegId OPEN_C_BRACE RegBody CLOSE_C_BRACE  { 
                                                         $$ = new NodeRegDef($1, $3);
+                                                        int def_s = table.currentScope();
                                                         table.exitScope();
                                                         int s = table.currentScope();
-                                                        Entry *e = new Entry($1, s, "Type");
+                                                        Entry *e = new StructureEntry($1, s, "Type", def_s);
                                                         table.insert(e);
                                                       }
           ;   
@@ -379,13 +383,13 @@ RegId     : REGISTER IdDef                            { table.newScope(); $$ = $
 RegBody	  : Type IdDef OptAssign SEMICOLON            { 
                                                         $$ = new NodeRegFields(NULL, $1, $2, $3);
                                                         int s = table.currentScope();
-                                                        Entry *e = new Entry($2, s, "Field");
+                                                        Entry *e = new VarEntry($2, s, "Field", $1);
                                                         table.insert(e);
                                                       }
 				  |	RegBody Type IdDef OptAssign SEMICOLON    { 
                                                         $$ = new NodeRegFields($1, $2, $3, $4);
                                                         int s = table.currentScope();
-                                                        Entry *e = new Entry($3, s, "Field");
+                                                        Entry *e = new VarEntry($3, s, "Field", $2);
                                                         table.insert(e);
                                                       }
           ;
@@ -436,7 +440,8 @@ LoopFor   : For OPEN_PAR IdFor SEMICOLON Exp SEMICOLON
           ;
 IdFor     : IdDef                                     { 
                                                         int s = table.currentScope();
-                                                        Entry *e = new Entry($1, s, "Var");
+                                                        Type *t = new PrimitiveType("Float");
+                                                        Entry *e = new VarEntry($1, s, "Var", t);
                                                         table.insert(e); 
                                                         $$ = $1; 
                                                       }
@@ -458,7 +463,7 @@ RoutDef   : RoutId OPEN_PAR RoutArgs CLOSE_PAR OptReturn
           ;  
 RoutId    : DEF IdDef                                     {
                                                             int s = table.currentScope();
-                                                            Entry *e = new Entry($2, s, "Function");
+                                                            Entry *e = new FunctionEntry($2, s, "Function");
                                                             table.insert(e);
                                                             table.newScope();
                                                             $$ = $2;
@@ -474,7 +479,7 @@ OblArgs   : Type OptRef IdDef                             {
                                                               NULL, $1, $2, $3, NULL
                                                             );
                                                             int s = table.currentScope();
-                                                            Entry *e = new Entry($3, s, "Var");
+                                                            Entry *e = new VarEntry($3, s, "Var", $1);
                                                             table.insert(e);
                                                           }
           | OblArgs COMMA Type OptRef IdDef               { 
@@ -482,7 +487,7 @@ OblArgs   : Type OptRef IdDef                             {
                                                               $1, $3, $4, $5, NULL
                                                             );
                                                             int s = table.currentScope();
-                                                            Entry *e = new Entry($5, s, "Var");
+                                                            Entry *e = new VarEntry($5, s, "Var", $3);
                                                             table.insert(e);
                                                           }
           ;   
@@ -491,7 +496,7 @@ OptArgs   : Type OptRef IdDef ASSIGNMENT RValue           {
                                                               NULL, $1, $2, $3, $5
                                                             );
                                                             int s = table.currentScope();
-                                                            Entry *e = new Entry($3, s, "Var");
+                                                            Entry *e = new VarEntry($3, s, "Var", $1);
                                                             table.insert(e);
                                                           }
           | OptArgs COMMA Type OptRef IdDef 
@@ -500,7 +505,7 @@ OptArgs   : Type OptRef IdDef ASSIGNMENT RValue           {
                                                               $1, $3, $4, $5, $7
                                                             );
                                                             int s = table.currentScope();
-                                                            Entry *e = new Entry($5, s, "Var");
+                                                            Entry *e = new VarEntry($5, s, "Var", $3);
                                                             table.insert(e);
                                                           }
           ;

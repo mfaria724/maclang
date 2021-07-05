@@ -2,6 +2,7 @@
 #include <deque>
 #include <vector>
 #include <iostream>
+#include "ast.hpp"
 
 using namespace std;
 
@@ -14,13 +15,13 @@ class Entry {
     string id;
     // Scope where variable was defined.
     int scope;
-    // Variable type
-    string type;
+    // Category of the entry
+    string category;
   
-    Entry(string id, int scope, string type);
+    Entry(void) {};
 
     // Prints the variable information
-    virtual void print(void);
+    virtual void print(void) {};
 };
 
 /*
@@ -61,3 +62,33 @@ class SymbolsTable {
     void printScopeStack(void);
 };
 
+class VarEntry : public Entry {
+  public:
+    // Variable type
+    Type *type;
+  
+    VarEntry(string id, int scope, string category, Type *type);
+
+    // Prints the variable information
+    void print(void);
+};
+
+class StructureEntry : public Entry {
+  public:
+    // scope where the entry was defined.
+    int def_scope;  
+
+    StructureEntry(string id, int scope, string category, int def_scope);
+
+    // Prints the structure information
+    void print(void);
+};
+
+class FunctionEntry : public Entry {
+  public:
+
+    FunctionEntry(string id, int scope, string category);
+
+    // Prints the function information
+    void print(void);
+};

@@ -129,7 +129,7 @@ void NodeUnaryOperator::printTree(vector<bool> *identation) {
 }
 
 /* ======================= HEAP NODES =======================  */
-NodeNew::NodeNew(Node *type) {
+NodeNew::NodeNew(Type *type) {
   this->type = type;
 }
 
@@ -169,71 +169,7 @@ void NodeForget::printTree(vector<bool> *identation) {
 }
 
 /* ======================= TYPEDEF NODES =======================  */
-NodeTypePrimitiveDef::NodeTypePrimitiveDef(string id) {
-  this->id = id;
-}
-
-void NodeTypePrimitiveDef::print(void) {
-  cout << this->id;
-}
-
-void NodeTypePrimitiveDef::printTree(vector<bool> *identation) {
-  cout << "Primitive Type: " << this->id << "\n";
-}
-
-NodeTypePointerDef::NodeTypePointerDef(Node *type) {
-  this->type = type;
-}
-
-void NodeTypePointerDef::print(void) {
-  cout << "^(";
-  this->type->print();
-  cout << ")";
-}
-
-void NodeTypePointerDef::printTree(vector<bool> *identation) {
-  cout << "\e[1;34mType Pointer\e[0m\n";
-
-  printIdentation(identation);
-  cout << "├── ^\n";
-
-  printIdentation(identation);
-  identation->push_back(false);
-  cout << "└── ";
-  this->type->printTree(identation);
-  identation->pop_back();
-}
-
-NodeTypeArrayDef::NodeTypeArrayDef(Node *type, Node *size) {
-  this->type = type;
-  this->size = size;
-}
-
-void NodeTypeArrayDef::print(void) {
-  cout << "(";
-  this->type->print();
-  cout << ")[";
-  this->size->print();
-  cout << "]";
-}
-
-void NodeTypeArrayDef::printTree(vector<bool> *identation) {
-  cout << "\e[1;34mType Array\e[0m\n";
-
-  printIdentation(identation);
-  identation->push_back(true);
-  cout << "├── ";
-  this->type->printTree(identation);
-  identation->pop_back();
-
-  printIdentation(identation);
-  identation->push_back(false);
-  cout << "└── \e[1;34mSize: \e[0m";
-  this->size->printTree(identation);
-  identation->pop_back();
-}
-
-NodeVarDef::NodeVarDef(Node *type, string id, Node *rvalue) {
+NodeVarDef::NodeVarDef(Type *type, string id, Node *rvalue) {
   this->type = type;
   this->id = id;
   this->rvalue = rvalue;
@@ -281,8 +217,6 @@ void NodeVarDef::printTree(vector<bool> *identation) {
     identation->pop_back();
   }
 }
-
-
 
 /* ======================= LVALUE NODES =======================  */
 NodeIDLValue::NodeIDLValue(string id) {
@@ -525,7 +459,7 @@ void NodeUnionDef::printTree(vector<bool> *identation) {
   identation->pop_back();
 }
 
-NodeUnionFields::NodeUnionFields(Node *head, Node *type, string id) {
+NodeUnionFields::NodeUnionFields(Node *head, Type *type, string id) {
   this->head = head;
   this->type = type;
   this->id = id;
@@ -586,7 +520,7 @@ void NodeRegDef::printTree(vector<bool> *identation) {
   identation->pop_back();
 }
 
-NodeRegFields::NodeRegFields(Node *head, Node *type, string id, Node *rvalue) {
+NodeRegFields::NodeRegFields(Node *head, Type *type, string id, Node *rvalue) {
   this->head = head;
   this->type = type;
   this->id = id;
@@ -889,7 +823,7 @@ void NodeFor::printTree(vector<bool> *identation) {
 }
 
 /* ======================= SUBROUTINE DEF NODES =======================  */
-NodeRoutineDef::NodeRoutineDef(string id, Node *args, Node *ret, Node *body) {
+NodeRoutineDef::NodeRoutineDef(string id, Node *args, Type *ret, Node *body) {
   this->id = id;
   this->args = args;
   this->ret = ret;
@@ -1002,7 +936,7 @@ void NodeRoutArgs::printTree(vector<bool> *identation) {
   }
 }
 
-NodeRoutArgDef::NodeRoutArgDef(Node *head, Node *type, bool ref, string id, Node *rvalue) {
+NodeRoutArgDef::NodeRoutArgDef(Node *head, Type *type, bool ref, string id, Node *rvalue) {
   this->head = head;
   this->type = type;
   this->ref = ref;
@@ -1176,4 +1110,69 @@ void NodeS::printTree(vector<bool> *identation) {
     cout << "└── ";
     this->inst->printTree(new_identation);
   }
+}
+
+/* ======================= TYPE NODES =======================  */
+PrimitiveType::PrimitiveType(string id) {
+  this->id = id;
+}
+
+void PrimitiveType::print(void) {
+  cout << this->id;
+}
+
+void PrimitiveType::printTree(vector<bool> *identation) {
+  cout << "Primitive Type: " << this->id << "\n";
+}
+
+PointerType::PointerType(Type *type) {
+  this->type = type;
+}
+
+void PointerType::print(void) {
+  cout << "^(";
+  this->type->print();
+  cout << ")";
+}
+
+void PointerType::printTree(vector<bool> *identation) {
+  cout << "\e[1;34mType Pointer\e[0m\n";
+
+  printIdentation(identation);
+  cout << "├── ^\n";
+
+  printIdentation(identation);
+  identation->push_back(false);
+  cout << "└── ";
+  this->type->printTree(identation);
+  identation->pop_back();
+}
+
+ArrayType::ArrayType(Type *type, Node *size) {
+  this->type = type;
+  this->size = size;
+}
+
+void ArrayType::print(void) {
+  cout << "(";
+  this->type->print();
+  cout << ")[";
+  this->size->print();
+  cout << "]";
+}
+
+void ArrayType::printTree(vector<bool> *identation) {
+  cout << "\e[1;34mType Array\e[0m\n";
+
+  printIdentation(identation);
+  identation->push_back(true);
+  cout << "├── ";
+  this->type->printTree(identation);
+  identation->pop_back();
+
+  printIdentation(identation);
+  identation->push_back(false);
+  cout << "└── \e[1;34mSize: \e[0m";
+  this->size->printTree(identation);
+  identation->pop_back();
 }

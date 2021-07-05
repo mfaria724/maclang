@@ -10,11 +10,23 @@ using namespace std;
 */
 class Node {
   public:
-    Node() {};
+    Node(void) {};
     // Print a node representation.
-    virtual void print(void) { };
+    virtual void print(void) {};
     // Print a tree representation of the sub-ast.
-    virtual void printTree(vector<bool> *identation) { };
+    virtual void printTree(vector<bool> *identation) {};
+};
+
+/*
+  "Abstract" class that is parent of all type classes.
+*/
+class Type {
+  public:
+    Type(void) {};
+
+    virtual void print(void) {};
+
+    virtual void printTree(vector<bool> *identation) {};
 };
 
 /* ======================= DATA NODES =======================  */
@@ -112,10 +124,10 @@ class NodeUnaryOperator : public Node {
 /* Representation of  -> new Type. */
 class NodeNew : public Node {
   protected:
-    Node *type;
+    Type *type;
 
   public:
-    NodeNew(Node *type);
+    NodeNew(Type *type);
 
     void print(void);
 
@@ -136,55 +148,15 @@ class NodeForget : public Node {
 };
 
 /* ======================= TYPEDEF NODES =======================  */
-/* Class for defined types. */
-class NodeTypePrimitiveDef : public Node {
-  protected:
-    string id;
-
-  public:
-    NodeTypePrimitiveDef(string id);
-
-    void print(void);
-
-    void printTree(vector<bool> *identation);
-};
-
-/* Representation of  -> ^ Type. */
-class NodeTypePointerDef : public Node {
-  protected:
-    Node *type;
-
-  public:
-    NodeTypePointerDef(Node *type);
-
-    void print(void);
-
-    void printTree(vector<bool> *identation);
-};
-
-/* Representation of  -> Type [ Exp ]. */
-class NodeTypeArrayDef : public Node {
-  protected:
-    Node *type;
-    Node *size;
-
-  public:
-    NodeTypeArrayDef(Node *type, Node *size);
-
-    void print(void);
-
-    void printTree(vector<bool> *identation);
-};
-
 /* Representation of  -> Type ID = RValue. */
 class NodeVarDef : public Node {
   protected:
-    Node *type;
+    Type *type;
     string id;
     Node *rvalue;
 
   public:
-    NodeVarDef(Node *type, string id, Node *rvalue = NULL);
+    NodeVarDef(Type *type, string id, Node *rvalue = NULL);
 
     void print(void);
 
@@ -325,11 +297,11 @@ class NodeUnionDef : public Node {
 class NodeUnionFields : public Node {
   protected:
     Node *head;
-    Node *type;
+    Type *type;
     string id;
 
   public:
-    NodeUnionFields(Node *head, Node *type, string id);
+    NodeUnionFields(Node *head, Type *type, string id);
 
     void print(void);
 
@@ -355,12 +327,12 @@ class NodeRegDef : public Node {
 class NodeRegFields : public Node {
   protected:
     Node *head;
-    Node *type;
+    Type *type;
     string id;
     Node *rvalue;
 
   public:
-    NodeRegFields(Node *head, Node *type, string id, Node *rvalue);
+    NodeRegFields(Node *head, Type *type, string id, Node *rvalue);
 
     void print(void);
 
@@ -450,11 +422,11 @@ class NodeRoutineDef : public Node {
   protected:
     string id;
     Node *args;
-    Node *ret;
+    Type *ret;
     Node *body;
 
   public:
-    NodeRoutineDef(string id, Node *args, Node *ret, Node *body);
+    NodeRoutineDef(string id, Node *args, Type *ret, Node *body);
 
     void print(void);
 
@@ -477,13 +449,13 @@ class NodeRoutArgs : public Node {
 class NodeRoutArgDef : public Node {
   protected:
     Node *head; 
-    Node *type; 
+    Type *type; 
     bool ref; 
     string id; 
     Node *rvalue;
 
   public:
-    NodeRoutArgDef(Node *head, Node *type, bool ref, string id, Node *rvalue);
+    NodeRoutArgDef(Node *head, Type *type, bool ref, string id, Node *rvalue);
 
     void print(void);
 
@@ -543,4 +515,45 @@ class NodeS {
     void print(void);
 
     void printTree(vector<bool> *identation);
+};
+
+/* ======================= TYPE NODES =======================  */
+/* Class for defined types. */
+class PrimitiveType : public Type {
+  protected:
+    string id;
+
+  public:
+    PrimitiveType(string id);
+
+    void print(void);
+
+    void printTree(vector<bool> *identation);
+};
+
+/* Representation of  -> ^ Type. */
+class PointerType : public Type {
+  protected:
+    Type *type;
+
+  public:
+    PointerType(Type *type);
+
+    void print(void);
+
+    void printTree(vector<bool> *identation);
+};
+
+/* Representation of  -> Type [ Exp ]. */
+class ArrayType : public Type {
+  protected:
+    Type *type;
+    Node *size;
+
+  public: 
+    ArrayType(Type *type, Node *size);
+
+  void print(void);
+
+  void printTree(vector<bool> *identation);
 };

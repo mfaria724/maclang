@@ -7,7 +7,8 @@
   #include <vector>
   #include <queue>
   #include <iostream>
-  #include "ast.hpp"
+  
+  #include "table.hpp"
   #include "parser.tab.h"
 
   using namespace std;

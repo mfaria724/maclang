@@ -2,22 +2,6 @@
 
 using namespace std;
 
-Entry::Entry(string id, int scope, string type) {
-  this->id = id;
-  this->scope = scope;
-  this->type = type;
-}
-
-/*
-  Print a entry representation.
-*/
-void Entry::print(void) {
-  cout << "\e[1;31m(\e[1;34mScope:\e[0m " << this->scope;
-  cout << ", \e[1;34mID:\e[0m " << this->id;
-  cout << ", \e[1;34mType:\e[0m " << this->type; 
-  cout << "\e[1;31m)\e[0m";
-}
-
 SymbolsTable::SymbolsTable() {
   this->lastScope = 1;
   this->scopeStack.push_back(this->lastScope);
@@ -162,4 +146,57 @@ void SymbolsTable::printScopeStack() {
   }
   
   cout << "\e[1;31m<== Top\e[0m\n";
+}
+
+VarEntry::VarEntry(string id, int scope, string category, Type *type) {
+  this->id = id;
+  this->type = type;
+  this->scope = scope;
+  this->category = category;
+}
+
+void VarEntry::print(void) {
+  cout << "\e[1;31m(\e[1;34mScope:\e[0m " << this->scope;
+  cout << ", \e[1;34mID:\e[0m " << this->id;
+  cout << ", \e[1;34mCategory:\e[0m " << this->category;
+  cout << ", \e[1;34mType: \e[0m";
+  this->type->print(); 
+  cout << "\e[1;31m)\e[0m";
+}
+
+StructureEntry::StructureEntry(
+  string id, 
+  int scope, 
+  string category, 
+  int def_scope
+) {
+  this->id = id;
+  this->scope = scope;
+  this->category = category;
+  this->def_scope = def_scope;
+}
+
+void StructureEntry::print(void) {
+  cout << "\e[1;31m(\e[1;34mScope:\e[0m " << this->scope;
+  cout << ", \e[1;34mID:\e[0m " << this->id;
+  cout << ", \e[1;34mCategory:\e[0m " << this->category;
+  cout << ", \e[1;34mDef Scope:\e[0m " << this->def_scope; 
+  cout << "\e[1;31m)\e[0m";
+}
+
+FunctionEntry::FunctionEntry(
+  string id, 
+  int scope, 
+  string category
+) {
+  this->id = id;
+  this->scope = scope;
+  this->category = category;
+}
+
+void FunctionEntry::print(void) {
+  cout << "\e[1;31m(\e[1;34mScope:\e[0m " << this->scope;
+  cout << ", \e[1;34mID:\e[0m " << this->id;
+  cout << ", \e[1;34mCategory:\e[0m " << this->category;
+  cout << "\e[1;31m)\e[0m";
 }
