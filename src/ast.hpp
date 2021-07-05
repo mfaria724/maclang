@@ -13,6 +13,8 @@ class Node {
     Node(void) {};
     // Print a node representation.
     virtual void print(void) {};
+    // Returns a string representation of the sub-ast.
+    virtual string toString(void) { return ""; };
     // Print a tree representation of the sub-ast.
     virtual void printTree(vector<bool> *identation) {};
 };
@@ -23,14 +25,30 @@ class Node {
 class Type {
   public:
     Type(void) {};
+    // Print a node representation.
+    virtual void print(void) {};
+    // Returns a string representation of the sub ast.
+    virtual string toString(void) { return ""; };
+    // Print a tree representation of the sub-ast.
+    virtual void printTree(vector<bool> *identation) {};
+};
+
+class ExpressionNode : public Node {
+
+  public: 
+    string type;
+
+    ExpressionNode(void) {};
 
     virtual void print(void) {};
 
+    virtual string toString(void) { return ""; };
+    
     virtual void printTree(vector<bool> *identation) {};
 };
 
 /* ======================= DATA NODES =======================  */
-class NodeBOOL : public Node {
+class NodeBOOL : public ExpressionNode {
   protected:
     bool value;
 
@@ -39,10 +57,12 @@ class NodeBOOL : public Node {
 
     void print(void);
 
+    string toString(void);
+
     void printTree(vector<bool> *identation);
 };
 
-class NodeCHAR : public Node {
+class NodeCHAR : public ExpressionNode {
   protected:
     char value;
 
@@ -51,10 +71,12 @@ class NodeCHAR : public Node {
 
     void print(void);
 
+    string toString(void);
+
     void printTree(vector<bool> *identation);
 };
 
-class NodeINT : public Node {
+class NodeINT : public ExpressionNode {
   protected:
     int value;
 
@@ -63,10 +85,12 @@ class NodeINT : public Node {
 
     void print(void);
 
+    string toString(void);
+
     void printTree(vector<bool> *identation);
 };
 
-class NodeFLOAT : public Node {
+class NodeFLOAT : public ExpressionNode {
   protected:
     float value;
 
@@ -75,10 +99,12 @@ class NodeFLOAT : public Node {
 
     void print(void);
 
+    string toString(void);
+
     void printTree(vector<bool> *identation);
 };
 
-class NodeSTRING : public Node {
+class NodeSTRING : public ExpressionNode {
   protected:
     string value;
 
@@ -87,35 +113,41 @@ class NodeSTRING : public Node {
 
     void print(void);
 
+    string toString(void);
+
     void printTree(vector<bool> *identation);
 };
 
 /* ======================= EXPRESSION NODES =======================  */
 /* Representation o binary operators. */
-class NodeBinaryOperator : public Node {
+class NodeBinaryOperator : public ExpressionNode {
   protected:
     Node *left;
     string op;
     Node *right;
 
   public:
-    NodeBinaryOperator(Node *left, string op, Node *rigth);
+    NodeBinaryOperator(Node *left, string op, Node *rigth, string type);
 
     void print(void);
+
+    string toString(void);
 
     void printTree(vector<bool> *identation);
 };
 
 /* Representation of unary operations. */
-class NodeUnaryOperator : public Node {
+class NodeUnaryOperator : public ExpressionNode {
   protected:
     string op;
     Node *exp;
 
   public:
-    NodeUnaryOperator(string op, Node *exp);
+    NodeUnaryOperator(string op, Node *exp, string type);
 
     void print(void);
+
+    string toString(void);
 
     void printTree(vector<bool> *identation);
 };
@@ -131,6 +163,8 @@ class NodeNew : public Node {
 
     void print(void);
 
+    string toString(void);
+
     void printTree(vector<bool> *identation);
 };
 
@@ -143,6 +177,8 @@ class NodeForget : public Node {
     NodeForget(Node *lvalue);
 
     void print(void);
+
+    string toString(void);
 
     void printTree(vector<bool> *identation);
 };
@@ -160,60 +196,70 @@ class NodeVarDef : public Node {
 
     void print(void);
 
+    string toString(void);
+
     void printTree(vector<bool> *identation);
 };
 
 /* ======================= LVALUE NODES =======================  */
 /* Class for defined id lvalues. */
-class NodeIDLValue : public Node {
+class NodeIDLValue : public ExpressionNode {
   protected:
     string id;
 
   public:
-    NodeIDLValue(string id);
+    NodeIDLValue(string id, string type);
 
     void print(void);
+
+    string toString(void);
 
     void printTree(vector<bool> *identation);
 };
 
 /* Representation of  -> LValue . ID. */
-class NodeDotLValue : public Node {
+class NodeDotLValue : public ExpressionNode {
   protected:
     Node *lvalue;
     string id;
 
   public:
-    NodeDotLValue(Node *lvalue, string id);
+    NodeDotLValue(Node *lvalue, string id, string type);
 
     void print(void);
+
+    string toString(void);
 
     void printTree(vector<bool> *identation);
 };
 
 /* Representation of  -> ^ LValue. */
-class NodePointerLValue : public Node {
+class NodePointerLValue : public ExpressionNode {
   protected:
     Node *lvalue;
 
   public:
-    NodePointerLValue(Node *lvalue);
+    NodePointerLValue(Node *lvalue, string type);
 
     void print(void);
+
+    string toString(void);
 
     void printTree(vector<bool> *identation);
 };
 
 /* Representation of  -> LValue [ Exp ]. */
-class NodeArrayLValue : public Node {
+class NodeArrayLValue : public ExpressionNode {
   protected:
     Node *lvalue;
     Node *size;
 
   public:
-    NodeArrayLValue(Node *lvalue, Node *size);
+    NodeArrayLValue(Node *lvalue, Node *size, string type);
 
     void print(void);
+
+    string toString(void);
 
     void printTree(vector<bool> *identation);
 };
@@ -229,6 +275,8 @@ class NodeArray : public Node {
 
     void print(void);
 
+    string toString(void);
+
     void printTree(vector<bool> *identation);
 };
 
@@ -243,23 +291,27 @@ class NodeArrayElems : public Node {
 
     void print(void);
 
+    string toString(void);
+
     void printTree(vector<bool> *identation);
 };
 
 /* ======================= FUNCTION CALL NODES ======================= */
 /* Representation of function calls. */
-class NodeFunctionCall : public Node {
+class NodeFunctionCall : public ExpressionNode {
   protected:
     string id;
     Node *args;
     bool bEndInst;
 
   public:
-    NodeFunctionCall(string id, Node *args, bool bEndInst);
+    NodeFunctionCall(string id, Node *args, bool bEndInst, string type);
 
     void print(void);
 
     void printTree(vector<bool> *identation);
+
+    string toString(void);
 
     void setEndInst(void);
 };
@@ -274,6 +326,8 @@ class NodeFunctionCallArgs : public Node {
     NodeFunctionCallArgs(Node *head, Node *rvalue);
 
     void print(void);
+
+    string toString(void);
 
     void printTree(vector<bool> *identation);
 };
@@ -290,6 +344,8 @@ class NodeUnionDef : public Node {
 
     void print(void);
 
+    string toString(void);
+
     void printTree(vector<bool> *identation);
 };
 
@@ -304,6 +360,8 @@ class NodeUnionFields : public Node {
     NodeUnionFields(Node *head, Type *type, string id);
 
     void print(void);
+
+    string toString(void);
 
     void printTree(vector<bool> *identation);
 };
@@ -320,6 +378,8 @@ class NodeRegDef : public Node {
 
     void print(void);
 
+    string toString(void);
+
     void printTree(vector<bool> *identation);
 };
 
@@ -335,6 +395,8 @@ class NodeRegFields : public Node {
     NodeRegFields(Node *head, Type *type, string id, Node *rvalue);
 
     void print(void);
+
+    string toString(void);
 
     void printTree(vector<bool> *identation);
 };
@@ -353,6 +415,8 @@ class NodeConditional : public Node {
 
     void print(void);
 
+    string toString(void);
+
     void printTree(vector<bool> *identation);
 };
 
@@ -368,6 +432,8 @@ class NodeElsif : public Node {
 
     void print(void);
 
+    string toString(void);
+
     void printTree(vector<bool> *identation);
 };
 
@@ -380,6 +446,8 @@ class NodeElse : public Node {
     NodeElse(Node *body);
 
     void print(void);
+
+    string toString(void);
 
     void printTree(vector<bool> *identation);
 };
@@ -395,6 +463,8 @@ class NodeWhile : public Node {
     NodeWhile(Node *cond, Node *body);
 
     void print(void);
+
+    string toString(void);
 
     void printTree(vector<bool> *identation);
 };
@@ -413,6 +483,8 @@ class NodeFor : public Node {
 
     void print(void);
 
+    string toString(void);
+
     void printTree(vector<bool> *identation);
 };
 
@@ -430,6 +502,8 @@ class NodeRoutineDef : public Node {
 
     void print(void);
 
+    string toString(void);
+
     void printTree(vector<bool> *identation);
 };
 
@@ -442,6 +516,8 @@ class NodeRoutArgs : public Node {
     NodeRoutArgs(Node *oblArgs, Node *optArgs);
 
     void print(void);
+
+    string toString(void);
 
     void printTree(vector<bool> *identation);
 };
@@ -459,6 +535,8 @@ class NodeRoutArgDef : public Node {
 
     void print(void);
 
+    string toString(void);
+
     void printTree(vector<bool> *identation);
 };
 
@@ -472,6 +550,8 @@ class NodeActions : public Node {
     NodeActions(Node *head, Node *inst);
 
     void print(void);
+
+    string toString(void);
 
     void printTree(vector<bool> *identation);
 };
@@ -487,6 +567,8 @@ class NodeAssign : public Node {
 
     void print(void);
 
+    string toString(void);
+
     void printTree(vector<bool> *identation);
 };
 
@@ -501,6 +583,8 @@ class NodeI : public Node {
 
     void print(void);
 
+    string toString(void);
+
     void printTree(vector<bool> *identation);
 };
 
@@ -513,6 +597,8 @@ class NodeS {
     NodeS(Node *inst);
 
     void print(void);
+
+    string toString(void);
 
     void printTree(vector<bool> *identation);
 };
@@ -528,6 +614,8 @@ class PrimitiveType : public Type {
 
     void print(void);
 
+    string toString(void);
+
     void printTree(vector<bool> *identation);
 };
 
@@ -540,6 +628,8 @@ class PointerType : public Type {
     PointerType(Type *type);
 
     void print(void);
+
+    string toString(void);
 
     void printTree(vector<bool> *identation);
 };
@@ -554,6 +644,8 @@ class ArrayType : public Type {
     ArrayType(Type *type, Node *size);
 
   void print(void);
+
+  string toString(void);
 
   void printTree(vector<bool> *identation);
 };

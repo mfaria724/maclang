@@ -85,6 +85,21 @@ Entry* SymbolsTable::lookup(string id) {
 }
 
 /*
+  Gets an entry on the Symbols Table that matches the specified id and scope.
+  If that entry doesn't exists, returns NULL.
+*/
+Entry* SymbolsTable::lookup(string id, int scope) {
+  // For each entry in the vector with belongs to id.
+  for (Entry *entry : this->symTable[id]) {
+    if (entry->id == id && entry->scope == scope) {
+      return entry;
+    }
+  }
+
+  return NULL;
+}
+
+/*
   Add new scope to the symbols table.
 */
 int SymbolsTable::newScope() {
@@ -155,6 +170,9 @@ VarEntry::VarEntry(string id, int scope, string category, Type *type) {
   this->category = category;
 }
 
+/*
+  Prints a representation of the table entry.
+*/
 void VarEntry::print(void) {
   cout << "\e[1;31m(\e[1;34mScope:\e[0m " << this->scope;
   cout << ", \e[1;34mID:\e[0m " << this->id;
@@ -176,6 +194,9 @@ StructureEntry::StructureEntry(
   this->def_scope = def_scope;
 }
 
+/*
+  Prints a representation of the table entry.
+*/
 void StructureEntry::print(void) {
   cout << "\e[1;31m(\e[1;34mScope:\e[0m " << this->scope;
   cout << ", \e[1;34mID:\e[0m " << this->id;
@@ -194,9 +215,15 @@ FunctionEntry::FunctionEntry(
   this->category = category;
 }
 
+/*
+  Prints a representation of the table entry.
+*/
 void FunctionEntry::print(void) {
   cout << "\e[1;31m(\e[1;34mScope:\e[0m " << this->scope;
   cout << ", \e[1;34mID:\e[0m " << this->id;
   cout << ", \e[1;34mCategory:\e[0m " << this->category;
+  if (this->return_type) {
+    cout << ", \e[1;34mReturn Type:\e[0m " << this->return_type->toString();
+  }
   cout << "\e[1;31m)\e[0m";
 }

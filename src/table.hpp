@@ -49,6 +49,9 @@ class SymbolsTable {
     // Find a variable
     Entry* lookup(string id);
 
+    // Find a variable in a scope
+    Entry* lookup(string id, int scope);
+
     // Add a new scope
     int newScope(void);
 
@@ -86,6 +89,8 @@ class StructureEntry : public Entry {
 
 class FunctionEntry : public Entry {
   public:
+    // return type of the function
+    Type *return_type;
 
     FunctionEntry(string id, int scope, string category);
 

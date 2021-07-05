@@ -3,7 +3,8 @@
   #include <queue>
   #include <string>
   #include <cstring>
-  
+  #include <set>
+
   #include "table.hpp"
 
   using namespace std;
@@ -32,7 +33,23 @@
   void printQueue(queue<string> queueToPrint);
 
   // add a error.
-  void addError(string id, string error);
+  void addError(string error);
+
+  /* ==== TYPE VERIFICATION METHODS ==== */
+
+  // verifies the type of an operand
+  bool verify(set<string> accepted_types, string type);
+  // verifies the types of 2 operands
+  bool verify(set<pair<string, string>> accepted_types, string type1, string type2);
+
+  // verifies types for a binary operator
+  string verifyBinayOpType(
+    set<pair<string, string>> accepted_types, 
+    set<string> types1,
+    set<string> types2,
+    string type1, 
+    string type2
+  );
 
   // token names for readability on lexer
   string tokenNames [] = {
@@ -108,6 +125,7 @@
   Node  *ast;
   NodeS *nS;
   Type *t;
+  ExpressionNode *expr;
 }
 
 %locations
@@ -185,11 +203,12 @@
 %token <str>      ASTERISK 55
 
 %type <ast>       I Inst Action VarInst VarDef OptAssign
-%type <ast>       LValue Exp Array ArrExp ArrElems FuncCall ArgsExp
+%type <ast>       Array ArrExp ArrElems ArgsExp
 %type <ast>       Args RValue Assign UnionDef UnionBody Def RegDef
 %type <ast>       RegBody Conditional OptElsif Elsifs OptElse 
 %type <ast>       LoopWhile LoopFor OptStep RoutDef OptArgs OblArgs 
 %type <ast>       RoutArgs Actions 
+%type <expr>      Exp LValue FuncCall
 %type <t>         Type OptReturn
 %type <boolean>   OptRef
 %type <str>       IdDef IdFor UnionId RegId RoutId
@@ -234,7 +253,7 @@ VarDef      : LET Type IdDef OptAssign  {
             ;   
 IdDef       : ID                        {
                                           if (! table.verifyInsert($1)) {
-                                            addError($1, (string) "Redefinition of \"" + $1 + "\".");
+                                            addError((string) "Redefinition of \"" + $1 + "\".");
                                           }
                                           $$ = $1; 
                                         }
@@ -256,9 +275,9 @@ Type	: Type OPEN_BRACKET Exp CLOSE_BRACKET { $$ = new ArrayType($1, $3); }
       | ID                                  {
                                               Entry *e;
                                               if ((e = table.lookup($1)) == NULL) {
-                                                addError($1, (string) "\"" + $1 + "\" was not declared.");
+                                                addError((string) "\"" + $1 + "\" was not declared.");
                                               } else if (e->category != "Type") {
-                                                addError($1, (string) "\"" + $1 + "\" is not a type.");
+                                                addError((string) "\"" + $1 + "\" is not a type.");
                                               }
                                               $$ = new PrimitiveType($1);
                                             }
@@ -271,39 +290,299 @@ Type	: Type OPEN_BRACKET Exp CLOSE_BRACKET { $$ = new ArrayType($1, $3); }
       ;
 
 /* ======================= LVALUES ======================= */
-LValue	:	LValue OPEN_BRACKET Exp CLOSE_BRACKET   { $$ = new NodeArrayLValue($1, $3); }
-				|	POINTER LValue                          { $$ = new NodePointerLValue($2); }
-				|	LValue DOT ID                           { $$ = new NodeDotLValue($1, $3); }
+LValue	:	LValue OPEN_BRACKET Exp CLOSE_BRACKET   { 
+                                                    // TODO: revisar si son todos del mismo tipo
+                                                    string type = $1->type + "[]";
+                                                    $$ = new NodeArrayLValue($1, $3, type); }
+				|	POINTER LValue                          { 
+                                                    string type = "^" + $2->type;
+                                                    $$ = new NodePointerLValue($2, type);
+                                                  }
+				|	LValue DOT ID                           { 
+
+                                                    string type = "";
+                                                    Entry *e;
+                                                    if ((e = table.lookup($1->type)) == NULL) {
+                                                      addError((string) "\"" + $1->type + "\" was not declared.");
+                                                      type = "$TypeError";
+                                                    } else if (e->category != "Structure") {
+                                                      addError((string) "\"" + $1->type + "\" is not a variable.");
+                                                      type = "$TypeError";
+                                                    }
+
+                                                    StructureEntry *se = (StructureEntry*) e;
+
+                                                    if (type != "$TypeError") {
+                                                      if ((e = table.lookup($3, se->def_scope)) == NULL) {
+                                                        addError((string) "\"" + $3 + "\" was not declared.");
+                                                        type = "$TypeError";
+                                                      } else if (e->category != "Var") {
+                                                        addError((string) "\"" + $3 + "\" is not a variable.");
+                                                        type = "$TypeError";
+                                                      } else {
+                                                        VarEntry *ve = (VarEntry*) e;
+                                                        type = ve->type->toString();
+                                                      }
+                                                    }
+
+                                                    $$ = new NodeDotLValue($1, $3, type); 
+                                                  }
 				| OPEN_PAR LValue CLOSE_PAR               { $$ = $2; }
 				|	ID                                      { 
                                                     Entry *e;
                                                     if ((e = table.lookup($1)) == NULL) {
-                                                      addError($1, (string) "\"" + $1 + "\" was not declared.");
+                                                      addError((string) "\"" + $1 + "\" was not declared.");
                                                     } else if (e->category != "Var") {
-                                                      addError($1, (string) "\"" + $1 + "\" is not a variable.");
+                                                      addError((string) "\"" + $1 + "\" is not a variable.");
                                                     }
-                                                    $$ = new NodeIDLValue($1); 
+
+                                                    VarEntry *ve = (VarEntry*) e;
+                                                    string type = ve->type->toString();
+                                                    $$ = new NodeIDLValue($1, type); 
                                                   }
         ;
 
 /* ======================= EXPRESSIONS ======================= */
-Exp   : Exp EQUIV Exp               { $$ = new NodeBinaryOperator($1, $2, $3); }
-      | Exp NOT_EQUIV Exp           { $$ = new NodeBinaryOperator($1, $2, $3); }
-      | Exp OR Exp                  { $$ = new NodeBinaryOperator($1, $2, $3); }
-      | Exp AND Exp                 { $$ = new NodeBinaryOperator($1, $2, $3); }
-      | NOT Exp                     { $$ = new NodeUnaryOperator($1, $2); }
-      | Exp LESS_THAN Exp           { $$ = new NodeBinaryOperator($1, $2, $3); }
-      | Exp LESS_EQUAL_THAN Exp     { $$ = new NodeBinaryOperator($1, $2, $3); }
-      | Exp GREATER_THAN Exp        { $$ = new NodeBinaryOperator($1, $2, $3); }
-      | Exp GREATER_EQUAL_THAN Exp  { $$ = new NodeBinaryOperator($1, $2, $3); }
-      | Exp PLUS Exp                { $$ = new NodeBinaryOperator($1, $2, $3); }
-      | Exp MINUS Exp               { $$ = new NodeBinaryOperator($1, $2, $3); }
-      | Exp ASTERISK Exp            { $$ = new NodeBinaryOperator($1, $2, $3); }
-      | Exp DIV Exp                 { $$ = new NodeBinaryOperator($1, $2, $3); }
-      | Exp MODULE Exp              { $$ = new NodeBinaryOperator($1, $2, $3); }
-      | MINUS Exp                   { $$ = new NodeUnaryOperator($1, $2); }
-      | PLUS Exp                    { $$ = new NodeUnaryOperator($1, $2); }
-      | Exp POWER Exp               { $$ = new NodeBinaryOperator($1, $2, $3); }
+Exp   : Exp EQUIV Exp               { 
+                                      set<string> types = {"Bool", "Char", "Int", "Float"};
+                                      set<pair<string, string>> tuples = {
+                                        {"Bool", "Bool"},
+                                        {"Char", "Char"},
+                                        {"Int", "Int"},
+                                        {"Float", "Float"},
+                                        {"Int", "Float"},
+                                        {"Float", "Int"}
+                                      };
+
+                                      string t1 = $1->type;
+                                      string t2 = $3->type;
+
+                                      string type = verifyBinayOpType(tuples, types, types, t1, t2);
+                                      $$ = new NodeBinaryOperator($1, $2, $3, type); 
+                                    }
+      | Exp NOT_EQUIV Exp           { 
+                                      set<string> types = {"Bool", "Char", "Int", "Float"};
+                                      set<pair<string, string>> tuples = {
+                                        {"Bool", "Bool"},
+                                        {"Char", "Char"},
+                                        {"Int", "Int"},
+                                        {"Float", "Float"},
+                                        {"Int", "Float"},
+                                        {"Float", "Int"}
+                                      };
+
+                                      string t1 = $1->type;
+                                      string t2 = $3->type;
+
+                                      string type = verifyBinayOpType(tuples, types, types, t1, t2);
+                                      $$ = new NodeBinaryOperator($1, $2, $3, type); 
+                                    }
+      | Exp OR Exp                  { 
+                                      set<string> types = {"Bool"};
+                                      set<pair<string, string>> tuples = { {"Bool", "Bool"} };
+
+                                      string t1 = $1->type;
+                                      string t2 = $3->type;
+
+                                      string type = verifyBinayOpType(tuples, types, types, t1, t2);
+                                      $$ = new NodeBinaryOperator($1, $2, $3, type); 
+                                    }
+      | Exp AND Exp                 { 
+                                      set<string> types = {"Bool"};
+                                      set<pair<string, string>> tuples = { {"Bool", "Bool"} };
+
+                                      string t1 = $1->type;
+                                      string t2 = $3->type;
+
+                                      string type = verifyBinayOpType(tuples, types, types, t1, t2);
+                                      $$ = new NodeBinaryOperator($1, $2, $3, type); 
+                                    }
+      | NOT Exp                     { 
+                                      string type;
+                                      bool ct = verify({"Bool"}, $2->type);
+                                      if (ct) {
+                                        type = "Bool";
+                                      } else {
+                                        addError((string) "Incorrect type: \"" + $2->type);
+                                        type = "$TypeError";
+                                      }
+
+                                      $$ = new NodeUnaryOperator($1, $2, type); 
+                                    }
+      | Exp LESS_THAN Exp           { 
+                                      set<string> types = {"Int", "Float"};
+                                      set<pair<string, string>> tuples = {
+                                        {"Int", "Int"},
+                                        {"Float", "Float"},
+                                        {"Int", "Float"},
+                                        {"Float", "Int"}
+                                      };
+
+                                      string t1 = $1->type;
+                                      string t2 = $3->type;
+
+                                      string type = verifyBinayOpType(tuples, types, types, t1, t2);
+                                      $$ = new NodeBinaryOperator($1, $2, $3, type); 
+                                    }
+      | Exp LESS_EQUAL_THAN Exp     { 
+                                      set<string> types = {"Int", "Float"};
+                                      set<pair<string, string>> tuples = {
+                                        {"Int", "Int"},
+                                        {"Float", "Float"},
+                                        {"Int", "Float"},
+                                        {"Float", "Int"}
+                                      };
+
+                                      string t1 = $1->type;
+                                      string t2 = $3->type;
+
+                                      string type = verifyBinayOpType(tuples, types, types, t1, t2);
+                                      $$ = new NodeBinaryOperator($1, $2, $3, type); 
+                                    }
+      | Exp GREATER_THAN Exp        { 
+                                      set<string> types = {"Int", "Float"};
+                                      set<pair<string, string>> tuples = {
+                                        {"Int", "Int"},
+                                        {"Float", "Float"},
+                                        {"Int", "Float"},
+                                        {"Float", "Int"}
+                                      };
+
+                                      string t1 = $1->type;
+                                      string t2 = $3->type;
+
+                                      string type = verifyBinayOpType(tuples, types, types, t1, t2);
+                                      $$ = new NodeBinaryOperator($1, $2, $3, type); 
+                                    }
+      | Exp GREATER_EQUAL_THAN Exp  { 
+                                      set<string> types = {"Int", "Float"};
+                                      set<pair<string, string>> tuples = {
+                                        {"Int", "Int"},
+                                        {"Float", "Float"},
+                                        {"Int", "Float"},
+                                        {"Float", "Int"}
+                                      };
+
+                                      string t1 = $1->type;
+                                      string t2 = $3->type;
+
+                                      string type = verifyBinayOpType(tuples, types, types, t1, t2);
+                                      $$ = new NodeBinaryOperator($1, $2, $3, type); 
+                                    }
+      | Exp PLUS Exp                { 
+                                      set<string> types = {"Int", "Float"};
+                                      set<pair<string, string>> tuples = {
+                                        {"Int", "Int"},
+                                        {"Float", "Float"},
+                                        {"Int", "Float"},
+                                        {"Float", "Int"}
+                                      };
+
+                                      string t1 = $1->type;
+                                      string t2 = $3->type;
+
+                                      string type = verifyBinayOpType(tuples, types, types, t1, t2);
+                                      $$ = new NodeBinaryOperator($1, $2, $3, type); 
+                                    }
+      | Exp MINUS Exp               { 
+                                      set<string> types = {"Int", "Float"};
+                                      set<pair<string, string>> tuples = {
+                                        {"Int", "Int"},
+                                        {"Float", "Float"},
+                                        {"Int", "Float"},
+                                        {"Float", "Int"}
+                                      };
+
+                                      string t1 = $1->type;
+                                      string t2 = $3->type;
+
+                                      string type = verifyBinayOpType(tuples, types, types, t1, t2);
+                                      $$ = new NodeBinaryOperator($1, $2, $3, type); 
+                                    }
+      | Exp ASTERISK Exp            { 
+                                      set<string> types = {"Int", "Float"};
+                                      set<pair<string, string>> tuples = {
+                                        {"Int", "Int"},
+                                        {"Float", "Float"},
+                                        {"Int", "Float"},
+                                        {"Float", "Int"}
+                                      };
+
+                                      string t1 = $1->type;
+                                      string t2 = $3->type;
+
+                                      string type = verifyBinayOpType(tuples, types, types, t1, t2);
+                                      $$ = new NodeBinaryOperator($1, $2, $3, type); 
+                                    }
+      | Exp DIV Exp                 { 
+                                      set<string> types = {"Int", "Float"};
+                                      set<pair<string, string>> tuples = {
+                                        {"Int", "Int"},
+                                        {"Float", "Float"},
+                                        {"Int", "Float"},
+                                        {"Float", "Int"}
+                                      };
+
+                                      string t1 = $1->type;
+                                      string t2 = $3->type;
+
+                                      string type = verifyBinayOpType(tuples, types, types, t1, t2);
+                                      $$ = new NodeBinaryOperator($1, $2, $3, type); 
+                                    }
+      | Exp MODULE Exp              { 
+                                      set<string> types = {"Int", "Float"};
+                                      set<pair<string, string>> tuples = {
+                                        {"Int", "Int"},
+                                        {"Float", "Float"},
+                                        {"Int", "Float"},
+                                        {"Float", "Int"}
+                                      };
+
+                                      string t1 = $1->type;
+                                      string t2 = $3->type;
+
+                                      string type = verifyBinayOpType(tuples, types, types, t1, t2);
+                                      $$ = new NodeBinaryOperator($1, $2, $3, type); 
+                                    }
+      | MINUS Exp                   { 
+                                      string type;
+                                      bool ct = verify({"Int", "Float"}, $2->type);
+                                      if (ct) {
+                                        type = $2->type;
+                                      } else {
+                                        addError((string) "Incorrect type: \"" + $2->type);
+                                        type = "$TypeError";
+                                      }
+
+                                      $$ = new NodeUnaryOperator($1, $2, type); 
+                                    }
+      | PLUS Exp                    { 
+                                      string type;
+                                      bool ct = verify({"Int", "Float"}, $2->type);
+                                      if (ct) {
+                                        type = $2->type;
+                                      } else {
+                                        addError((string) "Incorrect type: \"" + $2->type);
+                                        type = "$TypeError";
+                                      }
+
+                                      $$ = new NodeUnaryOperator($1, $2, type); 
+                                    }
+      | Exp POWER Exp               { 
+                                      set<string> types = {"Int", "Float"};
+                                      set<pair<string, string>> tuples = {
+                                        {"Int", "Int"},
+                                        {"Float", "Float"},
+                                        {"Int", "Float"},
+                                        {"Float", "Int"}
+                                      };
+
+                                      string t1 = $1->type;
+                                      string t2 = $3->type;
+
+                                      string type = verifyBinayOpType(tuples, types, types, t1, t2);
+                                      $$ = new NodeBinaryOperator($1, $2, $3, type); 
+                                    }
       | OPEN_PAR Exp CLOSE_PAR      { $$ = $2; }
       | LValue                      { $$ = $1; }
       | FuncCall                    { $$ = $1; }
@@ -326,13 +605,35 @@ ArrElems	: /* lambda */                        { $$ = NULL; }
 
 /* ================= FUNCTION CALLS ================= */
 FuncCall  : ID OPEN_PAR ArgsExp CLOSE_PAR   { 
+                                              string type = "";
                                               Entry *e;
                                               if ((e = table.lookup($1)) == NULL) {
-                                                addError($1, (string) "\"" + $1 + "\" was not declared.");
+                                                addError((string) "\"" + $1 + "\" was not declared.");
+                                                type = "$TypeError";
                                               } else if (e->category != "Function") {
-                                                addError($1, (string) "\"" + $1 + "\" is not a function.");
+                                                addError((string) "\"" + $1 + "\" is not a function.");
+                                                type = "$TypeError";
                                               }
-                                              $$ = new NodeFunctionCall($1, $3, false); 
+
+                                              if (type != "$TypeError") {
+                                                FunctionEntry *fe = (FunctionEntry*) e;
+
+                                                cout << "Hola:" << endl;
+                                                fe->print();
+                                                cout << "Chao:" << endl;
+
+                                                Type *pt = (Type*) fe->return_type;
+                                                
+                                                cout << "Antes:" << endl;
+                                                pt->print();
+                                                cout << "Despues:" << endl;
+
+                                                type = pt->toString();
+
+                                                cout << "El tipo es: " << pt->toString() << endl;
+                                              }
+
+                                              $$ = new NodeFunctionCall($1, $3, false, type); 
                                             }
           ;
 ArgsExp   : /* lambda */                    { $$ = NULL; }
@@ -348,7 +649,7 @@ UnionDef  : UnionId OPEN_C_BRACE UnionBody CLOSE_C_BRACE  {
                                                             int def_s = table.currentScope();
                                                             table.exitScope(); 
                                                             int s = table.currentScope();
-                                                            Entry *e = new StructureEntry($1, s, "Type", def_s);
+                                                            Entry *e = new StructureEntry($1, s, "Structure", def_s);
                                                             table.insert(e);
                                                           }
           ;
@@ -374,7 +675,7 @@ RegDef    : RegId OPEN_C_BRACE RegBody CLOSE_C_BRACE  {
                                                         int def_s = table.currentScope();
                                                         table.exitScope();
                                                         int s = table.currentScope();
-                                                        Entry *e = new StructureEntry($1, s, "Type", def_s);
+                                                        Entry *e = new StructureEntry($1, s, "Structure", def_s);
                                                         table.insert(e);
                                                       }
           ;   
@@ -455,6 +756,16 @@ OptStep   : /* lambda */                              { $$ = NULL; }
 /* =============== SUBROUTINES DEFINITION =============== */
 RoutDef   : RoutId OPEN_PAR RoutArgs CLOSE_PAR OptReturn 
             OPEN_C_BRACE Actions CLOSE_C_BRACE            { 
+                                                            Entry *e;
+                                                            e = table.lookup($1);
+
+                                                            FunctionEntry *fe = (FunctionEntry*) e;
+                                                            fe->return_type = $5;
+
+                                                            cout << "Nueva entrada de la tabla: " << endl;
+                                                            fe->print();
+                                                            cout << "Termina la nueva entrada" << endl;
+
                                                             $$ = new NodeRoutineDef(
                                                               $1, $3, $5, $7
                                                             ); 
@@ -512,7 +823,7 @@ OptArgs   : Type OptRef IdDef ASSIGNMENT RValue           {
 OptRef    : /* lambda */                                  { $$ = false; }
 					| AT                                            { $$ = true; }
           ; 
-OptReturn : /* lambda */                                  { $$ = NULL; }
+OptReturn : /* lambda */                                  { $$ = new PrimitiveType("Unit"); }
 				  | RIGHT_ARROW Type                              { $$ = $2; }
           ; 
 Actions   : /* lambda */                                  { $$ = NULL; }
@@ -689,7 +1000,7 @@ void printQueue(queue<string> queueToPrint)
 /*
   Add a error to vector errors.
 */
-void addError(string id, string error) {
+void addError(string error) {
   string file = strdup(filename);
 
   string err = "\e[1m" + file + " (" + to_string(yylineno) + ", " + 
@@ -698,3 +1009,46 @@ void addError(string id, string error) {
   // add the error to the queue
   errors.push(err);
 }
+
+/*
+  Verifies of the type is one of the accepted_types.
+*/
+bool verify(set<string> accepted_types, string type) {
+  return accepted_types.count(type);
+}
+
+/*
+  Verifies that the types correspond with an accepted pair of types.
+*/
+bool verify(set<pair<string, string>> accepted_types, string type1, string type2) {
+  return accepted_types.count({type1, type2});
+}
+
+/*
+  Verifies that a pair of operators have the correct types for a binary operator.
+*/
+string verifyBinayOpType(
+  set<pair<string, string>> accepted_types, 
+  set<string> types1,
+  set<string> types2,
+  string type1, 
+  string type2
+) {
+  if (type1 == "$TypeError" || type2 == "$TypeError") {
+    return "$TypeError";
+  } else {
+    bool st1 = verify(types1, type1);
+    bool st2 = verify(types2, type2);
+
+    // Verificar que ambos tipos son soportados
+    if ((st1 && st2) && verify(accepted_types, type1, type2)) {
+      return "Bool";
+    } else {
+      // error alguno de los tipos no es soportados
+      // ejemplo: no se puede comparar t1 con t2
+      addError((string) "Types \"" + type1 + "\" and \"" + type2 + "can't be operated.");
+      return "$TypeError";
+    }
+  }
+}
+
