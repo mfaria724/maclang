@@ -1,6 +1,3 @@
-#ifndef AST
-#define AST
-
 #include "ast.hpp"
 
 /* ======================= AUXILIARY FUNCTIONS =======================  */
@@ -826,7 +823,7 @@ void NodeFor::printTree(vector<bool> *identation) {
 }
 
 /* ======================= SUBROUTINE DEF NODES =======================  */
-NodeRoutineDef::NodeRoutineDef(string id, Node *args, Node *ret, Node *body) {
+NodeRoutineDef::NodeRoutineDef(string id, Node *args, Type *ret, Node *body) {
   this->id = id;
   this->args = args;
   this->ret = ret;
@@ -1115,4 +1112,67 @@ void NodeS::printTree(vector<bool> *identation) {
   }
 }
 
-#endif
+/* ======================= TYPE NODES =======================  */
+PrimitiveType::PrimitiveType(string id) {
+  this->id = id;
+}
+
+void PrimitiveType::print(void) {
+  cout << this->id;
+}
+
+void PrimitiveType::printTree(vector<bool> *identation) {
+  cout << "Primitive Type: " << this->id << "\n";
+}
+
+PointerType::PointerType(Type *type) {
+  this->type = type;
+}
+
+void PointerType::print(void) {
+  cout << "^(";
+  this->type->print();
+  cout << ")";
+}
+
+void PointerType::printTree(vector<bool> *identation) {
+  cout << "\e[1;34mType Pointer\e[0m\n";
+
+  printIdentation(identation);
+  cout << "├── ^\n";
+
+  printIdentation(identation);
+  identation->push_back(false);
+  cout << "└── ";
+  this->type->printTree(identation);
+  identation->pop_back();
+}
+
+ArrayType::ArrayType(Type *type, Node *size) {
+  this->type = type;
+  this->size = size;
+}
+
+void ArrayType::print(void) {
+  cout << "(";
+  this->type->print();
+  cout << ")[";
+  this->size->print();
+  cout << "]";
+}
+
+void ArrayType::printTree(vector<bool> *identation) {
+  cout << "\e[1;34mType Array\e[0m\n";
+
+  printIdentation(identation);
+  identation->push_back(true);
+  cout << "├── ";
+  this->type->printTree(identation);
+  identation->pop_back();
+
+  printIdentation(identation);
+  identation->push_back(false);
+  cout << "└── \e[1;34mSize: \e[0m";
+  this->size->printTree(identation);
+  identation->pop_back();
+}

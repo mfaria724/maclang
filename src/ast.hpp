@@ -1,7 +1,6 @@
 #include <string>
 #include <vector>
 #include <iostream>
-#include "types.hpp"
 
 using namespace std;
 
@@ -11,10 +10,22 @@ using namespace std;
 */
 class Node {
   public:
-    Node() {};
+    Node(void) {};
     // Print a node representation.
     virtual void print(void) {};
     // Print a tree representation of the sub-ast.
+    virtual void printTree(vector<bool> *identation) {};
+};
+
+/*
+  "Abstract" class that is parent of all type classes.
+*/
+class Type {
+  public:
+    Type(void) {};
+
+    virtual void print(void) {};
+
     virtual void printTree(vector<bool> *identation) {};
 };
 
@@ -411,11 +422,11 @@ class NodeRoutineDef : public Node {
   protected:
     string id;
     Node *args;
-    Node *ret;
+    Type *ret;
     Node *body;
 
   public:
-    NodeRoutineDef(string id, Node *args, Node *ret, Node *body);
+    NodeRoutineDef(string id, Node *args, Type *ret, Node *body);
 
     void print(void);
 
@@ -504,4 +515,45 @@ class NodeS {
     void print(void);
 
     void printTree(vector<bool> *identation);
+};
+
+/* ======================= TYPE NODES =======================  */
+/* Class for defined types. */
+class PrimitiveType : public Type {
+  protected:
+    string id;
+
+  public:
+    PrimitiveType(string id);
+
+    void print(void);
+
+    void printTree(vector<bool> *identation);
+};
+
+/* Representation of  -> ^ Type. */
+class PointerType : public Type {
+  protected:
+    Type *type;
+
+  public:
+    PointerType(Type *type);
+
+    void print(void);
+
+    void printTree(vector<bool> *identation);
+};
+
+/* Representation of  -> Type [ Exp ]. */
+class ArrayType : public Type {
+  protected:
+    Type *type;
+    Node *size;
+
+  public: 
+    ArrayType(Type *type, Node *size);
+
+  void print(void);
+
+  void printTree(vector<bool> *identation);
 };
