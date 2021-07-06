@@ -335,11 +335,11 @@ Type	: Type OPEN_BRACKET Exp CLOSE_BRACKET {
       | ID                                  {
                                               Entry *e;
                                               if ((e = table.lookup($1)) == NULL) {
-                                                addError((string) "\"" + $1 + "\" was not declared.");
+                                                addError((string) "\"" + $1 + "\" wasn't declared.");
                                                 $$ = new PrimitiveType("$TypeError");
 
                                               } else if (e->category != "Type" && e->category != "Structure") {
-                                                addError((string) "\"" + $1 + "\" is not a type.");
+                                                addError((string) "\"" + $1 + "\" isn't a type.");
                                                 $$ = new PrimitiveType("$TypeError");
 
                                               } else {
@@ -396,7 +396,7 @@ LValue	:	LValue OPEN_BRACKET Exp CLOSE_BRACKET   {
                                                     } else if ($1->type->category != "Primitive") {
                                                       addError(
                                                         "'\e[1;3m" + $1->type->toString() + 
-                                                        "\e[0m' type can't be access."
+                                                        "\e[0m' type can't be accessed."
                                                       );
                                                       type = NULL;
 
@@ -406,7 +406,7 @@ LValue	:	LValue OPEN_BRACKET Exp CLOSE_BRACKET   {
                                                       if (e->category != "Structure") {
                                                         addError(
                                                           "'\e[1;3m" + $1->type->toString() + 
-                                                          "\e[0m' type can't be access."
+                                                          "\e[0m' type can't be accessed."
                                                         );
                                                         type = NULL;
 
@@ -435,11 +435,11 @@ LValue	:	LValue OPEN_BRACKET Exp CLOSE_BRACKET   {
 				|	ID                                      { 
                                                     Entry *e;
                                                     if ((e = table.lookup($1)) == NULL) {
-                                                      addError((string) "'\e[1;3m" + $1 + "\e[0m' was not declared.");
+                                                      addError((string) "'\e[1;3m" + $1 + "\e[0m' wasn't declared.");
                                                       $$ = new NodeIDLValue($1, NULL);
 
                                                     } else if (e->category != "Var") {
-                                                      addError((string) "'\e[1;3m" + $1 + "\e[0m' is not a variable.");
+                                                      addError((string) "'\e[1;3m" + $1 + "\e[0m' isn't a variable.");
                                                       $$ = new NodeIDLValue($1, NULL);
 
                                                     } else {
@@ -539,7 +539,7 @@ Exp   : Exp EQUIV Exp               {
 
                                       } else {
                                         addError(
-                                          (string) "Operator '\e[1;3m!\e[0m' don't matches with operand type " +
+                                          (string) "Operator '\e[1;3m!\e[0m' can't be applied with operand type " +
                                           "'\e[1;3m" + $2->type_str + "\e[0m'."
                                         );
                                         type = "$TypeError";
@@ -762,7 +762,7 @@ Exp   : Exp EQUIV Exp               {
                                         
                                       } else {
                                         addError(
-                                          (string) "Operator '\e[1;3m-\e[0m' don't matches with operand type " +
+                                          (string) "Operator '\e[1;3m-\e[0m' can't be applied with operand type " +
                                           "'\e[1;3m" + $2->type_str + "\e[0m'."
                                         );
                                         type = "$TypeError";
@@ -780,7 +780,7 @@ Exp   : Exp EQUIV Exp               {
                                         
                                       } else {
                                         addError(
-                                          (string) "Operator '\e[1;3m+\e[0m' don't matches with operand type " +
+                                          (string) "Operator '\e[1;3m+\e[0m' can't be applied with operand type " +
                                           "'\e[1;3m" + $2->type_str + "\e[0m'."
                                         );
                                         type = "$TypeError";
@@ -852,7 +852,7 @@ ArrExp    : ArrElems RValue                     {
 
                                                   } else if ($1->type_str != $2->type_str) {
                                                     addError(
-                                                      (string) "All elements of an array must be of the same type" +
+                                                      (string) "All elements of an array must have the same type" +
                                                       ", but found '\e[1;3m" + $1->type_str + "\e[0m' and " +
                                                       "'\e[1;3m" + $2->type_str + "'."
                                                     );
@@ -878,7 +878,7 @@ ArrElems	: /* lambda */                        { $$ = NULL; }
 
                                                   } else if ($1->type_str != $2->type_str) {
                                                     addError(
-                                                      (string) "All elements of an array must be of the same type" +
+                                                      (string) "All elements of an array must have the same type" +
                                                       ", but found '\e[1;3m" + $1->type_str + "\e[0m' and " +
                                                       "'\e[1;3m" + $2->type_str + "'."
                                                     );
@@ -897,10 +897,10 @@ FuncCall  : ID OPEN_PAR ArgsExp CLOSE_PAR   {
                                               string type = "";
                                               Entry *e;
                                               if ((e = table.lookup($1)) == NULL) {
-                                                addError((string) "\"" + $1 + "\" was not declared.");
+                                                addError((string) "\"" + $1 + "\" wasn't declared.");
                                                 type = "$TypeError";
                                               } else if (e->category != "Function") {
-                                                addError((string) "\"" + $1 + "\" is not a function.");
+                                                addError((string) "\"" + $1 + "\" isn't a function.");
                                                 type = "$TypeError";
                                               }
 
