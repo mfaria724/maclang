@@ -13,12 +13,12 @@ let Char c = 'A';                     # Caracter
 let Bool b;                           # Booleano
 let Float f = 1.5;                    # Flotante
 let Int x;                  
-let Int y = [x+1,3,x+5];              # Asignacion de arreglo a un entero.
+let Int y = [x+1,3,x+'c'];              # Asignacion de arreglo a un entero.
 let Int q4 = y + (^x            * b); # Asignacion con variable no declarada.
                                       # Dereferenciación de entero.
 
 # ERROR Redefinicion
-# let Char c;
+let Char c;
 # ERROR No definido
 # q = 1;
 # ERROR No es una funcion

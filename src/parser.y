@@ -256,9 +256,13 @@ VarInst     : VarDef                    { $$ = $1; }
             ;
 VarDef      : LET Type IdDef OptAssign  { 
                                           string ltype = $2->toString();
+
                                           if (
                                             ltype == "$TypeError" || 
-                                            (($4 != NULL) && ($4->type_str == "$TypeError")) 
+                                            (($4 != NULL) && 
+                                             ($4->type_str == "$TypeError") ||
+                                             ($4->type_str == "$ExpressionError")
+                                            ) 
                                           ) {
                                             $$ = new NodeError();
                                           } 
@@ -302,6 +306,7 @@ Assign      : LValue ASSIGNMENT RValue  {
                                           if (
                                             (ltype != "$TypeError") &&
                                             (rtype != "$TypeError") &&
+                                            ()
                                             (ltype != rtype)
                                           ) {
                                             addError(
