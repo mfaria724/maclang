@@ -136,6 +136,8 @@
   NodeS *nS;
   Type *t;
   ExpressionNode *expr;
+  NodeRoutArgDef *routArgsDef;
+  NodeRoutArgs *routArgs;
 }
 
 %locations
@@ -212,17 +214,19 @@
 %token <str>      DIV 54
 %token <str>      ASTERISK 55
 
-%type <ast>       I Inst Action VarInst VarDef 
-%type <ast>       Args Assign UnionDef UnionBody Def RegDef
-%type <ast>       RegBody Conditional OptElsif Elsifs OptElse 
-%type <ast>       LoopWhile LoopFor OptStep RoutDef OptArgs OblArgs 
-%type <ast>       RoutArgs Actions RoutSign ArgsExp
-%type <expr>      Exp LValue RValue FuncCall Array ArrExp ArrElems
-%type <expr>      OptAssign
-%type <t>         Type OptReturn
-%type <boolean>   OptRef
-%type <str>       IdDef IdFor UnionId RegId RoutId
-%type <nS>        S
+%type <ast>           I Inst Action VarInst VarDef 
+%type <ast>           Args Assign UnionDef UnionBody Def RegDef
+%type <ast>           RegBody Conditional OptElsif Elsifs OptElse 
+%type <ast>           LoopWhile LoopFor OptStep RoutDef  
+%type <ast>           Actions RoutSign ArgsExp
+%type <expr>          Exp LValue RValue FuncCall Array ArrExp ArrElems
+%type <expr>          OptAssign
+%type <routArgs>      RoutArgs
+%type <routArgsDef>   OptArgs MandArgs
+%type <t>             Type OptReturn
+%type <boolean>       OptRef
+%type <str>           IdDef IdFor UnionId RegId RoutId
+%type <nS>            S
 
 %expect 1
 
@@ -260,8 +264,8 @@ VarDef      : LET Type IdDef OptAssign  {
                                           if (
                                             ltype == "$TypeError" || 
                                             (($4 != NULL) && 
-                                             ($4->type_str == "$TypeError") ||
-                                             ($4->type_str == "$ExpressionError")
+                                             (($4->type_str == "$TypeError") ||
+                                              ($4->type_str == "$ExpressionError"))
                                             ) 
                                           ) {
                                             $$ = new NodeError();
@@ -306,7 +310,6 @@ Assign      : LValue ASSIGNMENT RValue  {
                                           if (
                                             (ltype != "$TypeError") &&
                                             (rtype != "$TypeError") &&
-                                            ()
                                             (ltype != rtype)
                                           ) {
                                             addError(
@@ -955,6 +958,12 @@ RoutSign  : RoutId OPEN_PAR RoutArgs CLOSE_PAR OptReturn  {
                                                             e = (FunctionEntry*) table.lookup($1);
                                                             e->return_type = $5;
                                                             e->def_scope = table.currentScope();
+                                                            
+                                                            if ($3 != NULL) {
+                                                              e->args = $3->params;
+                                                              $3->params.clear();
+                                                            }
+                                                            
                                                             table.newScope();
                                                             $$ = new NodeRoutineSign($1, $3, $5);
                                                           }
@@ -968,23 +977,46 @@ RoutId    : DEF IdDef                                     {
                                                           }
           ;    
 RoutArgs  : /* lambda */                                  { $$ = NULL; }
-          | OblArgs                                       { $$ = new NodeRoutArgs($1, NULL); }
-          | OptArgs                                       { $$ = new NodeRoutArgs(NULL, $1); }
-          | OblArgs COMMA OptArgs                         { $$ = new NodeRoutArgs($1, $3); }
+          | MandArgs                                      { 
+                                                            $$ = new NodeRoutArgs($1, NULL); 
+                                                            $$->params = $1->currentParams;
+                                                            $1->currentParams.clear();
+                                                          }
+          | OptArgs                                       { 
+                                                            $$ = new NodeRoutArgs(NULL, $1); 
+                                                            $$->params = $1->currentParams;
+                                                            $1->currentParams.clear();
+                                                          }
+          | MandArgs COMMA OptArgs                        { 
+                                                            for(auto & elem : $1->currentParams)
+                                                            {
+                                                              $3->currentParams.push_back(elem);
+                                                            }
+
+                                                            $$ = new NodeRoutArgs($1, $3);
+                                                            $$->params = $3->currentParams;
+                                                            $3->currentParams.clear();
+                                                            $1->currentParams.clear();
+                                                          }
           ;   
-OblArgs   : Type OptRef IdDef                             { 
+MandArgs  : Type OptRef IdDef                             { 
                                                             $$ = new NodeRoutArgDef(
                                                               NULL, $1, $2, $3, NULL
                                                             );
-                                                            ((NodeRoutArgDef*) $$)->
+                                                            $$->currentParams.push_back({$3, $1->toString(), true});
+
                                                             int s = table.currentScope();
                                                             Entry *e = new VarEntry($3, s, "Var", $1);
                                                             table.insert(e);
                                                           }
-          | OblArgs COMMA Type OptRef IdDef               { 
+          | MandArgs COMMA Type OptRef IdDef              { 
                                                             $$ = new NodeRoutArgDef(
                                                               $1, $3, $4, $5, NULL
                                                             );
+                                                            $$->currentParams = $1->currentParams;
+                                                            $1->currentParams.clear();
+                                                            $$->currentParams.push_back({$5, $3->toString(), true});
+
                                                             int s = table.currentScope();
                                                             Entry *e = new VarEntry($5, s, "Var", $3);
                                                             table.insert(e);
@@ -994,6 +1026,9 @@ OptArgs   : Type OptRef IdDef ASSIGNMENT RValue           {
                                                             $$ = new NodeRoutArgDef(
                                                               NULL, $1, $2, $3, $5
                                                             );
+
+                                                            $$->currentParams.push_back({$3, $1->toString(), false});
+
                                                             int s = table.currentScope();
                                                             Entry *e = new VarEntry($3, s, "Var", $1);
                                                             table.insert(e);
@@ -1003,6 +1038,11 @@ OptArgs   : Type OptRef IdDef ASSIGNMENT RValue           {
                                                             $$ = new NodeRoutArgDef(
                                                               $1, $3, $4, $5, $7
                                                             );
+
+                                                            $$->currentParams = $1->currentParams;
+                                                            $1->currentParams.clear();
+                                                            $$->currentParams.push_back({$5, $3->toString(), false});
+
                                                             int s = table.currentScope();
                                                             Entry *e = new VarEntry($5, s, "Var", $3);
                                                             table.insert(e);

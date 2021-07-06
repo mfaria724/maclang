@@ -532,6 +532,8 @@ class NodeRoutArgs : public Node {
     Node *optArgs;
 
   public:
+    vector<tuple<string, string, bool>> params;
+
     NodeRoutArgs(Node *oblArgs, Node *optArgs);
 
     void print(void);
@@ -550,8 +552,7 @@ class NodeRoutArgDef : public Node {
     Node *rvalue;
 
   public:
-    vector<string> currentMandParams;
-    map<string, string> currentOptParams;
+    vector<tuple<string, string, bool>> currentParams;
     
     NodeRoutArgDef(Node *head, Type *type, bool ref, string id, Node *rvalue);
 
