@@ -1,7 +1,5 @@
 # este archivo contiene tokens no identificados
-~
-Int i;            # Entero inicializado pero sin valor asignado.
-Int j = 1;        # Entero inicializado y con valor asignado.
-Char c = '1';     # Caracter
-Bool b;           # Booleano
-Float f = ~.0;    # Flotante
+
+let Int[1][1] i;            # Entero inicializado pero sin valor asignado.
+let Int a = 1 + ^^^^^^^^^^^^i.k;
+i = [[1]];

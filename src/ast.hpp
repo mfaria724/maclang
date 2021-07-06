@@ -25,6 +25,8 @@ class Node {
 class Type {
   public:
     Type(void) {};
+
+    string category;
     // Print a node representation.
     virtual void print(void) {};
     // Returns a string representation of the sub ast.
@@ -36,7 +38,8 @@ class Type {
 class ExpressionNode : public Node {
 
   public: 
-    string type;
+    string type_str;
+    Type *type;
 
     ExpressionNode(void) {};
 
@@ -154,9 +157,10 @@ class NodeUnaryOperator : public ExpressionNode {
 
 /* ======================= HEAP NODES =======================  */
 /* Representation of  -> new Type. */
-class NodeNew : public Node {
+class NodeNew : public ExpressionNode {
   protected:
     Type *type;
+    string type_str;
 
   public:
     NodeNew(Type *type);
@@ -208,7 +212,7 @@ class NodeIDLValue : public ExpressionNode {
     string id;
 
   public:
-    NodeIDLValue(string id, string type);
+    NodeIDLValue(string id, Type *type);
 
     void print(void);
 
@@ -224,7 +228,7 @@ class NodeDotLValue : public ExpressionNode {
     string id;
 
   public:
-    NodeDotLValue(Node *lvalue, string id, string type);
+    NodeDotLValue(Node *lvalue, string id, Type *type);
 
     void print(void);
 
@@ -239,7 +243,7 @@ class NodePointerLValue : public ExpressionNode {
     Node *lvalue;
 
   public:
-    NodePointerLValue(Node *lvalue, string type);
+    NodePointerLValue(Node *lvalue, Type *type);
 
     void print(void);
 
@@ -255,7 +259,7 @@ class NodeArrayLValue : public ExpressionNode {
     Node *size;
 
   public:
-    NodeArrayLValue(Node *lvalue, Node *size, string type);
+    NodeArrayLValue(Node *lvalue, Node *size, Type *type);
 
     void print(void);
 
@@ -266,12 +270,12 @@ class NodeArrayLValue : public ExpressionNode {
 
 /* ======================= ARRAY NODES =======================  */
 /* Representation of arrays. */
-class NodeArray : public Node {
+class NodeArray : public ExpressionNode {
   protected:
     Node *elems;
 
   public:
-    NodeArray(Node *elems);
+    NodeArray(Node *elems, string type_str);
 
     void print(void);
 
@@ -281,13 +285,13 @@ class NodeArray : public Node {
 };
 
 /* Representation of  ->  RValue , ArrElems. */
-class NodeArrayElems : public Node {
+class NodeArrayElems : public ExpressionNode {
   protected:
     Node *rvalue;
     Node *head;
 
   public:
-    NodeArrayElems(Node *rvalue, Node *head = NULL);
+    NodeArrayElems(Node *rvalue, string type_str, Node *head);
 
     void print(void);
 
@@ -492,13 +496,27 @@ class NodeFor : public Node {
 /* Representation of routine definitions. */
 class NodeRoutineDef : public Node {
   protected:
-    string id;
-    Node *args;
-    Type *ret;
+    Node *sign;
     Node *body;
 
   public:
-    NodeRoutineDef(string id, Node *args, Type *ret, Node *body);
+    NodeRoutineDef(Node *sign, Node *body);
+
+    void print(void);
+
+    string toString(void);
+
+    void printTree(vector<bool> *identation);
+};
+
+class NodeRoutineSign : public Node {
+  protected:
+    string id;
+    Node *args;
+    Type *ret;
+
+  public:
+    NodeRoutineSign(string id, Node *args, Type *ret);
 
     void print(void);
 
@@ -603,6 +621,11 @@ class NodeS {
     void printTree(vector<bool> *identation);
 };
 
+class NodeError : public Node {
+  public:
+    NodeError(void) { }
+};
+
 /* ======================= TYPE NODES =======================  */
 /* Class for defined types. */
 class PrimitiveType : public Type {
@@ -621,10 +644,9 @@ class PrimitiveType : public Type {
 
 /* Representation of  -> ^ Type. */
 class PointerType : public Type {
-  protected:
+  public:
     Type *type;
 
-  public:
     PointerType(Type *type);
 
     void print(void);
@@ -637,15 +659,16 @@ class PointerType : public Type {
 /* Representation of  -> Type [ Exp ]. */
 class ArrayType : public Type {
   protected:
-    Type *type;
     Node *size;
 
   public: 
+    Type *type;
+
     ArrayType(Type *type, Node *size);
 
-  void print(void);
+    void print(void);
 
-  string toString(void);
+    string toString(void);
 
-  void printTree(vector<bool> *identation);
+    void printTree(vector<bool> *identation);
 };

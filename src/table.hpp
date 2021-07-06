@@ -65,6 +65,13 @@ class SymbolsTable {
     void printScopeStack(void);
 };
 
+class PrimitiveEntry : public Entry {
+  public:
+    PrimitiveEntry(string id);
+
+    void print(void);
+};
+
 class VarEntry : public Entry {
   public:
     // Variable type

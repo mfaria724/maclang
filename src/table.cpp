@@ -163,6 +163,19 @@ void SymbolsTable::printScopeStack() {
   cout << "\e[1;31m<== Top\e[0m\n";
 }
 
+PrimitiveEntry::PrimitiveEntry(string id) {
+  this->id = id;
+  this->scope = 0;
+  this->category = "Primitive";
+}
+
+void PrimitiveEntry::print(void) {
+  cout << "\e[1;31m(\e[1;34mScope:\e[0m " << this->scope;
+  cout << ", \e[1;34mID:\e[0m " << this->id;
+  cout << ", \e[1;34mCategory:\e[0m " << this->category;
+  cout << "\e[1;31m)\e[0m";
+}
+
 VarEntry::VarEntry(string id, int scope, string category, Type *type) {
   this->id = id;
   this->type = type;

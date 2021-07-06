@@ -43,12 +43,13 @@
   bool verify(set<pair<string, string>> accepted_types, string type1, string type2);
 
   // verifies types for a binary operator
-  string verifyBinayOpType(
+  bool verifyBinayOpType(
     set<pair<string, string>> accepted_types, 
     set<string> types1,
     set<string> types2,
     string type1, 
-    string type2
+    string type2,
+    string op
   );
 
   // token names for readability on lexer
@@ -202,13 +203,13 @@
 %token <str>      DIV 54
 %token <str>      ASTERISK 55
 
-%type <ast>       I Inst Action VarInst VarDef OptAssign
-%type <ast>       Array ArrExp ArrElems ArgsExp
-%type <ast>       Args RValue Assign UnionDef UnionBody Def RegDef
+%type <ast>       I Inst Action VarInst VarDef 
+%type <ast>       Args Assign UnionDef UnionBody Def RegDef
 %type <ast>       RegBody Conditional OptElsif Elsifs OptElse 
 %type <ast>       LoopWhile LoopFor OptStep RoutDef OptArgs OblArgs 
-%type <ast>       RoutArgs Actions 
-%type <expr>      Exp LValue FuncCall
+%type <ast>       RoutArgs Actions RoutSign ArgsExp
+%type <expr>      Exp LValue RValue FuncCall Array ArrExp ArrElems
+%type <expr>      OptAssign
 %type <t>         Type OptReturn
 %type <boolean>   OptRef
 %type <str>       IdDef IdFor UnionId RegId RoutId
@@ -245,10 +246,31 @@ VarInst     : VarDef                    { $$ = $1; }
             | FORGET LValue             { $$ = new NodeForget($2); }
             ;
 VarDef      : LET Type IdDef OptAssign  { 
-                                          $$ = new NodeVarDef($2, $3, $4);
-                                          int s = table.currentScope();
-                                          Entry *e = new VarEntry($3, s, "Var", $2);
-                                          table.insert(e);
+                                          string ltype = $2->toString();
+                                          if (
+                                            ltype == "$TypeError" || 
+                                            (($4 != NULL) && ($4->type_str == "$TypeError")) 
+                                          ) {
+                                            $$ = new NodeError();
+                                          } 
+                                          
+                                          else if (
+                                            ($4 != NULL) &&
+                                            (ltype != $4->type_str)
+                                          ) {
+                                            addError(
+                                              "Can't assign a '\e[1;3m" + $4->type_str +
+                                              "\e[0m' to a '\e[1;3m" + ltype + "\e[0m'."
+                                            );
+                                            $$ = new NodeError();
+                                          } 
+                                          
+                                          else {
+                                            $$ = new NodeVarDef($2, $3, $4);
+                                            int s = table.currentScope();
+                                            Entry *e = new VarEntry($3, s, "Var", $2);
+                                            table.insert(e);
+                                          }
                                         }
             ;   
 IdDef       : ID                        {
@@ -260,26 +282,69 @@ IdDef       : ID                        {
 OptAssign   : /* lambda */              { $$ = NULL; }
 						| ASSIGNMENT RValue         { $$ = $2; }
             ;
-Assign      : LValue ASSIGNMENT RValue  { $$ = new NodeAssign($1, $3); }
+Assign      : LValue ASSIGNMENT RValue  { 
+                                          string ltype, rtype = $3->type_str;
+                                          if ($1->type == NULL) {
+                                            ltype = "$TypeError";
+                                          } else {
+                                            ltype = $1->type->toString();
+                                          }
+
+                                          if (
+                                            (ltype != "$TypeError") &&
+                                            (rtype != "$TypeError") &&
+                                            (ltype != rtype)
+                                          ) {
+                                            addError(
+                                              "Can't assign a '\e[1;3m" + rtype +
+                                              "\e[0m' to a '\e[1;3m" + ltype + "\e[0m'."
+                                            );
+                                          }
+                                          $$ = new NodeAssign($1, $3); 
+                                        }
             ;
 RValue      : Exp                       { $$ = $1; }
             | Array                     { $$ = $1; }
             | STRING                    { $$ = new NodeSTRING($1); }
-            | NEW Type                  { $$ = new NodeNew($2); }
+            | NEW Type                  { 
+                                          if ($2->toString() != "$TypeError") {
+                                            $$ = new NodeNew($2); 
+                                          } else {
+                                            $$ = new ExpressionNode();
+                                            $$->type_str = "$TypeError";
+                                          }
+                                        }
             ;
 
 /* ======================== TYPES ======================== */
-Type	: Type OPEN_BRACKET Exp CLOSE_BRACKET { $$ = new ArrayType($1, $3); }
-			| POINTER Type 	                      { $$ = new PointerType($2); }
+Type	: Type OPEN_BRACKET Exp CLOSE_BRACKET { 
+                                              if ($1->toString() != "$TypeError") {
+                                                $$ = new ArrayType($1, $3);
+                                              } else {
+                                                $$ = new PrimitiveType("$TypeError");
+                                              }
+                                            }
+			| POINTER Type 	                      { 
+                                              if ($2->toString() != "$TypeError") {
+                                                $$ = new PointerType($2); 
+                                              } else {
+                                                $$ = new PrimitiveType("$TypeError");
+                                              }
+                                            }
 			| OPEN_PAR Type CLOSE_PAR             { $$ = $2; }
       | ID                                  {
                                               Entry *e;
                                               if ((e = table.lookup($1)) == NULL) {
                                                 addError((string) "\"" + $1 + "\" was not declared.");
-                                              } else if (e->category != "Type") {
+                                                $$ = new PrimitiveType("$TypeError");
+
+                                              } else if (e->category != "Type" && e->category != "Structure") {
                                                 addError((string) "\"" + $1 + "\" is not a type.");
+                                                $$ = new PrimitiveType("$TypeError");
+
+                                              } else {
+                                                $$ = new PrimitiveType($1);
                                               }
-                                              $$ = new PrimitiveType($1);
                                             }
       | T_UNIT                              { $$ = new PrimitiveType($1); }
 			| T_BOOL                              { $$ = new PrimitiveType($1); }
@@ -291,37 +356,76 @@ Type	: Type OPEN_BRACKET Exp CLOSE_BRACKET { $$ = new ArrayType($1, $3); }
 
 /* ======================= LVALUES ======================= */
 LValue	:	LValue OPEN_BRACKET Exp CLOSE_BRACKET   { 
-                                                    // TODO: revisar si son todos del mismo tipo
-                                                    string type = $1->type + "[]";
-                                                    $$ = new NodeArrayLValue($1, $3, type); }
+                                                    if ($1->type == NULL) {
+                                                      $$ = new NodeArrayLValue($1, $3, NULL);
+
+                                                    } else if ($1->type->category != "Array") {
+                                                      addError(
+                                                        "'\e[1;3m" + $1->type->toString() + 
+                                                        "\e[0m' type can't be indexed."
+                                                      );
+                                                      $$ = new NodeArrayLValue($1, $3, NULL); 
+
+                                                    } else {
+                                                      Type *type = ((ArrayType*) $1->type)->type;
+                                                      $$ = new NodeArrayLValue($1, $3, type); 
+                                                    }
+                                                    
+                                                  }
 				|	POINTER LValue                          { 
-                                                    string type = "^" + $2->type;
-                                                    $$ = new NodePointerLValue($2, type);
+                                                    if ($2->type == NULL) {
+                                                      $$ = new NodePointerLValue($2, NULL);
+
+                                                    } else if ($2->type->category != "Pointer") {
+                                                      addError(
+                                                        "'\e[1;3m" + $2->type->toString() + 
+                                                        "\e[0m' type can't be desreferenced."
+                                                      );
+                                                      $$ = new NodePointerLValue($2, NULL); 
+
+                                                    } else {
+                                                      Type *type = ((PointerType*) $2->type)->type;
+                                                      $$ = new NodePointerLValue($2, type); 
+                                                    }
                                                   }
 				|	LValue DOT ID                           { 
+                                                    Type *type;
+                                                    if ($1->type == NULL) {
+                                                      type = NULL;
 
-                                                    string type = "";
-                                                    Entry *e;
-                                                    if ((e = table.lookup($1->type)) == NULL) {
-                                                      addError((string) "\"" + $1->type + "\" was not declared.");
-                                                      type = "$TypeError";
-                                                    } else if (e->category != "Structure") {
-                                                      addError((string) "\"" + $1->type + "\" is not a variable.");
-                                                      type = "$TypeError";
-                                                    }
+                                                    } else if ($1->type->category != "Primitive") {
+                                                      addError(
+                                                        "'\e[1;3m" + $1->type->toString() + 
+                                                        "\e[0m' type can't be access."
+                                                      );
+                                                      type = NULL;
 
-                                                    StructureEntry *se = (StructureEntry*) e;
+                                                    } else {
+                                                      Entry *e = table.lookup($1->type->toString()); 
 
-                                                    if (type != "$TypeError") {
-                                                      if ((e = table.lookup($3, se->def_scope)) == NULL) {
-                                                        addError((string) "\"" + $3 + "\" was not declared.");
-                                                        type = "$TypeError";
-                                                      } else if (e->category != "Var") {
-                                                        addError((string) "\"" + $3 + "\" is not a variable.");
-                                                        type = "$TypeError";
+                                                      if (e->category != "Structure") {
+                                                        addError(
+                                                          "'\e[1;3m" + $1->type->toString() + 
+                                                          "\e[0m' type can't be access."
+                                                        );
+                                                        type = NULL;
+
                                                       } else {
-                                                        VarEntry *ve = (VarEntry*) e;
-                                                        type = ve->type->toString();
+                                                        StructureEntry *se = (StructureEntry*) e;
+                                                        VarEntry *field = (VarEntry*) table.lookup($3, se->def_scope);
+
+                                                        if (field == NULL) {
+                                                          addError(
+                                                            "'\e[1;3m" + $1->type->toString() + 
+                                                            "\e[0m' has no member '\e[1;3m" + 
+                                                            $3 + "\e[0m'."
+                                                          );
+                                                          type = NULL;
+
+                                                        } else {
+                                                          type = field->type;
+                                                        }
+
                                                       }
                                                     }
 
@@ -331,14 +435,18 @@ LValue	:	LValue OPEN_BRACKET Exp CLOSE_BRACKET   {
 				|	ID                                      { 
                                                     Entry *e;
                                                     if ((e = table.lookup($1)) == NULL) {
-                                                      addError((string) "\"" + $1 + "\" was not declared.");
-                                                    } else if (e->category != "Var") {
-                                                      addError((string) "\"" + $1 + "\" is not a variable.");
-                                                    }
+                                                      addError((string) "'\e[1;3m" + $1 + "\e[0m' was not declared.");
+                                                      $$ = new NodeIDLValue($1, NULL);
 
-                                                    VarEntry *ve = (VarEntry*) e;
-                                                    string type = ve->type->toString();
-                                                    $$ = new NodeIDLValue($1, type); 
+                                                    } else if (e->category != "Var") {
+                                                      addError((string) "'\e[1;3m" + $1 + "\e[0m' is not a variable.");
+                                                      $$ = new NodeIDLValue($1, NULL);
+
+                                                    } else {
+
+                                                      VarEntry *ve = (VarEntry*) e;
+                                                      $$ = new NodeIDLValue($1, ve->type); 
+                                                    }
                                                   }
         ;
 
@@ -354,10 +462,16 @@ Exp   : Exp EQUIV Exp               {
                                         {"Float", "Int"}
                                       };
 
-                                      string t1 = $1->type;
-                                      string t2 = $3->type;
+                                      string t1 = $1->type_str;
+                                      string t2 = $3->type_str;
 
-                                      string type = verifyBinayOpType(tuples, types, types, t1, t2);
+                                      string type;
+                                      if (verifyBinayOpType(tuples, types, types, t1, t2, "==")) {
+                                        type = "Bool";
+                                      } else {
+                                        type = "$TypeError";
+                                      }
+
                                       $$ = new NodeBinaryOperator($1, $2, $3, type); 
                                     }
       | Exp NOT_EQUIV Exp           { 
@@ -371,39 +485,63 @@ Exp   : Exp EQUIV Exp               {
                                         {"Float", "Int"}
                                       };
 
-                                      string t1 = $1->type;
-                                      string t2 = $3->type;
+                                      string t1 = $1->type_str;
+                                      string t2 = $3->type_str;
 
-                                      string type = verifyBinayOpType(tuples, types, types, t1, t2);
+                                      string type; 
+                                      if (verifyBinayOpType(tuples, types, types, t1, t2, "!=")) {
+                                        type = "Bool";
+                                      } else {
+                                        type = "$TypeError";
+                                      }
+                                      
                                       $$ = new NodeBinaryOperator($1, $2, $3, type); 
                                     }
       | Exp OR Exp                  { 
                                       set<string> types = {"Bool"};
                                       set<pair<string, string>> tuples = { {"Bool", "Bool"} };
 
-                                      string t1 = $1->type;
-                                      string t2 = $3->type;
+                                      string t1 = $1->type_str;
+                                      string t2 = $3->type_str;
 
-                                      string type = verifyBinayOpType(tuples, types, types, t1, t2);
+                                      string type; 
+                                      if (verifyBinayOpType(tuples, types, types, t1, t2, "||")) {
+                                        type = "Bool";
+                                      } else {
+                                        type = "$TypeError";
+                                      }
+
                                       $$ = new NodeBinaryOperator($1, $2, $3, type); 
                                     }
       | Exp AND Exp                 { 
                                       set<string> types = {"Bool"};
                                       set<pair<string, string>> tuples = { {"Bool", "Bool"} };
 
-                                      string t1 = $1->type;
-                                      string t2 = $3->type;
+                                      string t1 = $1->type_str;
+                                      string t2 = $3->type_str;
 
-                                      string type = verifyBinayOpType(tuples, types, types, t1, t2);
+                                      string type; 
+                                      if (verifyBinayOpType(tuples, types, types, t1, t2, "&&")) {
+                                        type = "Bool";
+                                      } else {
+                                        type = "$TypeError";
+                                      }
+
                                       $$ = new NodeBinaryOperator($1, $2, $3, type); 
                                     }
       | NOT Exp                     { 
                                       string type;
-                                      bool ct = verify({"Bool"}, $2->type);
-                                      if (ct) {
+                                      if ($2->type_str == "$TypeError") {
+                                        type = "$TypeError";
+
+                                      } else if (verify({"Bool"}, $2->type_str)) {
                                         type = "Bool";
+
                                       } else {
-                                        addError((string) "Incorrect type: \"" + $2->type);
+                                        addError(
+                                          (string) "Operator '\e[1;3m!\e[0m' don't matches with operand type " +
+                                          "'\e[1;3m" + $2->type_str + "\e[0m'."
+                                        );
                                         type = "$TypeError";
                                       }
 
@@ -418,10 +556,16 @@ Exp   : Exp EQUIV Exp               {
                                         {"Float", "Int"}
                                       };
 
-                                      string t1 = $1->type;
-                                      string t2 = $3->type;
+                                      string t1 = $1->type_str;
+                                      string t2 = $3->type_str;
 
-                                      string type = verifyBinayOpType(tuples, types, types, t1, t2);
+                                      string type; 
+                                      if (verifyBinayOpType(tuples, types, types, t1, t2, "<")) {
+                                        type = "Bool";
+                                      } else {
+                                        type = "$TypeError";
+                                      }
+
                                       $$ = new NodeBinaryOperator($1, $2, $3, type); 
                                     }
       | Exp LESS_EQUAL_THAN Exp     { 
@@ -433,10 +577,16 @@ Exp   : Exp EQUIV Exp               {
                                         {"Float", "Int"}
                                       };
 
-                                      string t1 = $1->type;
-                                      string t2 = $3->type;
+                                      string t1 = $1->type_str;
+                                      string t2 = $3->type_str;
 
-                                      string type = verifyBinayOpType(tuples, types, types, t1, t2);
+                                      string type; 
+                                      if (verifyBinayOpType(tuples, types, types, t1, t2, "<=")) {
+                                        type = "Bool";
+                                      } else {
+                                        type = "$TypeError";
+                                      }
+
                                       $$ = new NodeBinaryOperator($1, $2, $3, type); 
                                     }
       | Exp GREATER_THAN Exp        { 
@@ -448,10 +598,16 @@ Exp   : Exp EQUIV Exp               {
                                         {"Float", "Int"}
                                       };
 
-                                      string t1 = $1->type;
-                                      string t2 = $3->type;
+                                      string t1 = $1->type_str;
+                                      string t2 = $3->type_str;
 
-                                      string type = verifyBinayOpType(tuples, types, types, t1, t2);
+                                      string type; 
+                                      if (verifyBinayOpType(tuples, types, types, t1, t2, ">")) {
+                                        type = "Bool";
+                                      } else {
+                                        type = "$TypeError";
+                                      }
+
                                       $$ = new NodeBinaryOperator($1, $2, $3, type); 
                                     }
       | Exp GREATER_EQUAL_THAN Exp  { 
@@ -463,10 +619,16 @@ Exp   : Exp EQUIV Exp               {
                                         {"Float", "Int"}
                                       };
 
-                                      string t1 = $1->type;
-                                      string t2 = $3->type;
+                                      string t1 = $1->type_str;
+                                      string t2 = $3->type_str;
 
-                                      string type = verifyBinayOpType(tuples, types, types, t1, t2);
+                                      string type; 
+                                      if (verifyBinayOpType(tuples, types, types, t1, t2, ">=")) {
+                                        type = "Bool";
+                                      } else {
+                                        type = "$TypeError";
+                                      }
+
                                       $$ = new NodeBinaryOperator($1, $2, $3, type); 
                                     }
       | Exp PLUS Exp                { 
@@ -478,10 +640,20 @@ Exp   : Exp EQUIV Exp               {
                                         {"Float", "Int"}
                                       };
 
-                                      string t1 = $1->type;
-                                      string t2 = $3->type;
+                                      string t1 = $1->type_str;
+                                      string t2 = $3->type_str;
 
-                                      string type = verifyBinayOpType(tuples, types, types, t1, t2);
+                                      string type; 
+                                      if (verifyBinayOpType(tuples, types, types, t1, t2, "+")) {
+                                        if ((t1 == "Float") || (t2 == "Float")) {
+                                          type = "Float";
+                                        } else {
+                                          type = "Int";
+                                        }
+                                      } else {
+                                        type = "$TypeError";
+                                      }
+
                                       $$ = new NodeBinaryOperator($1, $2, $3, type); 
                                     }
       | Exp MINUS Exp               { 
@@ -493,10 +665,20 @@ Exp   : Exp EQUIV Exp               {
                                         {"Float", "Int"}
                                       };
 
-                                      string t1 = $1->type;
-                                      string t2 = $3->type;
+                                      string t1 = $1->type_str;
+                                      string t2 = $3->type_str;
 
-                                      string type = verifyBinayOpType(tuples, types, types, t1, t2);
+                                      string type; 
+                                      if (verifyBinayOpType(tuples, types, types, t1, t2, "-")) {
+                                        if ((t1 == "Float") || (t2 == "Float")) {
+                                          type = "Float";
+                                        } else {
+                                          type = "Int";
+                                        }
+                                      } else {
+                                        type = "$TypeError";
+                                      }
+
                                       $$ = new NodeBinaryOperator($1, $2, $3, type); 
                                     }
       | Exp ASTERISK Exp            { 
@@ -508,10 +690,20 @@ Exp   : Exp EQUIV Exp               {
                                         {"Float", "Int"}
                                       };
 
-                                      string t1 = $1->type;
-                                      string t2 = $3->type;
+                                      string t1 = $1->type_str;
+                                      string t2 = $3->type_str;
 
-                                      string type = verifyBinayOpType(tuples, types, types, t1, t2);
+                                      string type; 
+                                      if (verifyBinayOpType(tuples, types, types, t1, t2, "*")) {
+                                        if ((t1 == "Float") || (t2 == "Float")) {
+                                          type = "Float";
+                                        } else {
+                                          type = "Int";
+                                        }
+                                      } else {
+                                        type = "$TypeError";
+                                      }
+
                                       $$ = new NodeBinaryOperator($1, $2, $3, type); 
                                     }
       | Exp DIV Exp                 { 
@@ -523,10 +715,16 @@ Exp   : Exp EQUIV Exp               {
                                         {"Float", "Int"}
                                       };
 
-                                      string t1 = $1->type;
-                                      string t2 = $3->type;
+                                      string t1 = $1->type_str;
+                                      string t2 = $3->type_str;
 
-                                      string type = verifyBinayOpType(tuples, types, types, t1, t2);
+                                      string type; 
+                                      if (verifyBinayOpType(tuples, types, types, t1, t2, "/")) {
+                                        type = "Float";
+                                      } else {
+                                        type = "$TypeError";
+                                      }
+
                                       $$ = new NodeBinaryOperator($1, $2, $3, type); 
                                     }
       | Exp MODULE Exp              { 
@@ -538,19 +736,35 @@ Exp   : Exp EQUIV Exp               {
                                         {"Float", "Int"}
                                       };
 
-                                      string t1 = $1->type;
-                                      string t2 = $3->type;
+                                      string t1 = $1->type_str;
+                                      string t2 = $3->type_str;
 
-                                      string type = verifyBinayOpType(tuples, types, types, t1, t2);
+                                      string type; 
+                                      if (verifyBinayOpType(tuples, types, types, t1, t2, "%")) {
+                                        if ((t1 == "Float") || (t2 == "Float")) {
+                                          type = "Float";
+                                        } else {
+                                          type = "Int";
+                                        }
+                                      } else {
+                                        type = "$TypeError";
+                                      }
+
                                       $$ = new NodeBinaryOperator($1, $2, $3, type); 
                                     }
       | MINUS Exp                   { 
                                       string type;
-                                      bool ct = verify({"Int", "Float"}, $2->type);
-                                      if (ct) {
-                                        type = $2->type;
+                                      if ($2->type_str == "$TypeError") {
+                                        type = "$TypeError";
+
+                                      } else if (verify({"Int", "Float"}, $2->type_str)) {
+                                        type = "Bool";
+                                        
                                       } else {
-                                        addError((string) "Incorrect type: \"" + $2->type);
+                                        addError(
+                                          (string) "Operator '\e[1;3m-\e[0m' don't matches with operand type " +
+                                          "'\e[1;3m" + $2->type_str + "\e[0m'."
+                                        );
                                         type = "$TypeError";
                                       }
 
@@ -558,11 +772,17 @@ Exp   : Exp EQUIV Exp               {
                                     }
       | PLUS Exp                    { 
                                       string type;
-                                      bool ct = verify({"Int", "Float"}, $2->type);
-                                      if (ct) {
-                                        type = $2->type;
+                                      if ($2->type_str == "$TypeError") {
+                                        type = "$TypeError";
+
+                                      } else if (verify({"Int", "Float"}, $2->type_str)) {
+                                        type = "Bool";
+                                        
                                       } else {
-                                        addError((string) "Incorrect type: \"" + $2->type);
+                                        addError(
+                                          (string) "Operator '\e[1;3m+\e[0m' don't matches with operand type " +
+                                          "'\e[1;3m" + $2->type_str + "\e[0m'."
+                                        );
                                         type = "$TypeError";
                                       }
 
@@ -577,14 +797,31 @@ Exp   : Exp EQUIV Exp               {
                                         {"Float", "Int"}
                                       };
 
-                                      string t1 = $1->type;
-                                      string t2 = $3->type;
+                                      string t1 = $1->type_str;
+                                      string t2 = $3->type_str;
 
-                                      string type = verifyBinayOpType(tuples, types, types, t1, t2);
+                                      string type; 
+                                      if (verifyBinayOpType(tuples, types, types, t1, t2, "**")) {
+                                        if ((t1 == "Float") || (t2 == "Float")) {
+                                          type = "Float";
+                                        } else {
+                                          type = "Int";
+                                        }
+                                      } else {
+                                        type = "$TypeError";
+                                      }
+
                                       $$ = new NodeBinaryOperator($1, $2, $3, type); 
                                     }
       | OPEN_PAR Exp CLOSE_PAR      { $$ = $2; }
-      | LValue                      { $$ = $1; }
+      | LValue                      { 
+                                      $$ = $1; 
+                                      if ($$->type == NULL) {
+                                        $$->type_str = "$TypeError";
+                                      } else {
+                                        $$->type_str = $$->type->toString(); 
+                                      }
+                                    }
       | FuncCall                    { $$ = $1; }
       | TRUE                        { $$ = new NodeBOOL(true); }
       | FALSE                       { $$ = new NodeBOOL(false); }
@@ -594,13 +831,65 @@ Exp   : Exp EQUIV Exp               {
       ;
 
 /* ====================== ARRAYS ====================== */
-Array     : OPEN_BRACKET ArrExp CLOSE_BRACKET   { $$ = new NodeArray($2); }
+Array     : OPEN_BRACKET ArrExp CLOSE_BRACKET   { 
+                                                  if ($2->type_str != "$TypeError") {
+                                                    $$ = new NodeArray($2, "(" + $2->type_str + ")[]"); 
+                                                  } else {
+                                                    $$ = new NodeArray($2, "$TypeError"); 
+                                                  }
+                                                }
           ;
-ArrExp    : /* lambda */                        { $$ = NULL; }
-					| ArrElems RValue                     { $$ = new NodeArrayElems($1, $2); }
+ArrExp    : ArrElems RValue                     { 
+                                                  string type;
+                                                  if ($1 == NULL) {
+                                                    type = $2->type_str;
+
+                                                  } else if (
+                                                    ($1->type_str == "$TypeError") ||
+                                                    ($2->type_str == "$TypeError")
+                                                  ) {
+                                                    type = "$TypeError";
+
+                                                  } else if ($1->type_str != $2->type_str) {
+                                                    addError(
+                                                      (string) "All elements of an array must be of the same type" +
+                                                      ", but found '\e[1;3m" + $1->type_str + "\e[0m' and " +
+                                                      "'\e[1;3m" + $2->type_str + "'."
+                                                    );
+                                                    type = "$TypeError";
+
+                                                  } else {
+                                                    type = $2->type_str;
+                                                  }
+                                                  $$ = new NodeArrayElems($1, type, $2);
+                                                }
           ;
 ArrElems	: /* lambda */                        { $$ = NULL; }
-					| ArrElems RValue COMMA               { $$ = new NodeArrayElems($1, $2); }
+					| ArrElems RValue COMMA               { 
+                                                  string type;
+                                                  if ($1 == NULL) {
+                                                    type = $2->type_str;
+
+                                                  } else if (
+                                                    ($1->type_str == "$TypeError") || 
+                                                    ($2->type_str == "$TypeError")
+                                                  ) {
+                                                    type = "$TypeError";
+
+                                                  } else if ($1->type_str != $2->type_str) {
+                                                    addError(
+                                                      (string) "All elements of an array must be of the same type" +
+                                                      ", but found '\e[1;3m" + $1->type_str + "\e[0m' and " +
+                                                      "'\e[1;3m" + $2->type_str + "'."
+                                                    );
+                                                    type = "$TypeError";
+
+                                                  } else {
+                                                    type = $2->type_str;
+                                                  }
+
+                                                  $$ = new NodeArrayElems($1, type, $2);
+                                                }
           ;
 
 /* ================= FUNCTION CALLS ================= */
@@ -618,19 +907,8 @@ FuncCall  : ID OPEN_PAR ArgsExp CLOSE_PAR   {
                                               if (type != "$TypeError") {
                                                 FunctionEntry *fe = (FunctionEntry*) e;
 
-                                                cout << "Hola:" << endl;
-                                                fe->print();
-                                                cout << "Chao:" << endl;
-
                                                 Type *pt = (Type*) fe->return_type;
-                                                
-                                                cout << "Antes:" << endl;
-                                                pt->print();
-                                                cout << "Despues:" << endl;
-
                                                 type = pt->toString();
-
-                                                cout << "El tipo es: " << pt->toString() << endl;
                                               }
 
                                               $$ = new NodeFunctionCall($1, $3, false, type); 
@@ -754,24 +1032,18 @@ OptStep   : /* lambda */                              { $$ = NULL; }
           ;
 
 /* =============== SUBROUTINES DEFINITION =============== */
-RoutDef   : RoutId OPEN_PAR RoutArgs CLOSE_PAR OptReturn 
-            OPEN_C_BRACE Actions CLOSE_C_BRACE            { 
-                                                            Entry *e;
-                                                            e = table.lookup($1);
-
-                                                            FunctionEntry *fe = (FunctionEntry*) e;
-                                                            fe->return_type = $5;
-
-                                                            cout << "Nueva entrada de la tabla: " << endl;
-                                                            fe->print();
-                                                            cout << "Termina la nueva entrada" << endl;
-
-                                                            $$ = new NodeRoutineDef(
-                                                              $1, $3, $5, $7
-                                                            ); 
+RoutDef   : RoutSign OPEN_C_BRACE Actions CLOSE_C_BRACE   { 
+                                                            $$ = new NodeRoutineDef($1, $3); 
                                                             table.exitScope();
                                                           }
           ;  
+RoutSign  : RoutId OPEN_PAR RoutArgs CLOSE_PAR OptReturn  {
+                                                            FunctionEntry *e;
+                                                            e = (FunctionEntry*) table.lookup($1);
+                                                            e->return_type = $5;
+                                                            $$ = new NodeRoutineSign($1, $3, $5);
+                                                          }
+          ;
 RoutId    : DEF IdDef                                     {
                                                             int s = table.currentScope();
                                                             Entry *e = new FunctionEntry($2, s, "Function");
@@ -834,6 +1106,12 @@ Actions   : /* lambda */                                  { $$ = NULL; }
 
 int main(int argc, char **argv)
 {
+  // Adding scope 0 elements.
+  vector<string> primitives = {"Unit", "Bool", "Char", "Int", "Float", "String"};
+  for (string t : primitives) {
+    table.insert(new PrimitiveEntry(t));
+  }
+
   // Booleans for options
   bool bLexOpt = false;
   bool bParseOpt = false;
@@ -1027,27 +1305,34 @@ bool verify(set<pair<string, string>> accepted_types, string type1, string type2
 /*
   Verifies that a pair of operators have the correct types for a binary operator.
 */
-string verifyBinayOpType(
+bool verifyBinayOpType(
   set<pair<string, string>> accepted_types, 
   set<string> types1,
   set<string> types2,
   string type1, 
-  string type2
+  string type2,
+  string op
 ) {
   if (type1 == "$TypeError" || type2 == "$TypeError") {
-    return "$TypeError";
+    return false;
+
   } else {
     bool st1 = verify(types1, type1);
     bool st2 = verify(types2, type2);
 
     // Verificar que ambos tipos son soportados
     if ((st1 && st2) && verify(accepted_types, type1, type2)) {
-      return "Bool";
+      return true;
+
     } else {
       // error alguno de los tipos no es soportados
       // ejemplo: no se puede comparar t1 con t2
-      addError((string) "Types \"" + type1 + "\" and \"" + type2 + "can't be operated.");
-      return "$TypeError";
+
+      addError(
+        "Operator '\e[1;3m" + op + "\e[0m' don't matches with operand types: '\e[1;3m" +
+        type1 + "\e[0m' and '\e[1;3m" + type2 + "\e[0m'."
+      );
+      return false;
     }
   }
 }

@@ -14,7 +14,7 @@ let Bool b;         # Booleano
 let Float f = 1.5;  # Flotante
 let Int x;
 let Int y = [x+1,3,x+5];
-let Int q4 = y + (^x - b);
+let Int q4 = y + (^x            * b);
 
 # ERROR Redefinicion
 # let Char c;
@@ -28,8 +28,8 @@ let Int q4 = y + (^x - b);
 # tipos complejos
 ## arreglos
 let Bool[4] array;
-let Int[6] integers = [[1, 1], 2, 42, 69];
-let Int[6] set_numbers = [[],   [[]],   [[[]], []],   [[[[]], []], [[]], []]];
+let Int[6] integers = [[1, 1], 2, 42, - 'a'];
+let Int[6] set_numbers = [[0],   [[0]],   [[[0]], [0]],   [[[[0]], [0]], [[0]], [0]]];
 
 ## strings
 let String hello = "world";
@@ -70,7 +70,7 @@ def myfunction(unio U) => Int {
 # ERROR No es un tipo
 # let myfunction wtf;
 
-if ! True && (42**6 >= False) && ^x[^y**4] || press == (array != !!!!!!! (0/0 < hello)) then 
+if ! True && (42**6 >= False) && ^x   [  ^y ** 4] || press == (array != !!!!!!! (0/0 < hello)) then 
   def a() {}              
   register registro {
     Int numero = 15;
@@ -121,7 +121,7 @@ def A() {
   while True do # do
     for (i; 0; 100; 0.1) do
       if 1 < 2 then 
-        # A();
+        A();
       done 
     done 
   done
