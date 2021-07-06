@@ -758,7 +758,7 @@ Exp   : Exp EQUIV Exp               {
                                         type = "$TypeError";
 
                                       } else if (verify({"Int", "Float"}, $2->type_str)) {
-                                        type = "Bool";
+                                        type = $2->type_str;
                                         
                                       } else {
                                         addError(
@@ -776,7 +776,7 @@ Exp   : Exp EQUIV Exp               {
                                         type = "$TypeError";
 
                                       } else if (verify({"Int", "Float"}, $2->type_str)) {
-                                        type = "Bool";
+                                        type = $2->type_str;
                                         
                                       } else {
                                         addError(
@@ -1035,12 +1035,15 @@ OptStep   : /* lambda */                              { $$ = NULL; }
 RoutDef   : RoutSign OPEN_C_BRACE Actions CLOSE_C_BRACE   { 
                                                             $$ = new NodeRoutineDef($1, $3); 
                                                             table.exitScope();
+                                                            table.exitScope();
                                                           }
           ;  
 RoutSign  : RoutId OPEN_PAR RoutArgs CLOSE_PAR OptReturn  {
                                                             FunctionEntry *e;
                                                             e = (FunctionEntry*) table.lookup($1);
                                                             e->return_type = $5;
+                                                            e->def_scope = table.currentScope();
+                                                            table.newScope();
                                                             $$ = new NodeRoutineSign($1, $3, $5);
                                                           }
           ;
@@ -1061,6 +1064,7 @@ OblArgs   : Type OptRef IdDef                             {
                                                             $$ = new NodeRoutArgDef(
                                                               NULL, $1, $2, $3, NULL
                                                             );
+                                                            ((NodeRoutArgDef*) $$)->
                                                             int s = table.currentScope();
                                                             Entry *e = new VarEntry($3, s, "Var", $1);
                                                             table.insert(e);

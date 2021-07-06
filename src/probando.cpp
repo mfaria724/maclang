@@ -2,7 +2,11 @@
 
 using namespace std;
 
+int f(int a) {
+    int a = 2;
+    return 0;
+}
+
 main () {
-    int a = "1.0";
     return 0;
 }

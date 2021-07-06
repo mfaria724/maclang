@@ -1,5 +1,6 @@
 #include <string>
 #include <vector>
+#include <map>
 #include <iostream>
 
 using namespace std;
@@ -549,6 +550,9 @@ class NodeRoutArgDef : public Node {
     Node *rvalue;
 
   public:
+    vector<string> currentMandParams;
+    map<string, string> currentOptParams;
+    
     NodeRoutArgDef(Node *head, Type *type, bool ref, string id, Node *rvalue);
 
     void print(void);

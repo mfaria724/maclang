@@ -98,6 +98,9 @@ class FunctionEntry : public Entry {
   public:
     // return type of the function
     Type *return_type;
+    int def_scope;
+    // every arg is  a tuble (name, type, isMandatory)
+    vector<tuple<string, string, bool>> args;
 
     FunctionEntry(string id, int scope, string category);
 

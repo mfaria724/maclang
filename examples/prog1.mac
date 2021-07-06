@@ -116,12 +116,12 @@ done
 myfunc([0,[0,[0]]], 1); # ~
 # ~
 # 0xcbxb
-def A() {
+def A() => Int {
   # B();
   while True do # do
     for (i; 0; 100; 0.1) do
       if 1 < 2 then 
-        A();
+        x = A() + 'a';
       done 
     done 
   done
