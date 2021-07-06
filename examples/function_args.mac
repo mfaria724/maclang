@@ -1,0 +1,3 @@
+def A(Int a, Int b, Int c = 1, Int d = 3) => Int {
+  return (a + b + c + d);
+}

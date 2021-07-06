@@ -321,14 +321,53 @@ class NodeFunctionCall : public ExpressionNode {
     void setEndInst(void);
 };
 
-/* Representation of  ->  RValue , FuncArgs. */
 class NodeFunctionCallArgs : public Node {
+  protected:
+    Node* positional;
+    Node* named;
+
+  public:
+    vector<string> positionalArgs;
+    map<string, string> namedArgs;
+
+    NodeFunctionCallArgs(Node* positional, Node* named);
+
+    void print(void);
+
+    string toString(void);
+
+    void printTree(vector<bool> *identation);
+};
+
+/* Representation of position arguments when calling a function */
+class NodeFunctionCallPositionalArgs : public Node {
   protected:
     Node *head;
     Node *rvalue;
 
   public:
-    NodeFunctionCallArgs(Node *head, Node *rvalue);
+    vector<string> currentArgs;
+
+    NodeFunctionCallPositionalArgs(Node *head, Node *rvalue);
+
+    void print(void);
+
+    string toString(void);
+
+    void printTree(vector<bool> *identation);
+};
+
+/* Representation of named arguments when calling a function */
+class NodeFunctionCallNamedArgs : public Node {
+  protected:
+    Node *head;
+    string id;
+    Node *rvalue;
+
+  public:
+    map<string, string> currentArgs;
+
+    NodeFunctionCallNamedArgs(Node *head, string id, Node *rvalue);
 
     void print(void);
 

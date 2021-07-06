@@ -138,6 +138,9 @@
   ExpressionNode *expr;
   NodeRoutArgDef *routArgsDef;
   NodeRoutArgs *routArgs;
+  NodeFunctionCallArgs *fcArgs;
+  NodeFunctionCallPositionalArgs *fcpArgs;
+  NodeFunctionCallNamedArgs *fcnArgs;
 }
 
 %locations
@@ -214,15 +217,16 @@
 %token <str>      DIV 54
 %token <str>      ASTERISK 55
 
-%type <ast>           I Inst Action VarInst VarDef 
-%type <ast>           Args Assign UnionDef UnionBody Def RegDef
-%type <ast>           RegBody Conditional OptElsif Elsifs OptElse 
-%type <ast>           LoopWhile LoopFor OptStep RoutDef  
-%type <ast>           Actions RoutSign ArgsExp
+%type <ast>           I Inst Action VarInst VarDef Assign UnionDef UnionBody 
+%type <ast>           RegBody Conditional OptElsif Elsifs OptElse Def RegDef
+%type <ast>           LoopWhile LoopFor OptStep RoutDef Actions RoutSign
 %type <expr>          Exp LValue RValue FuncCall Array ArrExp ArrElems
 %type <expr>          OptAssign
 %type <routArgs>      RoutArgs
 %type <routArgsDef>   OptArgs MandArgs
+%type <fcArgs>        ArgsExp
+%type <fcpArgs>       PositionalArgs
+%type <fcnArgs>       NamedArgs
 %type <t>             Type OptReturn
 %type <boolean>       OptRef
 %type <str>           IdDef IdFor UnionId RegId RoutId
@@ -307,17 +311,17 @@ Assign      : LValue ASSIGNMENT RValue  {
                                             ltype = $1->type->toString();
                                           }
 
-                                          if (
-                                            (ltype != "$TypeError") &&
-                                            (rtype != "$TypeError") &&
-                                            (ltype != rtype)
-                                          ) {
+                                          if (ltype == "$TypeError" || rtype == "$ExpressionError") {
+                                            $$ = new NodeError();
+                                          } else if (ltype != rtype) {
                                             addError(
                                               "Can't assign a '\e[1;3m" + rtype +
                                               "\e[0m' to a '\e[1;3m" + ltype + "\e[0m'."
                                             );
+                                            $$ = new NodeError();
+                                          } else {
+                                            $$ = new NodeAssign($1, $3); 
                                           }
-                                          $$ = new NodeAssign($1, $3); 
                                         }
             ;
 RValue      : Exp                       { $$ = $1; }
@@ -809,32 +813,111 @@ ArrElems	: /* lambda */                        { $$ = NULL; }
 
 /* ================= FUNCTION CALLS ================= */
 FuncCall  : ID OPEN_PAR ArgsExp CLOSE_PAR   { 
-                                              string type = "";
-                                              Entry *e;
-                                              if ((e = table.lookup($1)) == NULL) {
-                                                addError((string) "\"" + $1 + "\" wasn't declared.");
-                                                type = "$TypeError";
-                                              } else if (e->category != "Function") {
-                                                addError((string) "\"" + $1 + "\" isn't a function.");
-                                                type = "$TypeError";
+                                              if ($3 == NULL) {
+                                                $$ = new ExpressionNode();
+                                                $$->type_str = "$ExpressionError";
+                                              } else {
+                                                string type = "";
+                                                Entry *e;
+                                                if ((e = table.lookup($1)) == NULL) {
+                                                  addError((string) "\"" + $1 + "\" wasn't declared.");
+                                                  type = "$TypeError";
+                                                } else if (e->category != "Function") {
+                                                  addError((string) "\"" + $1 + "\" isn't a function.");
+                                                  type = "$TypeError";
+                                                }
+
+                                                if (type != "$TypeError") {
+                                                  FunctionEntry *fe = (FunctionEntry*) e;
+
+                                                  Type *pt = (Type*) fe->return_type;
+                                                  type = pt->toString();
+                                                }
+
+                                                $$ = new NodeFunctionCall($1, $3, false, type); 
                                               }
-
-                                              if (type != "$TypeError") {
-                                                FunctionEntry *fe = (FunctionEntry*) e;
-
-                                                Type *pt = (Type*) fe->return_type;
-                                                type = pt->toString();
-                                              }
-
-                                              $$ = new NodeFunctionCall($1, $3, false, type); 
                                             }
           ;
-ArgsExp   : /* lambda */                    { $$ = NULL; }
-					| Args RValue                     { $$ = new NodeFunctionCallArgs($1, $2); }
-          ;
-Args      : /* lambda */                    { $$ = NULL; }
-					| Args RValue COMMA               { $$ = new NodeFunctionCallArgs($1, $2); }
-          ;
+ArgsExp         : /* lambda */                                { $$ = new NodeFunctionCallArgs(NULL, NULL); }
+                | PositionalArgs                              { 
+                                                                if ($1 == NULL) {
+                                                                  $$ = NULL;
+                                                                } else {
+                                                                  $$ = new NodeFunctionCallArgs($1, NULL);
+                                                                  $$->positionalArgs = $1->currentArgs;
+                                                                  $1->currentArgs.clear();
+                                                                }
+                                                              }
+                | NamedArgs                                   { 
+                                                                if ($1 == NULL) {
+                                                                  $$ = NULL;
+                                                                } else {
+                                                                  $$ = new NodeFunctionCallArgs(NULL, $1);
+                                                                  $$->namedArgs = $1->currentArgs;
+                                                                  $1->currentArgs.clear();
+                                                                }
+                                                              }
+                | PositionalArgs COMMA NamedArgs              { 
+                                                                if (($1 == NULL) || ($3 == NULL)) {
+                                                                  $$ = NULL;
+                                                                } else {
+                                                                  $$ = new NodeFunctionCallArgs($1, $3);
+                                                                  $$->positionalArgs = $1->currentArgs;
+                                                                  $1->currentArgs.clear();
+                                                                  $$->namedArgs = $3->currentArgs;
+                                                                  $3->currentArgs.clear();
+                                                                }
+                                                              }
+                ;
+
+PositionalArgs  : RValue                                      { 
+                                                                if ($1->type_str == "$ExpressionError") {
+                                                                  $$ = NULL;
+                                                                } else {
+                                                                  $$ = new NodeFunctionCallPositionalArgs(NULL, $1);
+                                                                  $$->currentArgs.push_back($1->type_str);  
+                                                                }
+                                                              }
+                | PositionalArgs COMMA RValue                 { 
+                                                                if (($3->type_str == "$ExpressionError") ||
+                                                                    ($1 == NULL) ) 
+                                                                {
+                                                                  $$ = NULL;
+                                                                } else {
+                                                                  $$ = new NodeFunctionCallPositionalArgs($1, $3);
+
+                                                                  $$->currentArgs = $1->currentArgs;
+                                                                  $1->currentArgs.clear();
+                                                                  $$->currentArgs.push_back($3->type_str);
+                                                                }
+                                                              }
+                ;
+
+NamedArgs       : ID ASSIGNMENT RValue                        { 
+                                                                if ($3->type_str == "$ExpressionError") {
+                                                                  $$ = NULL;
+                                                                } else {
+                                                                  $$ = new NodeFunctionCallNamedArgs(NULL, $1, $3);
+                                                                  $$->currentArgs[$1] = $3->type_str; 
+                                                                }
+                                                              }
+                | NamedArgs COMMA ID ASSIGNMENT RValue        { 
+                                                                $$ = new NodeFunctionCallNamedArgs($1, $3, $5); 
+                                                                if ($$->currentArgs.count($3) != 0) {
+                                                                  addError(
+                                                                    (string) "Argument \e[1;3m" + $3 + "\e[0m repeated"
+                                                                  );
+                                                                  $$ = NULL;
+                                                                } else if (($1 == NULL) || 
+                                                                           ($5->type_str == "$ExpressionError")) 
+                                                                {
+                                                                  $$ = NULL;
+                                                                } 
+                                                                else {
+                                                                  $$->currentArgs[$3] = $5->type_str;
+                                                                }
+                                                              }
+                ;
 
 /* ================= UNION DEFINITION ================= */
 UnionDef  : UnionId OPEN_C_BRACE UnionBody CLOSE_C_BRACE  { 
@@ -954,18 +1037,19 @@ RoutDef   : RoutSign OPEN_C_BRACE Actions CLOSE_C_BRACE   {
                                                           }
           ;  
 RoutSign  : RoutId OPEN_PAR RoutArgs CLOSE_PAR OptReturn  {
-                                                            FunctionEntry *e;
-                                                            e = (FunctionEntry*) table.lookup($1);
-                                                            e->return_type = $5;
-                                                            e->def_scope = table.currentScope();
-                                                            
-                                                            if ($3 != NULL) {
+                                                            if (($3 == NULL) || ($5->toString() == "$TypeError")) {
+                                                              $$ = new NodeError();
+                                                            } else {
+                                                              FunctionEntry *e;
+                                                              e = (FunctionEntry*) table.lookup($1);
+                                                              e->return_type = $5;
+                                                              e->def_scope = table.currentScope();                                                              
                                                               e->args = $3->params;
                                                               $3->params.clear();
+                                                              
+                                                              table.newScope();
+                                                              $$ = new NodeRoutineSign($1, $3, $5);
                                                             }
-                                                            
-                                                            table.newScope();
-                                                            $$ = new NodeRoutineSign($1, $3, $5);
                                                           }
           ;
 RoutId    : DEF IdDef                                     {
@@ -976,76 +1060,120 @@ RoutId    : DEF IdDef                                     {
                                                             $$ = $2;
                                                           }
           ;    
-RoutArgs  : /* lambda */                                  { $$ = NULL; }
+RoutArgs  : /* lambda */                                  { $$ = new NodeRoutArgs(NULL, NULL); }
           | MandArgs                                      { 
-                                                            $$ = new NodeRoutArgs($1, NULL); 
-                                                            $$->params = $1->currentParams;
-                                                            $1->currentParams.clear();
+                                                            if ($1 == NULL) {
+                                                              $$ = NULL;
+                                                            } else {
+                                                              $$ = new NodeRoutArgs($1, NULL); 
+                                                              $$->params = $1->currentParams;
+                                                              $1->currentParams.clear();
+                                                            }
                                                           }
-          | OptArgs                                       { 
-                                                            $$ = new NodeRoutArgs(NULL, $1); 
-                                                            $$->params = $1->currentParams;
-                                                            $1->currentParams.clear();
+          | OptArgs                                       {
+                                                            if ($1 == NULL) {
+                                                              $$ = NULL;
+                                                            } else {
+                                                              $$ = new NodeRoutArgs(NULL, $1); 
+                                                              $$->params = $1->currentParams;
+                                                              $1->currentParams.clear();
+                                                            }
                                                           }
           | MandArgs COMMA OptArgs                        { 
-                                                            for(auto & elem : $1->currentParams)
-                                                            {
-                                                              $3->currentParams.push_back(elem);
-                                                            }
+                                                            if (($1 == NULL) || ($3 == NULL)) {
+                                                              $$ = NULL;
+                                                            } else {
+                                                              for(auto & elem : $1->currentParams)
+                                                              {
+                                                                $3->currentParams.push_back(elem);
+                                                              }
 
-                                                            $$ = new NodeRoutArgs($1, $3);
-                                                            $$->params = $3->currentParams;
-                                                            $3->currentParams.clear();
-                                                            $1->currentParams.clear();
+                                                              $$ = new NodeRoutArgs($1, $3);
+                                                              $$->params = $3->currentParams;
+                                                              $3->currentParams.clear();
+                                                              $1->currentParams.clear();
+                                                            }
                                                           }
           ;   
 MandArgs  : Type OptRef IdDef                             { 
-                                                            $$ = new NodeRoutArgDef(
-                                                              NULL, $1, $2, $3, NULL
-                                                            );
-                                                            $$->currentParams.push_back({$3, $1->toString(), true});
+                                                            if ($1->toString() == "$TypeError") {
+                                                              $$ = NULL;
+                                                            } else {
+                                                              $$ = new NodeRoutArgDef(
+                                                                NULL, $1, $2, $3, NULL
+                                                              );
+                                                              $$->currentParams.push_back({$3, $1->toString(), true});
 
-                                                            int s = table.currentScope();
-                                                            Entry *e = new VarEntry($3, s, "Var", $1);
-                                                            table.insert(e);
+                                                              int s = table.currentScope();
+                                                              Entry *e = new VarEntry($3, s, "Var", $1);
+                                                              table.insert(e);
+                                                            }
                                                           }
           | MandArgs COMMA Type OptRef IdDef              { 
-                                                            $$ = new NodeRoutArgDef(
-                                                              $1, $3, $4, $5, NULL
-                                                            );
-                                                            $$->currentParams = $1->currentParams;
-                                                            $1->currentParams.clear();
-                                                            $$->currentParams.push_back({$5, $3->toString(), true});
+                                                            if (($1 == NULL) || ($3->toString() == "$TypeError")) {
+                                                              $$ = NULL;
+                                                            } else {
+                                                              $$ = new NodeRoutArgDef(
+                                                                $1, $3, $4, $5, NULL
+                                                              );
+                                                              $$->currentParams = $1->currentParams;
+                                                              $1->currentParams.clear();
+                                                              $$->currentParams.push_back({$5, $3->toString(), true});
 
-                                                            int s = table.currentScope();
-                                                            Entry *e = new VarEntry($5, s, "Var", $3);
-                                                            table.insert(e);
+                                                              int s = table.currentScope();
+                                                              Entry *e = new VarEntry($5, s, "Var", $3);
+                                                              table.insert(e);
+                                                            }
                                                           }
           ;   
 OptArgs   : Type OptRef IdDef ASSIGNMENT RValue           { 
-                                                            $$ = new NodeRoutArgDef(
-                                                              NULL, $1, $2, $3, $5
-                                                            );
+                                                            if (($1->toString() == "$TypeError") ||
+                                                                ($5->type_str == "$ExpressionError")) {
+                                                              $$ = NULL;
+                                                            } else if ($1->toString() != $5->type_str) {
+                                                              addError(
+                                                                "Can't assign a '\e[1;3m" + $5->type_str +
+                                                                "\e[0m' to a '\e[1;3m" + $1->toString() + "\e[0m'."
+                                                              );
+                                                              $$ = NULL;
+                                                            } else {
+                                                              $$ = new NodeRoutArgDef(
+                                                                NULL, $1, $2, $3, $5
+                                                              );
 
-                                                            $$->currentParams.push_back({$3, $1->toString(), false});
+                                                              $$->currentParams.push_back({$3, $1->toString(), false});
 
-                                                            int s = table.currentScope();
-                                                            Entry *e = new VarEntry($3, s, "Var", $1);
-                                                            table.insert(e);
+                                                              int s = table.currentScope();
+                                                              Entry *e = new VarEntry($3, s, "Var", $1);
+                                                              table.insert(e);
+                                                            }
                                                           }
           | OptArgs COMMA Type OptRef IdDef 
             ASSIGNMENT RValue                             { 
-                                                            $$ = new NodeRoutArgDef(
-                                                              $1, $3, $4, $5, $7
-                                                            );
+                                                            if (($3->toString() == "$TypeError") ||
+                                                                ($7->type_str == "$ExpressionError")) {
+                                                              $$ = NULL;
+                                                            } else if ($3->toString() != $7->type_str) {
+                                                              addError(
+                                                                "Can't assign a '\e[1;3m" + $7->type_str +
+                                                                "\e[0m' to a '\e[1;3m" + $3->toString() + "\e[0m'."
+                                                              );
+                                                              $$ = NULL;
+                                                            } else if ($1 == NULL) {
+                                                              $$ = NULL;
+                                                            } else {
+                                                              $$ = new NodeRoutArgDef(
+                                                                $1, $3, $4, $5, $7
+                                                              );
 
-                                                            $$->currentParams = $1->currentParams;
-                                                            $1->currentParams.clear();
-                                                            $$->currentParams.push_back({$5, $3->toString(), false});
+                                                              $$->currentParams = $1->currentParams;
+                                                              $1->currentParams.clear();
+                                                              $$->currentParams.push_back({$5, $3->toString(), false});
 
-                                                            int s = table.currentScope();
-                                                            Entry *e = new VarEntry($5, s, "Var", $3);
-                                                            table.insert(e);
+                                                              int s = table.currentScope();
+                                                              Entry *e = new VarEntry($5, s, "Var", $3);
+                                                              table.insert(e);
+                                                            }
                                                           }
           ;
 OptRef    : /* lambda */                                  { $$ = false; }
