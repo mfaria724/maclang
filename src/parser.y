@@ -43,13 +43,22 @@
   bool verify(set<pair<string, string>> accepted_types, string type1, string type2);
 
   // verifies types for a binary operator
-  bool verifyBinayOpType(
+  string verifyBinayOpType(
     set<pair<string, string>> accepted_types, 
     set<string> types1,
     set<string> types2,
     string type1, 
     string type2,
-    string op
+    string op,
+    string return_type
+  );
+
+  // verifies type for a unary operator
+  string verifyUnaryOpType(
+    set<string> accepted_types, 
+    string type, 
+    string op,
+    string return_type
   );
 
   // token names for readability on lexer
@@ -311,7 +320,7 @@ RValue      : Exp                       { $$ = $1; }
                                             $$ = new NodeNew($2); 
                                           } else {
                                             $$ = new ExpressionNode();
-                                            $$->type_str = "$TypeError";
+                                            $$->type_str = "$ExpressionError";
                                           }
                                         }
             ;
@@ -465,13 +474,7 @@ Exp   : Exp EQUIV Exp               {
                                       string t1 = $1->type_str;
                                       string t2 = $3->type_str;
 
-                                      string type;
-                                      if (verifyBinayOpType(tuples, types, types, t1, t2, "==")) {
-                                        type = "Bool";
-                                      } else {
-                                        type = "$TypeError";
-                                      }
-
+                                      string type = verifyBinayOpType(tuples, types, types, t1, t2, "==", "Bool");
                                       $$ = new NodeBinaryOperator($1, $2, $3, type); 
                                     }
       | Exp NOT_EQUIV Exp           { 
@@ -488,13 +491,7 @@ Exp   : Exp EQUIV Exp               {
                                       string t1 = $1->type_str;
                                       string t2 = $3->type_str;
 
-                                      string type; 
-                                      if (verifyBinayOpType(tuples, types, types, t1, t2, "!=")) {
-                                        type = "Bool";
-                                      } else {
-                                        type = "$TypeError";
-                                      }
-                                      
+                                      string type = verifyBinayOpType(tuples, types, types, t1, t2, "!=", "Bool");                                      
                                       $$ = new NodeBinaryOperator($1, $2, $3, type); 
                                     }
       | Exp OR Exp                  { 
@@ -504,13 +501,7 @@ Exp   : Exp EQUIV Exp               {
                                       string t1 = $1->type_str;
                                       string t2 = $3->type_str;
 
-                                      string type; 
-                                      if (verifyBinayOpType(tuples, types, types, t1, t2, "||")) {
-                                        type = "Bool";
-                                      } else {
-                                        type = "$TypeError";
-                                      }
-
+                                      string type = verifyBinayOpType(tuples, types, types, t1, t2, "||", "Bool");
                                       $$ = new NodeBinaryOperator($1, $2, $3, type); 
                                     }
       | Exp AND Exp                 { 
@@ -520,31 +511,11 @@ Exp   : Exp EQUIV Exp               {
                                       string t1 = $1->type_str;
                                       string t2 = $3->type_str;
 
-                                      string type; 
-                                      if (verifyBinayOpType(tuples, types, types, t1, t2, "&&")) {
-                                        type = "Bool";
-                                      } else {
-                                        type = "$TypeError";
-                                      }
-
+                                      string type = verifyBinayOpType(tuples, types, types, t1, t2, "&&", "Bool");
                                       $$ = new NodeBinaryOperator($1, $2, $3, type); 
                                     }
       | NOT Exp                     { 
-                                      string type;
-                                      if ($2->type_str == "$TypeError") {
-                                        type = "$TypeError";
-
-                                      } else if (verify({"Bool"}, $2->type_str)) {
-                                        type = "Bool";
-
-                                      } else {
-                                        addError(
-                                          (string) "Operator '\e[1;3m!\e[0m' can't be applied with operand type " +
-                                          "'\e[1;3m" + $2->type_str + "\e[0m'."
-                                        );
-                                        type = "$TypeError";
-                                      }
-
+                                      string type = verifyUnaryOpType({"Bool"}, $2->type_str, "!", "Bool");
                                       $$ = new NodeUnaryOperator($1, $2, type); 
                                     }
       | Exp LESS_THAN Exp           { 
@@ -559,13 +530,7 @@ Exp   : Exp EQUIV Exp               {
                                       string t1 = $1->type_str;
                                       string t2 = $3->type_str;
 
-                                      string type; 
-                                      if (verifyBinayOpType(tuples, types, types, t1, t2, "<")) {
-                                        type = "Bool";
-                                      } else {
-                                        type = "$TypeError";
-                                      }
-
+                                      string type = verifyBinayOpType(tuples, types, types, t1, t2, "<", "Bool");
                                       $$ = new NodeBinaryOperator($1, $2, $3, type); 
                                     }
       | Exp LESS_EQUAL_THAN Exp     { 
@@ -580,13 +545,7 @@ Exp   : Exp EQUIV Exp               {
                                       string t1 = $1->type_str;
                                       string t2 = $3->type_str;
 
-                                      string type; 
-                                      if (verifyBinayOpType(tuples, types, types, t1, t2, "<=")) {
-                                        type = "Bool";
-                                      } else {
-                                        type = "$TypeError";
-                                      }
-
+                                      string type = verifyBinayOpType(tuples, types, types, t1, t2, "<=", "Bool");
                                       $$ = new NodeBinaryOperator($1, $2, $3, type); 
                                     }
       | Exp GREATER_THAN Exp        { 
@@ -601,13 +560,7 @@ Exp   : Exp EQUIV Exp               {
                                       string t1 = $1->type_str;
                                       string t2 = $3->type_str;
 
-                                      string type; 
-                                      if (verifyBinayOpType(tuples, types, types, t1, t2, ">")) {
-                                        type = "Bool";
-                                      } else {
-                                        type = "$TypeError";
-                                      }
-
+                                      string type = verifyBinayOpType(tuples, types, types, t1, t2, ">", "Bool");
                                       $$ = new NodeBinaryOperator($1, $2, $3, type); 
                                     }
       | Exp GREATER_EQUAL_THAN Exp  { 
@@ -622,13 +575,7 @@ Exp   : Exp EQUIV Exp               {
                                       string t1 = $1->type_str;
                                       string t2 = $3->type_str;
 
-                                      string type; 
-                                      if (verifyBinayOpType(tuples, types, types, t1, t2, ">=")) {
-                                        type = "Bool";
-                                      } else {
-                                        type = "$TypeError";
-                                      }
-
+                                      string type = verifyBinayOpType(tuples, types, types, t1, t2, ">=", "Bool");
                                       $$ = new NodeBinaryOperator($1, $2, $3, type); 
                                     }
       | Exp PLUS Exp                { 
@@ -643,17 +590,13 @@ Exp   : Exp EQUIV Exp               {
                                       string t1 = $1->type_str;
                                       string t2 = $3->type_str;
 
-                                      string type; 
-                                      if (verifyBinayOpType(tuples, types, types, t1, t2, "+")) {
-                                        if ((t1 == "Float") || (t2 == "Float")) {
-                                          type = "Float";
-                                        } else {
-                                          type = "Int";
-                                        }
+                                      string return_type;
+                                      if ((t1 == "Float") || (t2 == "Float")) {
+                                        return_type = "Float";
                                       } else {
-                                        type = "$TypeError";
+                                        return_type = "Int";
                                       }
-
+                                      string type = verifyBinayOpType(tuples, types, types, t1, t2, "+", return_type);
                                       $$ = new NodeBinaryOperator($1, $2, $3, type); 
                                     }
       | Exp MINUS Exp               { 
@@ -668,17 +611,13 @@ Exp   : Exp EQUIV Exp               {
                                       string t1 = $1->type_str;
                                       string t2 = $3->type_str;
 
-                                      string type; 
-                                      if (verifyBinayOpType(tuples, types, types, t1, t2, "-")) {
-                                        if ((t1 == "Float") || (t2 == "Float")) {
-                                          type = "Float";
-                                        } else {
-                                          type = "Int";
-                                        }
+                                      string return_type;
+                                      if ((t1 == "Float") || (t2 == "Float")) {
+                                        return_type = "Float";
                                       } else {
-                                        type = "$TypeError";
+                                        return_type = "Int";
                                       }
-
+                                      string type = verifyBinayOpType(tuples, types, types, t1, t2, "-", return_type);
                                       $$ = new NodeBinaryOperator($1, $2, $3, type); 
                                     }
       | Exp ASTERISK Exp            { 
@@ -693,17 +632,13 @@ Exp   : Exp EQUIV Exp               {
                                       string t1 = $1->type_str;
                                       string t2 = $3->type_str;
 
-                                      string type; 
-                                      if (verifyBinayOpType(tuples, types, types, t1, t2, "*")) {
-                                        if ((t1 == "Float") || (t2 == "Float")) {
-                                          type = "Float";
-                                        } else {
-                                          type = "Int";
-                                        }
+                                      string return_type;
+                                      if ((t1 == "Float") || (t2 == "Float")) {
+                                        return_type = "Float";
                                       } else {
-                                        type = "$TypeError";
+                                        return_type = "Int";
                                       }
-
+                                      string type = verifyBinayOpType(tuples, types, types, t1, t2, "*", return_type);
                                       $$ = new NodeBinaryOperator($1, $2, $3, type); 
                                     }
       | Exp DIV Exp                 { 
@@ -718,13 +653,7 @@ Exp   : Exp EQUIV Exp               {
                                       string t1 = $1->type_str;
                                       string t2 = $3->type_str;
 
-                                      string type; 
-                                      if (verifyBinayOpType(tuples, types, types, t1, t2, "/")) {
-                                        type = "Float";
-                                      } else {
-                                        type = "$TypeError";
-                                      }
-
+                                      string type = verifyBinayOpType(tuples, types, types, t1, t2, "/", "Float");
                                       $$ = new NodeBinaryOperator($1, $2, $3, type); 
                                     }
       | Exp MODULE Exp              { 
@@ -739,53 +668,35 @@ Exp   : Exp EQUIV Exp               {
                                       string t1 = $1->type_str;
                                       string t2 = $3->type_str;
 
-                                      string type; 
-                                      if (verifyBinayOpType(tuples, types, types, t1, t2, "%")) {
-                                        if ((t1 == "Float") || (t2 == "Float")) {
-                                          type = "Float";
-                                        } else {
-                                          type = "Int";
-                                        }
+                                      string return_type;
+                                      if ((t1 == "Float") || (t2 == "Float")) {
+                                        return_type = "Float";
                                       } else {
-                                        type = "$TypeError";
+                                        return_type = "Int";
                                       }
-
+                                      string type = verifyBinayOpType(tuples, types, types, t1, t2, "%", return_type);
                                       $$ = new NodeBinaryOperator($1, $2, $3, type); 
                                     }
       | MINUS Exp                   { 
-                                      string type;
-                                      if ($2->type_str == "$TypeError") {
-                                        type = "$TypeError";
-
-                                      } else if (verify({"Int", "Float"}, $2->type_str)) {
-                                        type = "Bool";
-                                        
+                                      string return_type;
+                                      if ($2->type_str == "Int") {
+                                        return_type = "Int";
                                       } else {
-                                        addError(
-                                          (string) "Operator '\e[1;3m-\e[0m' can't be applied with operand type " +
-                                          "'\e[1;3m" + $2->type_str + "\e[0m'."
-                                        );
-                                        type = "$TypeError";
+                                        return_type = "Float";
                                       }
 
+                                      string type = verifyUnaryOpType({"Int", "Float"}, $2->type_str, "-", return_type);
                                       $$ = new NodeUnaryOperator($1, $2, type); 
                                     }
       | PLUS Exp                    { 
-                                      string type;
-                                      if ($2->type_str == "$TypeError") {
-                                        type = "$TypeError";
-
-                                      } else if (verify({"Int", "Float"}, $2->type_str)) {
-                                        type = "Bool";
-                                        
+                                      string return_type;
+                                      if ($2->type_str == "Int") {
+                                        return_type = "Int";
                                       } else {
-                                        addError(
-                                          (string) "Operator '\e[1;3m+\e[0m' can't be applied with operand type " +
-                                          "'\e[1;3m" + $2->type_str + "\e[0m'."
-                                        );
-                                        type = "$TypeError";
+                                        return_type = "Float";
                                       }
 
+                                      string type = verifyUnaryOpType({"Int", "Float"}, $2->type_str, "+", return_type);
                                       $$ = new NodeUnaryOperator($1, $2, type); 
                                     }
       | Exp POWER Exp               { 
@@ -800,24 +711,20 @@ Exp   : Exp EQUIV Exp               {
                                       string t1 = $1->type_str;
                                       string t2 = $3->type_str;
 
-                                      string type; 
-                                      if (verifyBinayOpType(tuples, types, types, t1, t2, "**")) {
-                                        if ((t1 == "Float") || (t2 == "Float")) {
-                                          type = "Float";
-                                        } else {
-                                          type = "Int";
-                                        }
+                                      string return_type;
+                                      if ((t1 == "Float") || (t2 == "Float")) {
+                                        return_type = "Float";
                                       } else {
-                                        type = "$TypeError";
+                                        return_type = "Int";
                                       }
-
+                                      string type = verifyBinayOpType(tuples, types, types, t1, t2, "**", return_type);
                                       $$ = new NodeBinaryOperator($1, $2, $3, type); 
                                     }
       | OPEN_PAR Exp CLOSE_PAR      { $$ = $2; }
       | LValue                      { 
                                       $$ = $1; 
                                       if ($$->type == NULL) {
-                                        $$->type_str = "$TypeError";
+                                        $$->type_str = "$ExpressionError";
                                       } else {
                                         $$->type_str = $$->type->toString(); 
                                       }
@@ -832,10 +739,10 @@ Exp   : Exp EQUIV Exp               {
 
 /* ====================== ARRAYS ====================== */
 Array     : OPEN_BRACKET ArrExp CLOSE_BRACKET   { 
-                                                  if ($2->type_str != "$TypeError") {
+                                                  if ($2->type_str != "$ExpressionError") {
                                                     $$ = new NodeArray($2, "(" + $2->type_str + ")[]"); 
                                                   } else {
-                                                    $$ = new NodeArray($2, "$TypeError"); 
+                                                    $$ = new NodeArray($2, "$ExpressionError"); 
                                                   }
                                                 }
           ;
@@ -845,10 +752,10 @@ ArrExp    : ArrElems RValue                     {
                                                     type = $2->type_str;
 
                                                   } else if (
-                                                    ($1->type_str == "$TypeError") ||
-                                                    ($2->type_str == "$TypeError")
+                                                    ($1->type_str == "$ExpressionError") ||
+                                                    ($2->type_str == "$ExpressionError")
                                                   ) {
-                                                    type = "$TypeError";
+                                                    type = "$ExpressionError";
 
                                                   } else if ($1->type_str != $2->type_str) {
                                                     addError(
@@ -856,7 +763,7 @@ ArrExp    : ArrElems RValue                     {
                                                       ", but found '\e[1;3m" + $1->type_str + "\e[0m' and " +
                                                       "'\e[1;3m" + $2->type_str + "'."
                                                     );
-                                                    type = "$TypeError";
+                                                    type = "$ExpressionError";
 
                                                   } else {
                                                     type = $2->type_str;
@@ -871,10 +778,10 @@ ArrElems	: /* lambda */                        { $$ = NULL; }
                                                     type = $2->type_str;
 
                                                   } else if (
-                                                    ($1->type_str == "$TypeError") || 
-                                                    ($2->type_str == "$TypeError")
+                                                    ($1->type_str == "$ExpressionError") || 
+                                                    ($2->type_str == "$ExpressionError")
                                                   ) {
-                                                    type = "$TypeError";
+                                                    type = "$ExpressionError";
 
                                                   } else if ($1->type_str != $2->type_str) {
                                                     addError(
@@ -882,7 +789,7 @@ ArrElems	: /* lambda */                        { $$ = NULL; }
                                                       ", but found '\e[1;3m" + $1->type_str + "\e[0m' and " +
                                                       "'\e[1;3m" + $2->type_str + "'."
                                                     );
-                                                    type = "$TypeError";
+                                                    type = "$ExpressionError";
 
                                                   } else {
                                                     type = $2->type_str;
@@ -1303,37 +1210,62 @@ bool verify(set<pair<string, string>> accepted_types, string type1, string type2
 }
 
 /*
+  Verfiy that an operand have the correct type for a unary operator.
+*/
+string verifyUnaryOpType(
+  set<string> accepted_types, 
+  string type, 
+  string op,
+  string return_type
+) {
+  if (type == "$ExpressionError") {
+    return "$ExpressionError";
+
+  } else if (verify(accepted_types, type)) {
+    return return_type;
+
+  } else {
+    addError(
+      (string) "Operator '\e[1;3m" + op + "\e[0m' can't be applied with operand type " +
+      "'\e[1;3m" + type + "\e[0m'."
+    );
+    return "$ExpressionError";
+  }
+
+}
+
+/*
   Verifies that a pair of operators have the correct types for a binary operator.
 */
-bool verifyBinayOpType(
+string verifyBinayOpType(
   set<pair<string, string>> accepted_types, 
   set<string> types1,
   set<string> types2,
   string type1, 
   string type2,
-  string op
+  string op,
+  string return_type
 ) {
-  if (type1 == "$TypeError" || type2 == "$TypeError") {
-    return false;
+  // Verifies if one of the operands has error type.
+  if (type1 == "$ExpressionError" || type2 == "$ExpressionError") {
+    return "$ExpressionError";
 
+  // If there are no errors in the operands.
   } else {
     bool st1 = verify(types1, type1);
     bool st2 = verify(types2, type2);
 
-    // Verificar que ambos tipos son soportados
+    // Verify that both types are supported.
     if ((st1 && st2) && verify(accepted_types, type1, type2)) {
-      return true;
+      return return_type;
 
+    // If one of the types isn't supported.
     } else {
-      // error alguno de los tipos no es soportados
-      // ejemplo: no se puede comparar t1 con t2
-
       addError(
         "Operator '\e[1;3m" + op + "\e[0m' don't matches with operand types: '\e[1;3m" +
         type1 + "\e[0m' and '\e[1;3m" + type2 + "\e[0m'."
       );
-      return false;
+      return "$ExpressionError";
     }
   }
 }
-
