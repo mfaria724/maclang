@@ -1,6 +1,7 @@
 #include <string>
 #include <vector>
 #include <map>
+#include <set>
 #include <iostream>
 
 using namespace std;
@@ -161,7 +162,6 @@ class NodeUnaryOperator : public ExpressionNode {
 class NodeNew : public ExpressionNode {
   protected:
     Type *type;
-    string type_str;
 
   public:
     NodeNew(Type *type);
@@ -329,6 +329,7 @@ class NodeFunctionCallArgs : public Node {
   public:
     vector<string> positionalArgs;
     map<string, string> namedArgs;
+    set<string> keywords;
 
     NodeFunctionCallArgs(Node* positional, Node* named);
 
@@ -366,6 +367,7 @@ class NodeFunctionCallNamedArgs : public Node {
 
   public:
     map<string, string> currentArgs;
+    set<string> keywords;
 
     NodeFunctionCallNamedArgs(Node *head, string id, Node *rvalue);
 
@@ -667,7 +669,11 @@ class NodeS {
 
 class NodeError : public Node {
   public:
+    string errInfo;
+
     NodeError(void) { }
+
+    string toString(void) { return "Error"; }
 };
 
 /* ======================= TYPE NODES =======================  */

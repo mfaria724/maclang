@@ -296,7 +296,7 @@ VarDef      : LET Type IdDef OptAssign  {
             ;   
 IdDef       : ID                        {
                                           if (! table.verifyInsert($1)) {
-                                            addError((string) "Redefinition of \"" + $1 + "\".");
+                                            addError((string) "Redefinition of '\e[1;3m" + $1 + "\e[0m'.");
                                           }
                                           $$ = $1; 
                                         }
@@ -356,7 +356,7 @@ Type	: Type OPEN_BRACKET Exp CLOSE_BRACKET {
       | ID                                  {
                                               Entry *e;
                                               if ((e = table.lookup($1)) == NULL) {
-                                                addError((string) "\"" + $1 + "\" wasn't declared.");
+                                                addError((string) "'\e[1;3m" + $1 + "\e[0m' wasn't declared.");
                                                 $$ = new PrimitiveType("$TypeError");
 
                                               } else if (e->category != "Type" && e->category != "Structure") {
@@ -816,18 +816,80 @@ FuncCall  : ID OPEN_PAR ArgsExp CLOSE_PAR   {
                                               if ($3 == NULL) {
                                                 $$ = new ExpressionNode();
                                                 $$->type_str = "$ExpressionError";
+
                                               } else {
                                                 string type = "";
                                                 Entry *e;
                                                 if ((e = table.lookup($1)) == NULL) {
-                                                  addError((string) "\"" + $1 + "\" wasn't declared.");
-                                                  type = "$TypeError";
+                                                  addError((string) "'\e[1;3m" + $1 + "\e[0m' wasn't declared.");
+                                                  type = "$ExpressionError";
+
                                                 } else if (e->category != "Function") {
                                                   addError((string) "\"" + $1 + "\" isn't a function.");
-                                                  type = "$TypeError";
+                                                  type = "$ExpressionError";
+                                                  
+                                                } else {
+                                                  FunctionEntry *fe = (FunctionEntry*) e;
+                                                  bool correctTypes = true, allMand = true;
+
+                                                  int numPositional = $3->positionalArgs.size(), i = 0;
+  
+                                                  for (tuple<string, string, bool> arg : fe->args) {
+                                                    if (i < numPositional) {
+                                                      if (get<1>(arg) != $3->positionalArgs[i]) {
+                                                        addError(
+                                                          (string) "Argument '\e[1;3m" + get<0>(arg) + "\e[0m' " +
+                                                          "must be '\e[1;3m" + get<1>(arg) + "\e[0m' but '\e[1;3m" +
+                                                          $3->positionalArgs[i] + "\e[0m' found."
+                                                        );
+                                                        correctTypes = false;
+                                                      }
+                                                      if ($3->keywords.count(get<0>(arg))) {
+                                                        addError(
+                                                          (string) "Got multiple values of '\e[1;3m" + get<0>(arg) + "\e[0m'."
+                                                        );
+                                                        correctTypes = false;
+                                                      }
+
+
+                                                    } else if ($3->keywords.count(get<0>(arg))) {
+                                                      if (get<1>(arg) != $3->namedArgs[get<0>(arg)]) {
+                                                        addError(
+                                                          (string) "Argument '\e[1;3m" + get<0>(arg) + "\e[0m' " +
+                                                          "must be '\e[1;3m" + get<1>(arg) + "\e[0m' but '\e[1;3m" +
+                                                          $3->namedArgs[get<0>(arg)] + "\e[0m' found."
+                                                        );
+                                                        correctTypes = false;
+                                                      }
+                                                      $3->keywords.erase(get<0>(arg));
+
+
+                                                    } else if (get<2>(arg) && allMand) {
+                                                      addError(
+                                                        (string) "Missing required positional arguments."
+                                                      );
+                                                      correctTypes = false;
+                                                      allMand = false;
+                                                    }
+
+                                                    i++;
+                                                  }
+
+                                                  if ($3->keywords.size()) {
+                                                    string err = "Got unexpected keywords: ";
+                                                    for (string k : $3->keywords) {
+                                                      err += "'\e[1;3m" + k + "\e[0m', ";
+                                                    }
+                                                    addError(err);
+                                                    correctTypes = false;
+                                                  }
+
+                                                  if (! correctTypes) {
+                                                    type = "$ExpressionError";
+                                                  }
                                                 }
 
-                                                if (type != "$TypeError") {
+                                                if (type != "$ExpressionError") {
                                                   FunctionEntry *fe = (FunctionEntry*) e;
 
                                                   Type *pt = (Type*) fe->return_type;
@@ -854,7 +916,10 @@ ArgsExp         : /* lambda */                                { $$ = new NodeFun
                                                                 } else {
                                                                   $$ = new NodeFunctionCallArgs(NULL, $1);
                                                                   $$->namedArgs = $1->currentArgs;
+                                                                  $$->keywords = $1->keywords;
+
                                                                   $1->currentArgs.clear();
+                                                                  $1->keywords.clear();
                                                                 }
                                                               }
                 | PositionalArgs COMMA NamedArgs              { 
@@ -862,10 +927,14 @@ ArgsExp         : /* lambda */                                { $$ = new NodeFun
                                                                   $$ = NULL;
                                                                 } else {
                                                                   $$ = new NodeFunctionCallArgs($1, $3);
+                                                                  
                                                                   $$->positionalArgs = $1->currentArgs;
-                                                                  $1->currentArgs.clear();
                                                                   $$->namedArgs = $3->currentArgs;
+                                                                  $$->keywords = $3->keywords;
+
+                                                                  $1->currentArgs.clear();
                                                                   $3->currentArgs.clear();
+                                                                  $3->keywords.clear();
                                                                 }
                                                               }
                 ;
@@ -899,22 +968,36 @@ NamedArgs       : ID ASSIGNMENT RValue                        {
                                                                 } else {
                                                                   $$ = new NodeFunctionCallNamedArgs(NULL, $1, $3);
                                                                   $$->currentArgs[$1] = $3->type_str; 
+                                                                  $$->keywords.insert($1);
                                                                 }
                                                               }
                 | NamedArgs COMMA ID ASSIGNMENT RValue        { 
                                                                 $$ = new NodeFunctionCallNamedArgs($1, $3, $5); 
                                                                 if ($$->currentArgs.count($3) != 0) {
                                                                   addError(
-                                                                    (string) "Argument \e[1;3m" + $3 + "\e[0m repeated"
+                                                                    (string) "Argument '\e[1;3m" + $3 + "\e[0m' repeated"
                                                                   );
                                                                   $$ = NULL;
-                                                                } else if (($1 == NULL) || 
-                                                                           ($5->type_str == "$ExpressionError")) 
-                                                                {
+                                                                  
+                                                                } else if ($1->currentArgs.count($3)) {
+                                                                  addError(
+                                                                    (string) "Got multiple values of '\e[1;3m" + $3 + "\e[0m'."
+                                                                  );
+                                                                } else if (
+                                                                  ($1 == NULL) || 
+                                                                  ($5->type_str == "$ExpressionError")
+                                                                )  {
                                                                   $$ = NULL;
+
                                                                 } 
                                                                 else {
+                                                                  $$->currentArgs = $1->currentArgs;
                                                                   $$->currentArgs[$3] = $5->type_str;
+                                                                  $1->currentArgs.clear();
+
+                                                                  $$->keywords = $1->keywords;
+                                                                  $$->keywords.insert($3);
+                                                                  $1->keywords.clear();
                                                                 }
                                                               }
                 ;
@@ -1031,14 +1114,28 @@ OptStep   : /* lambda */                              { $$ = NULL; }
 
 /* =============== SUBROUTINES DEFINITION =============== */
 RoutDef   : RoutSign OPEN_C_BRACE Actions CLOSE_C_BRACE   { 
-                                                            $$ = new NodeRoutineDef($1, $3); 
-                                                            table.exitScope();
-                                                            table.exitScope();
+                                                            if ($1->toString() == "Error") {
+                                                              NodeError *err = (NodeError*) $1;
+                                                              table.exitScope();
+                                                              table.exitScope();
+                                                              table.erase(err->errInfo, table.currentScope());
+
+                                                              $$ = new NodeError();
+
+                                                            } else {
+                                                              table.exitScope();
+                                                              table.exitScope();
+
+                                                              $$ = new NodeRoutineDef($1, $3); 
+                                                            }
                                                           }
           ;  
 RoutSign  : RoutId OPEN_PAR RoutArgs CLOSE_PAR OptReturn  {
                                                             if (($3 == NULL) || ($5->toString() == "$TypeError")) {
-                                                              $$ = new NodeError();
+                                                              NodeError *err = new NodeError();
+                                                              err->errInfo = $1;
+                                                              $$ = err;
+
                                                             } else {
                                                               FunctionEntry *e;
                                                               e = (FunctionEntry*) table.lookup($1);
@@ -1083,15 +1180,15 @@ RoutArgs  : /* lambda */                                  { $$ = new NodeRoutArg
                                                             if (($1 == NULL) || ($3 == NULL)) {
                                                               $$ = NULL;
                                                             } else {
-                                                              for(auto & elem : $1->currentParams)
+                                                              for(auto & elem : $3->currentParams)
                                                               {
-                                                                $3->currentParams.push_back(elem);
+                                                                $1->currentParams.push_back(elem);
                                                               }
 
                                                               $$ = new NodeRoutArgs($1, $3);
-                                                              $$->params = $3->currentParams;
-                                                              $3->currentParams.clear();
+                                                              $$->params = $1->currentParams;
                                                               $1->currentParams.clear();
+                                                              $3->currentParams.clear();
                                                             }
                                                           }
           ;   
@@ -1130,12 +1227,14 @@ OptArgs   : Type OptRef IdDef ASSIGNMENT RValue           {
                                                             if (($1->toString() == "$TypeError") ||
                                                                 ($5->type_str == "$ExpressionError")) {
                                                               $$ = NULL;
+
                                                             } else if ($1->toString() != $5->type_str) {
                                                               addError(
                                                                 "Can't assign a '\e[1;3m" + $5->type_str +
                                                                 "\e[0m' to a '\e[1;3m" + $1->toString() + "\e[0m'."
                                                               );
                                                               $$ = NULL;
+                                                              
                                                             } else {
                                                               $$ = new NodeRoutArgDef(
                                                                 NULL, $1, $2, $3, $5
@@ -1148,19 +1247,26 @@ OptArgs   : Type OptRef IdDef ASSIGNMENT RValue           {
                                                               table.insert(e);
                                                             }
                                                           }
-          | OptArgs COMMA Type OptRef IdDef 
+          | OptArgs COMMA Type OptRef ID 
             ASSIGNMENT RValue                             { 
                                                             if (($3->toString() == "$TypeError") ||
                                                                 ($7->type_str == "$ExpressionError")) {
                                                               $$ = NULL;
+
                                                             } else if ($3->toString() != $7->type_str) {
                                                               addError(
                                                                 "Can't assign a '\e[1;3m" + $7->type_str +
                                                                 "\e[0m' to a '\e[1;3m" + $3->toString() + "\e[0m'."
                                                               );
                                                               $$ = NULL;
+
+                                                            } else if (! table.verifyInsert($5)) {
+                                                              addError((string) "Redefinition of '\e[1;3m" + $5 + "\e[0m'.");
+                                                              $$ = NULL;
+                                                            
                                                             } else if ($1 == NULL) {
                                                               $$ = NULL;
+                                                              
                                                             } else {
                                                               $$ = new NodeRoutArgDef(
                                                                 $1, $3, $4, $5, $7
@@ -1170,6 +1276,7 @@ OptArgs   : Type OptRef IdDef ASSIGNMENT RValue           {
                                                               $1->currentParams.clear();
                                                               $$->currentParams.push_back({$5, $3->toString(), false});
 
+          
                                                               int s = table.currentScope();
                                                               Entry *e = new VarEntry($5, s, "Var", $3);
                                                               table.insert(e);

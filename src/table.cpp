@@ -100,6 +100,24 @@ Entry* SymbolsTable::lookup(string id, int scope) {
 }
 
 /*
+  Erase an entry on the Symbols Table that matches the specified id and scope.
+*/
+void SymbolsTable::erase(string id, int scope) {
+  deque<Entry*> newQueue;
+
+  while (! this->symTable[id].empty()) {
+    Entry *e = this->symTable[id].back();
+    this->symTable[id].pop_back();
+
+    if ((e->id != id) || (e->scope != scope)) {
+      newQueue.push_front(e);
+    }
+  }
+
+  this->symTable[id] = newQueue;
+}
+
+/*
   Add new scope to the symbols table.
 */
 int SymbolsTable::newScope() {

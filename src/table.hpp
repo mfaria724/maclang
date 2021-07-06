@@ -52,6 +52,9 @@ class SymbolsTable {
     // Find a variable in a scope
     Entry* lookup(string id, int scope);
 
+    // Erase a variable in a scope
+    void erase(string id, int scope);
+
     // Add a new scope
     int newScope(void);
 

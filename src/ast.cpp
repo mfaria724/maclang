@@ -174,7 +174,7 @@ void NodeUnaryOperator::printTree(vector<bool> *identation) {
 /* ======================= HEAP NODES =======================  */
 NodeNew::NodeNew(Type *type) {
   this->type = type;
-  this->type_str = "^" + this->type->toString();
+  this->type_str = "^(" + this->type->toString() + ")";
 }
 
 void NodeNew::print(void) {
