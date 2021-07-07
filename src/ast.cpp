@@ -82,7 +82,7 @@ void NodeFLOAT::printTree(vector<bool> *identation) {
 
 NodeSTRING::NodeSTRING(string value) {
   this->value = value;
-  this->type_str = "String";
+  this->type_str = "(Char)[]";
 }
 
 void NodeSTRING::print(void) {
@@ -1448,6 +1448,42 @@ void NodeActions::printTree(vector<bool> *identation) {
   cout << "└── ";
   this->inst->printTree(identation);
   identation->pop_back();
+}
+
+NodeReturn::NodeReturn(Node *rvalue) {
+  this->rvalue = rvalue;
+}
+
+void NodeReturn::print(void) {
+  cout << "return ";
+  if (this->rvalue != NULL) {
+    this->rvalue->print();
+  }
+  cout << ";\n";
+}
+
+string NodeReturn::toString(void) {
+  string result = "return ";
+  
+  if (this->rvalue != NULL) {
+    result += this->rvalue->toString();
+  }
+  return result;
+}
+
+void NodeReturn::printTree(vector<bool> *identation) {
+  cout << "\e[1;34mReturn\e[0m\n";
+
+  if (this->rvalue != NULL) {
+    printIdentation(identation);
+    identation->push_back(true);
+    cout << "├── ";
+    this->rvalue->printTree(identation);
+    identation->pop_back();
+  } else {
+    printIdentation(identation);
+    cout << "├── Unit\n";
+  }
 }
 
 /* ======================= INSTRUCTION NODES =======================  */

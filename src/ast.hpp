@@ -620,6 +620,20 @@ class NodeActions : public Node {
     void printTree(vector<bool> *identation);
 };
 
+class NodeReturn : public Node {
+  protected:
+    Node *rvalue;
+
+  public:
+    NodeReturn(Node *rvalue = NULL);
+
+    void print(void);
+
+    string toString(void);
+
+    void printTree(vector<bool> *identation);
+};
+
 /* ======================= INSTRUCTION NODES =======================  */
 class NodeAssign : public Node {
   protected:

@@ -3,9 +3,9 @@
 
 using namespace std;
 
-int f(int a) {
-    int a = 2;
-    return 0;
+string f(int a) {
+    vector<int> a ;
+    return a;
 }
 
 main () {

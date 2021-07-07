@@ -90,6 +90,7 @@
     "DEF",
     "AT",
     "RIGHT_ARROW",
+    "RETURN",
     "INT",
     "FLOAT",
     "CHAR",
@@ -127,14 +128,14 @@
 
 %union 
 {	
-  int   integer;
-  float flot;
-  bool  boolean;
-  char  *str;
-  char  ch;
-  Node  *ast;
-  NodeS *nS;
-  Type *t;
+  int    integer;
+  float  flot;
+  bool   boolean;
+  char*  str;
+  char   ch;
+  Node   *ast;
+  NodeS  *nS;
+  Type   *t;
   ExpressionNode *expr;
   NodeRoutArgDef *routArgsDef;
   NodeRoutArgs *routArgs;
@@ -187,6 +188,7 @@
 %token DEF 25
 %token AT 26
 %token RIGHT_ARROW 27
+%token RETURN 56
 
 %token <integer>  INT 28
 %token <flot>     FLOAT 29
@@ -221,7 +223,7 @@
 %type <ast>           RegBody Conditional OptElsif Elsifs OptElse Def RegDef
 %type <ast>           LoopWhile LoopFor OptStep RoutDef Actions RoutSign
 %type <expr>          Exp LValue RValue FuncCall Array ArrExp ArrElems
-%type <expr>          OptAssign
+%type <expr>          OptAssign Cond
 %type <routArgs>      RoutArgs
 %type <routArgsDef>   OptArgs MandArgs
 %type <fcArgs>        ArgsExp
@@ -247,7 +249,7 @@ Inst    : Action              { $$ = $1; }
 				| Def                 { $$ = $1; }
         ;
 Action  : VarInst SEMICOLON   { $$ = $1; }
-				| FuncCall SEMICOLON  { $$ = $1; ((NodeFunctionCall*) $$)->setEndInst(); }
+				| FuncCall SEMICOLON  { $$ = $1; }
 				| Conditional         { $$ = $1; }
 				| LoopWhile           { $$ = $1; }
 				| LoopFor             { $$ = $1; }
@@ -260,25 +262,26 @@ Def     : UnionDef            { $$ = $1; }
 /* ============ VARIABLES DEFINITION ============ */
 VarInst     : VarDef                    { $$ = $1; }
 						| Assign                    { $$ = $1; }
-            | FORGET LValue             { $$ = new NodeForget($2); }
+            | FORGET LValue             { 
+                                          if ($2->type == NULL) {
+                                            $$ = new NodeError();
+                                          } else {
+                                            $$ = new NodeForget($2);
+                                          }
+                                        }
             ;
 VarDef      : LET Type IdDef OptAssign  { 
                                           string ltype = $2->toString();
 
                                           if (
                                             ltype == "$TypeError" || 
-                                            (($4 != NULL) && 
-                                             (($4->type_str == "$TypeError") ||
-                                              ($4->type_str == "$ExpressionError"))
-                                            ) 
+                                            $3 == "" ||
+                                            ($4 != NULL && $4->type_str == "$ExpressionError") 
                                           ) {
                                             $$ = new NodeError();
                                           } 
                                           
-                                          else if (
-                                            ($4 != NULL) &&
-                                            (ltype != $4->type_str)
-                                          ) {
+                                          else if ($4 != NULL && ltype != $4->type_str) {
                                             addError(
                                               "Can't assign a '\e[1;3m" + $4->type_str +
                                               "\e[0m' to a '\e[1;3m" + ltype + "\e[0m'."
@@ -297,8 +300,10 @@ VarDef      : LET Type IdDef OptAssign  {
 IdDef       : ID                        {
                                           if (! table.verifyInsert($1)) {
                                             addError((string) "Redefinition of '\e[1;3m" + $1 + "\e[0m'.");
+                                            $$ = (char*) "";
+                                          } else {
+                                            $$ = $1; 
                                           }
-                                          $$ = $1; 
                                         }
 OptAssign   : /* lambda */              { $$ = NULL; }
 						| ASSIGNMENT RValue         { $$ = $2; }
@@ -313,13 +318,17 @@ Assign      : LValue ASSIGNMENT RValue  {
 
                                           if (ltype == "$TypeError" || rtype == "$ExpressionError") {
                                             $$ = new NodeError();
-                                          } else if (ltype != rtype) {
+                                          } 
+                                          
+                                          else if (ltype != rtype) {
                                             addError(
                                               "Can't assign a '\e[1;3m" + rtype +
                                               "\e[0m' to a '\e[1;3m" + ltype + "\e[0m'."
                                             );
                                             $$ = new NodeError();
-                                          } else {
+                                          } 
+                                          
+                                          else {
                                             $$ = new NodeAssign($1, $3); 
                                           }
                                         }
@@ -330,7 +339,9 @@ RValue      : Exp                       { $$ = $1; }
             | NEW Type                  { 
                                           if ($2->toString() != "$TypeError") {
                                             $$ = new NodeNew($2); 
-                                          } else {
+                                          }
+                                          
+                                          else {
                                             $$ = new ExpressionNode();
                                             $$->type_str = "$ExpressionError";
                                           }
@@ -339,7 +350,10 @@ RValue      : Exp                       { $$ = $1; }
 
 /* ======================== TYPES ======================== */
 Type	: Type OPEN_BRACKET Exp CLOSE_BRACKET { 
-                                              if ($1->toString() != "$TypeError") {
+                                              if (
+                                                $1->toString() != "$TypeError" &&
+                                                $3->type_str != "$ExpressionError"
+                                              ) {
                                                 $$ = new ArrayType($1, $3);
                                               } else {
                                                 $$ = new PrimitiveType("$TypeError");
@@ -358,12 +372,14 @@ Type	: Type OPEN_BRACKET Exp CLOSE_BRACKET {
                                               if ((e = table.lookup($1)) == NULL) {
                                                 addError((string) "'\e[1;3m" + $1 + "\e[0m' wasn't declared.");
                                                 $$ = new PrimitiveType("$TypeError");
-
-                                              } else if (e->category != "Type" && e->category != "Structure") {
+                                              } 
+                                              
+                                              else if (e->category != "Type" && e->category != "Structure") {
                                                 addError((string) "\"" + $1 + "\" isn't a type.");
                                                 $$ = new PrimitiveType("$TypeError");
-
-                                              } else {
+                                              } 
+                                              
+                                              else {
                                                 $$ = new PrimitiveType($1);
                                               }
                                             }
@@ -379,15 +395,21 @@ Type	: Type OPEN_BRACKET Exp CLOSE_BRACKET {
 LValue	:	LValue OPEN_BRACKET Exp CLOSE_BRACKET   { 
                                                     if ($1->type == NULL) {
                                                       $$ = new NodeArrayLValue($1, $3, NULL);
-
-                                                    } else if ($1->type->category != "Array") {
+                                                    }
+                                                     
+                                                    else if ($1->type->category != "Array") {
                                                       addError(
                                                         "'\e[1;3m" + $1->type->toString() + 
                                                         "\e[0m' type can't be indexed."
                                                       );
                                                       $$ = new NodeArrayLValue($1, $3, NULL); 
+                                                    } 
 
-                                                    } else {
+                                                    else if ($3->type_str == "$ExpressionError") {
+                                                      $$ = new NodeArrayLValue($1, $3, NULL);
+                                                    }
+                                                    
+                                                    else {
                                                       Type *type = ((ArrayType*) $1->type)->type;
                                                       $$ = new NodeArrayLValue($1, $3, type); 
                                                     }
@@ -396,15 +418,17 @@ LValue	:	LValue OPEN_BRACKET Exp CLOSE_BRACKET   {
 				|	POINTER LValue                          { 
                                                     if ($2->type == NULL) {
                                                       $$ = new NodePointerLValue($2, NULL);
-
-                                                    } else if ($2->type->category != "Pointer") {
+                                                    } 
+                                                    
+                                                    else if ($2->type->category != "Pointer") {
                                                       addError(
                                                         "'\e[1;3m" + $2->type->toString() + 
                                                         "\e[0m' type can't be desreferenced."
                                                       );
                                                       $$ = new NodePointerLValue($2, NULL); 
-
-                                                    } else {
+                                                    } 
+                                                    
+                                                    else {
                                                       Type *type = ((PointerType*) $2->type)->type;
                                                       $$ = new NodePointerLValue($2, type); 
                                                     }
@@ -413,15 +437,17 @@ LValue	:	LValue OPEN_BRACKET Exp CLOSE_BRACKET   {
                                                     Type *type;
                                                     if ($1->type == NULL) {
                                                       type = NULL;
-
-                                                    } else if ($1->type->category != "Primitive") {
+                                                    } 
+                                                    
+                                                    else if ($1->type->category != "Primitive") {
                                                       addError(
                                                         "'\e[1;3m" + $1->type->toString() + 
                                                         "\e[0m' type can't be accessed."
                                                       );
                                                       type = NULL;
-
-                                                    } else {
+                                                    } 
+                                                    
+                                                    else {
                                                       Entry *e = table.lookup($1->type->toString()); 
 
                                                       if (e->category != "Structure") {
@@ -430,8 +456,9 @@ LValue	:	LValue OPEN_BRACKET Exp CLOSE_BRACKET   {
                                                           "\e[0m' type can't be accessed."
                                                         );
                                                         type = NULL;
-
-                                                      } else {
+                                                      } 
+                                                      
+                                                      else {
                                                         StructureEntry *se = (StructureEntry*) e;
                                                         VarEntry *field = (VarEntry*) table.lookup($3, se->def_scope);
 
@@ -442,11 +469,11 @@ LValue	:	LValue OPEN_BRACKET Exp CLOSE_BRACKET   {
                                                             $3 + "\e[0m'."
                                                           );
                                                           type = NULL;
+                                                        } 
 
-                                                        } else {
+                                                        else {
                                                           type = field->type;
                                                         }
-
                                                       }
                                                     }
 
@@ -458,13 +485,14 @@ LValue	:	LValue OPEN_BRACKET Exp CLOSE_BRACKET   {
                                                     if ((e = table.lookup($1)) == NULL) {
                                                       addError((string) "'\e[1;3m" + $1 + "\e[0m' wasn't declared.");
                                                       $$ = new NodeIDLValue($1, NULL);
-
-                                                    } else if (e->category != "Var") {
+                                                    } 
+                                                    
+                                                    else if (e->category != "Var") {
                                                       addError((string) "'\e[1;3m" + $1 + "\e[0m' isn't a variable.");
                                                       $$ = new NodeIDLValue($1, NULL);
-
-                                                    } else {
-
+                                                    } 
+                                                    
+                                                    else {
                                                       VarEntry *ve = (VarEntry*) e;
                                                       $$ = new NodeIDLValue($1, ve->type); 
                                                     }
@@ -762,18 +790,20 @@ ArrExp    : ArrElems RValue                     {
                                                   string type;
                                                   if ($1 == NULL) {
                                                     type = $2->type_str;
-
-                                                  } else if (
-                                                    ($1->type_str == "$ExpressionError") ||
-                                                    ($2->type_str == "$ExpressionError")
+                                                  } 
+                                                  
+                                                  else if (
+                                                    $1->type_str == "$ExpressionError" ||
+                                                    $2->type_str == "$ExpressionError"
                                                   ) {
                                                     type = "$ExpressionError";
-
-                                                  } else if ($1->type_str != $2->type_str) {
+                                                  } 
+                                                  
+                                                  else if ($1->type_str != $2->type_str) {
                                                     addError(
                                                       (string) "All elements of an array must have the same type" +
                                                       ", but found '\e[1;3m" + $1->type_str + "\e[0m' and " +
-                                                      "'\e[1;3m" + $2->type_str + "'."
+                                                      "'\e[1;3m" + $2->type_str + "\e[0m'."
                                                     );
                                                     type = "$ExpressionError";
 
@@ -816,19 +846,22 @@ FuncCall  : ID OPEN_PAR ArgsExp CLOSE_PAR   {
                                               if ($3 == NULL) {
                                                 $$ = new ExpressionNode();
                                                 $$->type_str = "$ExpressionError";
-
-                                              } else {
+                                              } 
+                                              
+                                              else {
                                                 string type = "";
                                                 Entry *e;
                                                 if ((e = table.lookup($1)) == NULL) {
                                                   addError((string) "'\e[1;3m" + $1 + "\e[0m' wasn't declared.");
                                                   type = "$ExpressionError";
-
-                                                } else if (e->category != "Function") {
+                                                } 
+                                                
+                                                else if (e->category != "Function") {
                                                   addError((string) "\"" + $1 + "\" isn't a function.");
                                                   type = "$ExpressionError";
-                                                  
-                                                } else {
+                                                } 
+                                                
+                                                else {
                                                   FunctionEntry *fe = (FunctionEntry*) e;
                                                   bool correctTypes = true, allMand = true;
 
@@ -844,15 +877,16 @@ FuncCall  : ID OPEN_PAR ArgsExp CLOSE_PAR   {
                                                         );
                                                         correctTypes = false;
                                                       }
+
                                                       if ($3->keywords.count(get<0>(arg))) {
                                                         addError(
                                                           (string) "Got multiple values of '\e[1;3m" + get<0>(arg) + "\e[0m'."
                                                         );
                                                         correctTypes = false;
                                                       }
-
-
-                                                    } else if ($3->keywords.count(get<0>(arg))) {
+                                                    } 
+                                                    
+                                                    else if ($3->keywords.count(get<0>(arg))) {
                                                       if (get<1>(arg) != $3->namedArgs[get<0>(arg)]) {
                                                         addError(
                                                           (string) "Argument '\e[1;3m" + get<0>(arg) + "\e[0m' " +
@@ -862,9 +896,9 @@ FuncCall  : ID OPEN_PAR ArgsExp CLOSE_PAR   {
                                                         correctTypes = false;
                                                       }
                                                       $3->keywords.erase(get<0>(arg));
-
-
-                                                    } else if (get<2>(arg) && allMand) {
+                                                    } 
+                                                    
+                                                    else if (get<2>(arg) && allMand) {
                                                       addError(
                                                         (string) "Missing required positional arguments."
                                                       );
@@ -923,7 +957,7 @@ ArgsExp         : /* lambda */                                { $$ = new NodeFun
                                                                 }
                                                               }
                 | PositionalArgs COMMA NamedArgs              { 
-                                                                if (($1 == NULL) || ($3 == NULL)) {
+                                                                if ($1 == NULL || $3 == NULL) {
                                                                   $$ = NULL;
                                                                 } else {
                                                                   $$ = new NodeFunctionCallArgs($1, $3);
@@ -938,7 +972,6 @@ ArgsExp         : /* lambda */                                { $$ = new NodeFun
                                                                 }
                                                               }
                 ;
-
 PositionalArgs  : RValue                                      { 
                                                                 if ($1->type_str == "$ExpressionError") {
                                                                   $$ = NULL;
@@ -948,9 +981,7 @@ PositionalArgs  : RValue                                      {
                                                                 }
                                                               }
                 | PositionalArgs COMMA RValue                 { 
-                                                                if (($3->type_str == "$ExpressionError") ||
-                                                                    ($1 == NULL) ) 
-                                                                {
+                                                                if ($3->type_str == "$ExpressionError" || $1 == NULL) {
                                                                   $$ = NULL;
                                                                 } else {
                                                                   $$ = new NodeFunctionCallPositionalArgs($1, $3);
@@ -961,7 +992,6 @@ PositionalArgs  : RValue                                      {
                                                                 }
                                                               }
                 ;
-
 NamedArgs       : ID ASSIGNMENT RValue                        { 
                                                                 if ($3->type_str == "$ExpressionError") {
                                                                   $$ = NULL;
@@ -978,18 +1008,21 @@ NamedArgs       : ID ASSIGNMENT RValue                        {
                                                                     (string) "Argument '\e[1;3m" + $3 + "\e[0m' repeated"
                                                                   );
                                                                   $$ = NULL;
-                                                                  
-                                                                } else if ($1->currentArgs.count($3)) {
+                                                                } 
+                                                                
+                                                                else if ($1->currentArgs.count($3)) {
                                                                   addError(
                                                                     (string) "Got multiple values of '\e[1;3m" + $3 + "\e[0m'."
                                                                   );
-                                                                } else if (
+                                                                } 
+                                                                
+                                                                else if (
                                                                   ($1 == NULL) || 
                                                                   ($5->type_str == "$ExpressionError")
                                                                 )  {
                                                                   $$ = NULL;
-
                                                                 } 
+                                                                
                                                                 else {
                                                                   $$->currentArgs = $1->currentArgs;
                                                                   $$->currentArgs[$3] = $5->type_str;
@@ -1004,62 +1037,125 @@ NamedArgs       : ID ASSIGNMENT RValue                        {
 
 /* ================= UNION DEFINITION ================= */
 UnionDef  : UnionId OPEN_C_BRACE UnionBody CLOSE_C_BRACE  { 
-                                                            $$ = new NodeUnionDef($1, $3);
-                                                            int def_s = table.currentScope();
-                                                            table.exitScope(); 
-                                                            int s = table.currentScope();
-                                                            Entry *e = new StructureEntry($1, s, "Structure", def_s);
-                                                            table.insert(e);
+                                                            if ($1 == "" || $3 == NULL) {
+                                                              $$ = new NodeError();
+                                                            } else {
+                                                              $$ = new NodeUnionDef($1, $3);
+
+                                                              int def_s = table.currentScope();
+                                                              table.exitScope(); 
+                                                              int s = table.currentScope();
+
+                                                              Entry *e = new StructureEntry($1, s, "Structure", def_s);
+                                                              table.insert(e);
+                                                            }
                                                           }
           ;
 UnionId   : UNION IdDef                                   { table.newScope(); $$ = $2; }
           ;  
 UnionBody	: Type IdDef SEMICOLON                          { 
-                                                            $$ = new NodeUnionFields(NULL, $1, $2); 
-                                                            int s = table.currentScope();
-                                                            Entry *e = new VarEntry($2, s, "Field", $1);
-                                                            table.insert(e);
+                                                            if ($2 == "" || $1->toString() == "$TypeError") {
+                                                              $$ = NULL;
+                                                            } else {
+                                                              $$ = new NodeUnionFields(NULL, $1, $2); 
+                                                              int s = table.currentScope();
+                                                              Entry *e = new VarEntry($2, s, "Field", $1);
+                                                              table.insert(e);
+                                                            }
                                                           }
 					| UnionBody Type IdDef SEMICOLON                { 
-                                                            $$ = new NodeUnionFields($1, $2, $3); 
-                                                            int s = table.currentScope();
-                                                            Entry *e = new VarEntry($3, s, "Field", $2);
-                                                            table.insert(e);
+                                                            if ($1 == NULL || $3 == "" || $2->toString() == "$TypeError") {
+                                                              $$ = NULL;
+                                                            } else {
+                                                              $$ = new NodeUnionFields($1, $2, $3); 
+                                                              int s = table.currentScope();
+                                                              Entry *e = new VarEntry($3, s, "Field", $2);
+                                                              table.insert(e);
+                                                            }
                                                           }
           ;
 
 /* ================ REGISTER DEFINITION ================ */
 RegDef    : RegId OPEN_C_BRACE RegBody CLOSE_C_BRACE  { 
-                                                        $$ = new NodeRegDef($1, $3);
-                                                        int def_s = table.currentScope();
-                                                        table.exitScope();
-                                                        int s = table.currentScope();
-                                                        Entry *e = new StructureEntry($1, s, "Structure", def_s);
-                                                        table.insert(e);
+                                                        if ($1 == "" || $3 == NULL) {
+                                                          $$ = new NodeError();
+                                                        } else {
+                                                          $$ = new NodeRegDef($1, $3);
+
+                                                          int def_s = table.currentScope();
+                                                          table.exitScope();
+                                                          int s = table.currentScope();
+
+                                                          Entry *e = new StructureEntry($1, s, "Structure", def_s);
+                                                          table.insert(e);
+                                                        }
                                                       }
           ;   
 RegId     : REGISTER IdDef                            { table.newScope(); $$ = $2; }
           ; 
 RegBody	  : Type IdDef OptAssign SEMICOLON            { 
-                                                        $$ = new NodeRegFields(NULL, $1, $2, $3);
-                                                        int s = table.currentScope();
-                                                        Entry *e = new VarEntry($2, s, "Field", $1);
-                                                        table.insert(e);
+                                                        if (
+                                                          $2 == "" || $1->toString() == "$TypeError" ||
+                                                          ($3 != NULL && $3->type_str == "$ExpressionError")
+                                                        ) {
+                                                          $$ = NULL;
+                                                        } 
+
+                                                        else if ($3 != NULL && $1->toString() != $3->type_str) {
+                                                          addError(
+                                                            "Can't assign a '\e[1;3m" + $3->type_str +
+                                                            "\e[0m' to a '\e[1;3m" + $1->toString() + "\e[0m'."
+                                                          );
+                                                          $$ = NULL;
+                                                        }
+                                                        
+                                                        else {
+                                                          $$ = new NodeRegFields(NULL, $1, $2, $3);
+                                                          int s = table.currentScope();
+                                                          Entry *e = new VarEntry($2, s, "Field", $1);
+                                                          table.insert(e);
+                                                        }
                                                       }
 				  |	RegBody Type IdDef OptAssign SEMICOLON    { 
-                                                        $$ = new NodeRegFields($1, $2, $3, $4);
-                                                        int s = table.currentScope();
-                                                        Entry *e = new VarEntry($3, s, "Field", $2);
-                                                        table.insert(e);
+                                                        if ($3 == "" || $2->toString() == "$TypeError") {
+                                                          $$ = NULL;
+                                                        } 
+
+                                                        else if ($4 != NULL && $2->toString() != $4->type_str) {
+                                                          addError(
+                                                            "Can't assign a '\e[1;3m" + $4->type_str +
+                                                            "\e[0m' to a '\e[1;3m" + $2->toString() + "\e[0m'."
+                                                          );
+                                                          $$ = NULL;
+                                                        }
+
+                                                        else if ($1 == NULL) {
+                                                          $$ = NULL;
+                                                        }
+                                                        
+                                                        else {
+                                                          $$ = new NodeRegFields($1, $2, $3, $4);
+                                                          int s = table.currentScope();
+                                                          Entry *e = new VarEntry($3, s, "Field", $2);
+                                                          table.insert(e);
+                                                        }
                                                       }
           ;
 
-
-
 /* ===================== CONDITIONALS ===================== */
-Conditional : If Exp THEN I OptElsif OptElse DONE   { 
+Conditional : If Cond THEN I OptElsif OptElse DONE  { 
                                                       $$ = new NodeConditional($2, $4, $5, $6);
                                                       table.exitScope(); 
+                                                    }
+            ;
+Cond        : Exp                                   {
+                                                      if ($1->type_str != "$ExpressionError" && $1->type_str != "Bool") {
+                                                        addError(
+                                                          "Condition must be a '\e[1;3mBool\e[0m' but '\e[1;3m" +
+                                                          $1->type_str + "\e[0m' found."
+                                                        );
+                                                      }
+                                                      $$ = $1;
                                                     }
             ;
 If          : IF                                    { table.newScope(); }
@@ -1067,8 +1163,8 @@ If          : IF                                    { table.newScope(); }
 OptElsif    : /* lambda */                          { $$ = NULL; }
 						| Elsifs                                { $$ = $1; }
             ;
-Elsifs      : Elsif Exp THEN I                      { $$ = new NodeElsif(NULL, $2, $4); }
-						| Elsifs Elsif Exp THEN I               { $$ = new NodeElsif($1, $3, $5); }
+Elsifs      : Elsif Cond THEN I                     { $$ = new NodeElsif(NULL, $2, $4); }
+						| Elsifs Elsif Cond THEN I              { $$ = new NodeElsif($1, $3, $5); }
             ;
 Elsif       : ELSIF                                 { 
                                                       table.exitScope();
@@ -1128,6 +1224,8 @@ RoutDef   : RoutSign OPEN_C_BRACE Actions CLOSE_C_BRACE   {
 
                                                               $$ = new NodeRoutineDef($1, $3); 
                                                             }
+
+                                                            table.ret_types.pop_back();
                                                           }
           ;  
 RoutSign  : RoutId OPEN_PAR RoutArgs CLOSE_PAR OptReturn  {
@@ -1146,6 +1244,8 @@ RoutSign  : RoutId OPEN_PAR RoutArgs CLOSE_PAR OptReturn  {
                                                               
                                                               table.newScope();
                                                               $$ = new NodeRoutineSign($1, $3, $5);
+
+                                                              table.ret_types.push_back($5->toString());
                                                             }
                                                           }
           ;
@@ -1224,18 +1324,22 @@ MandArgs  : Type OptRef IdDef                             {
                                                           }
           ;   
 OptArgs   : Type OptRef IdDef ASSIGNMENT RValue           { 
-                                                            if (($1->toString() == "$TypeError") ||
-                                                                ($5->type_str == "$ExpressionError")) {
+                                                            if (
+                                                              $1->toString() == "$TypeError" ||
+                                                              $5->type_str == "$ExpressionError"
+                                                            ) {
                                                               $$ = NULL;
-
-                                                            } else if ($1->toString() != $5->type_str) {
+                                                            } 
+                                                            
+                                                            else if ($1->toString() != $5->type_str) {
                                                               addError(
                                                                 "Can't assign a '\e[1;3m" + $5->type_str +
                                                                 "\e[0m' to a '\e[1;3m" + $1->toString() + "\e[0m'."
                                                               );
                                                               $$ = NULL;
-                                                              
-                                                            } else {
+                                                            } 
+                                                            
+                                                            else {
                                                               $$ = new NodeRoutArgDef(
                                                                 NULL, $1, $2, $3, $5
                                                               );
@@ -1249,25 +1353,31 @@ OptArgs   : Type OptRef IdDef ASSIGNMENT RValue           {
                                                           }
           | OptArgs COMMA Type OptRef ID 
             ASSIGNMENT RValue                             { 
-                                                            if (($3->toString() == "$TypeError") ||
-                                                                ($7->type_str == "$ExpressionError")) {
+                                                            if (
+                                                              $3->toString() == "$TypeError" ||
+                                                              $7->type_str == "$ExpressionError"
+                                                            ) {
                                                               $$ = NULL;
-
-                                                            } else if ($3->toString() != $7->type_str) {
+                                                            } 
+                                                            
+                                                            else if ($3->toString() != $7->type_str) {
                                                               addError(
                                                                 "Can't assign a '\e[1;3m" + $7->type_str +
                                                                 "\e[0m' to a '\e[1;3m" + $3->toString() + "\e[0m'."
                                                               );
                                                               $$ = NULL;
-
-                                                            } else if (! table.verifyInsert($5)) {
+                                                            } 
+                                                            
+                                                            else if (! table.verifyInsert($5)) {
                                                               addError((string) "Redefinition of '\e[1;3m" + $5 + "\e[0m'.");
                                                               $$ = NULL;
+                                                            } 
                                                             
-                                                            } else if ($1 == NULL) {
+                                                            else if ($1 == NULL) {
                                                               $$ = NULL;
-                                                              
-                                                            } else {
+                                                            } 
+                                                            
+                                                            else {
                                                               $$ = new NodeRoutArgDef(
                                                                 $1, $3, $4, $5, $7
                                                               );
@@ -1291,6 +1401,30 @@ OptReturn : /* lambda */                                  { $$ = new PrimitiveTy
           ; 
 Actions   : /* lambda */                                  { $$ = NULL; }
 				  | Actions Action                                { $$ = new NodeActions($1, $2); }
+          | Actions RETURN RValue SEMICOLON               {
+                                                            if ($3->type_str != table.ret_types.back()) {
+                                                              addError(
+                                                                "Expected return type '\e[1;3m" + 
+                                                                table.ret_types.back() + "\e[0m' but " +
+                                                                "'\e[1;3m" + $3->type_str + "\e[0m' found."
+                                                              );
+                                                              $$ = new NodeError();
+                                                            } else {
+                                                              $$ = new NodeReturn($3);
+                                                            }
+                                                          }
+          | Actions RETURN SEMICOLON                      {
+                                                            if ("Unit" != table.ret_types.back()) {
+                                                              addError(
+                                                                "Expected return type '\e[1;3m" + 
+                                                                table.ret_types.back() + "\e[0m' but " +
+                                                                "'\e[1;3mUnit\e[0m' found ."
+                                                              );
+                                                              $$ = new NodeError();
+                                                            } else {
+                                                              $$ = new NodeReturn();
+                                                            }
+                                                          }
           ;
 
 %%
