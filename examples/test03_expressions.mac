@@ -1,0 +1,16 @@
+let Int i;
+let ^Float[1] f;
+
+let Float q = 1 + i + f;
+let Float q = 1 + i;
+let Float q = 1 + i + ----^(f[0]);
+let Bool b = (True == False <= 1);
+let Bool b = (True == !!!!False == False);
+
+def F() => Float {}
+
+let Char a = F();
+let Float w = (1 + i) --^(f[0]) ** F();
+
+let Char[5] hello = ['W', 0, 'r', 'l', 'd'];
+let String[5] lorem = ["Ipsu", "No ", ['S', 'e', ' ', 'q', 'u', 'e'], "poner"];

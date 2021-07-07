@@ -36,8 +36,8 @@ class SymbolsTable {
     int lastScope;
 
   public:
-    // Return types in a function definition.
-    vector<string> ret_types;
+    // Return type in a function definition.
+    string ret_type;
 
     SymbolsTable(void);
 

@@ -1,0 +1,15 @@
+let Int i = 0;
+
+let Int a = 'b';
+let ^^(A[1]) a;
+let ^^(i[1]) a;
+let Char a;
+let Int a;
+
+a = 1;
+a = "ok";
+a = 'o';
+
+forget a;
+let ^Float p = new Float;
+forget p;

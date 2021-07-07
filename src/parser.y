@@ -265,7 +265,17 @@ VarInst     : VarDef                    { $$ = $1; }
             | FORGET LValue             { 
                                           if ($2->type == NULL) {
                                             $$ = new NodeError();
-                                          } else {
+                                          } 
+
+                                          else if ($2->type->category != "Pointer") {
+                                            addError(
+                                              "Expected a pointer but '\e[1;3m" +
+                                              $2->type->toString() + "\e[0m' found."
+                                            );
+                                            $$ = new NodeError();
+                                          }
+                                          
+                                          else {
                                             $$ = new NodeForget($2);
                                           }
                                         }
@@ -375,7 +385,7 @@ Type	: Type OPEN_BRACKET Exp CLOSE_BRACKET {
                                               } 
                                               
                                               else if (e->category != "Type" && e->category != "Structure") {
-                                                addError((string) "\"" + $1 + "\" isn't a type.");
+                                                addError((string) "'\e[1;3m" + $1 + "\e[0m' isn't a type.");
                                                 $$ = new PrimitiveType("$TypeError");
                                               } 
                                               
@@ -388,7 +398,7 @@ Type	: Type OPEN_BRACKET Exp CLOSE_BRACKET {
       | T_CHAR                              { $$ = new PrimitiveType($1); }
       | T_INT                               { $$ = new PrimitiveType($1); }
       | T_FLOAT                             { $$ = new PrimitiveType($1); }
-      | T_STRING                            { $$ = new PrimitiveType($1); }
+      | T_STRING                            { $$ = new ArrayType(new PrimitiveType("Char"), new NodeINT(1)); }
       ;
 
 /* ======================= LVALUES ======================= */
@@ -404,6 +414,17 @@ LValue	:	LValue OPEN_BRACKET Exp CLOSE_BRACKET   {
                                                       );
                                                       $$ = new NodeArrayLValue($1, $3, NULL); 
                                                     } 
+
+                                                    else if (
+                                                      $3->type_str != "$ExpressionError" &&
+                                                      $3->type_str != "Int"
+                                                    ) {
+                                                      addError(
+                                                        "Expected a '\e[1;3mInt\e[0m' but '\e[1;3m" +
+                                                        $3->type_str + "\e[0m' found."
+                                                      );
+                                                      $$ = new NodeArrayLValue($1, $3, NULL); 
+                                                    }
 
                                                     else if ($3->type_str == "$ExpressionError") {
                                                       $$ = new NodeArrayLValue($1, $3, NULL);
@@ -857,7 +878,7 @@ FuncCall  : ID OPEN_PAR ArgsExp CLOSE_PAR   {
                                                 } 
                                                 
                                                 else if (e->category != "Function") {
-                                                  addError((string) "\"" + $1 + "\" isn't a function.");
+                                                  addError((string) "'\e[1;3m" + $1 + "\e[0m' isn't a function.");
                                                   type = "$ExpressionError";
                                                 } 
                                                 
@@ -1003,17 +1024,11 @@ NamedArgs       : ID ASSIGNMENT RValue                        {
                                                               }
                 | NamedArgs COMMA ID ASSIGNMENT RValue        { 
                                                                 $$ = new NodeFunctionCallNamedArgs($1, $3, $5); 
-                                                                if ($$->currentArgs.count($3) != 0) {
-                                                                  addError(
-                                                                    (string) "Argument '\e[1;3m" + $3 + "\e[0m' repeated"
-                                                                  );
-                                                                  $$ = NULL;
-                                                                } 
-                                                                
-                                                                else if ($1->currentArgs.count($3)) {
+                                                                if ($1 != NULL && $1->currentArgs.count($3)) {
                                                                   addError(
                                                                     (string) "Got multiple values of '\e[1;3m" + $3 + "\e[0m'."
                                                                   );
+                                                                  $$ = NULL;
                                                                 } 
                                                                 
                                                                 else if (
@@ -1181,7 +1196,7 @@ Else        : ELSE                                  {
             ;
 
 /* ======================== LOOPS ======================== */
-LoopWhile : While Exp DO I DONE                       { 
+LoopWhile : While Cond DO I DONE                       { 
                                                         $$ = new NodeWhile($2, $4); 
                                                         table.exitScope();
                                                       }
@@ -1225,11 +1240,11 @@ RoutDef   : RoutSign OPEN_C_BRACE Actions CLOSE_C_BRACE   {
                                                               $$ = new NodeRoutineDef($1, $3); 
                                                             }
 
-                                                            table.ret_types.pop_back();
+                                                            table.ret_type = "";
                                                           }
           ;  
 RoutSign  : RoutId OPEN_PAR RoutArgs CLOSE_PAR OptReturn  {
-                                                            if (($3 == NULL) || ($5->toString() == "$TypeError")) {
+                                                            if ($3 == NULL || $5->toString() == "$TypeError") {
                                                               NodeError *err = new NodeError();
                                                               err->errInfo = $1;
                                                               $$ = err;
@@ -1244,8 +1259,10 @@ RoutSign  : RoutId OPEN_PAR RoutArgs CLOSE_PAR OptReturn  {
                                                               
                                                               table.newScope();
                                                               $$ = new NodeRoutineSign($1, $3, $5);
+                                                            }
 
-                                                              table.ret_types.push_back($5->toString());
+                                                            if ($5->toString() != "$TypeError") {
+                                                              table.ret_type = $5->toString();
                                                             }
                                                           }
           ;
@@ -1293,7 +1310,7 @@ RoutArgs  : /* lambda */                                  { $$ = new NodeRoutArg
                                                           }
           ;   
 MandArgs  : Type OptRef IdDef                             { 
-                                                            if ($1->toString() == "$TypeError") {
+                                                            if ($3 == "" || $1->toString() == "$TypeError") {
                                                               $$ = NULL;
                                                             } else {
                                                               $$ = new NodeRoutArgDef(
@@ -1307,7 +1324,10 @@ MandArgs  : Type OptRef IdDef                             {
                                                             }
                                                           }
           | MandArgs COMMA Type OptRef IdDef              { 
-                                                            if (($1 == NULL) || ($3->toString() == "$TypeError")) {
+                                                            if (
+                                                              $1 == NULL || $5 == "" ||
+                                                              $3->toString() == "$TypeError"
+                                                            ) {
                                                               $$ = NULL;
                                                             } else {
                                                               $$ = new NodeRoutArgDef(
@@ -1338,6 +1358,10 @@ OptArgs   : Type OptRef IdDef ASSIGNMENT RValue           {
                                                               );
                                                               $$ = NULL;
                                                             } 
+
+                                                            else if ($3 == "") {
+                                                              $$ = NULL;
+                                                            }
                                                             
                                                             else {
                                                               $$ = new NodeRoutArgDef(
@@ -1351,7 +1375,7 @@ OptArgs   : Type OptRef IdDef ASSIGNMENT RValue           {
                                                               table.insert(e);
                                                             }
                                                           }
-          | OptArgs COMMA Type OptRef ID 
+          | OptArgs COMMA Type OptRef IdDef 
             ASSIGNMENT RValue                             { 
                                                             if (
                                                               $3->toString() == "$TypeError" ||
@@ -1368,12 +1392,7 @@ OptArgs   : Type OptRef IdDef ASSIGNMENT RValue           {
                                                               $$ = NULL;
                                                             } 
                                                             
-                                                            else if (! table.verifyInsert($5)) {
-                                                              addError((string) "Redefinition of '\e[1;3m" + $5 + "\e[0m'.");
-                                                              $$ = NULL;
-                                                            } 
-                                                            
-                                                            else if ($1 == NULL) {
+                                                            else if ($1 == NULL || $5 == "") {
                                                               $$ = NULL;
                                                             } 
                                                             
@@ -1402,10 +1421,13 @@ OptReturn : /* lambda */                                  { $$ = new PrimitiveTy
 Actions   : /* lambda */                                  { $$ = NULL; }
 				  | Actions Action                                { $$ = new NodeActions($1, $2); }
           | Actions RETURN RValue SEMICOLON               {
-                                                            if ($3->type_str != table.ret_types.back()) {
+                                                            if (
+                                                              table.ret_type != "" &&
+                                                              $3->type_str != table.ret_type
+                                                            ) {
                                                               addError(
                                                                 "Expected return type '\e[1;3m" + 
-                                                                table.ret_types.back() + "\e[0m' but " +
+                                                                table.ret_type + "\e[0m' but " +
                                                                 "'\e[1;3m" + $3->type_str + "\e[0m' found."
                                                               );
                                                               $$ = new NodeError();
@@ -1414,10 +1436,13 @@ Actions   : /* lambda */                                  { $$ = NULL; }
                                                             }
                                                           }
           | Actions RETURN SEMICOLON                      {
-                                                            if ("Unit" != table.ret_types.back()) {
+                                                            if (
+                                                              table.ret_type != "" &&
+                                                              "Unit" != table.ret_type
+                                                            ) {
                                                               addError(
                                                                 "Expected return type '\e[1;3m" + 
-                                                                table.ret_types.back() + "\e[0m' but " +
+                                                                table.ret_type + "\e[0m' but " +
                                                                 "'\e[1;3mUnit\e[0m' found ."
                                                               );
                                                               $$ = new NodeError();

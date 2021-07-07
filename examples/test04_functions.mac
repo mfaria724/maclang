@@ -1,0 +1,20 @@
+def F(Int a, Char a, Float b = 1.0, ^Int a = 1) => Int {
+    return 1;
+    return a;
+    return 'a';
+    return;
+}
+
+def F(Int a, Char @c, ^Int khe = new Int, String ola = "k ase?", Bool[10] b = [False]) {
+    let Int a = 'a';
+    return 1;
+}
+
+def F() {}
+
+g();
+let Int g;
+g();
+
+F('a', a=4, a=2, ola="nada", z=1);
+F(0, c='c', b=[True]);

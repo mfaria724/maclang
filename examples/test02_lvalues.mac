@@ -1,0 +1,18 @@
+let ^^(^^(^Int)[6][4])[9][2] wtf;
+
+let Int a = wtf[0][0][0];
+let Int a = wtf[0]['a'];
+let Int a = ^wtf;
+let Int a = wtf.a;
+
+def F() {}
+let Int a = ^F;
+
+register R {
+  Int ok = 0;
+}
+let R r;
+
+let Int a = r.o;
+
+let Int a = r.ok;

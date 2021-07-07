@@ -1,0 +1,25 @@
+union U {
+    Int i;
+    Float f;
+}
+
+let U u;
+u.i = 1;
+u.f = 'a';
+
+register R {
+    Int q = 0;
+    Float f = "ua";
+    Char c;
+}
+
+let R r;
+
+register R {
+    Int q = 0;
+    String f = "ua";
+    Char c;
+}
+
+let ^R r;
+(^r).f = "uaaaaaa";
