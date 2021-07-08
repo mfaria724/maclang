@@ -16,3 +16,12 @@ let R r;
 let Int a = r.o;
 
 let Int a = r.ok;
+
+${
+  Error: '^(^(((^(^(^(Int))))[])[]))' type can't be indexed.
+  Error: Expected a 'Int' but 'Char' found.
+  Error: '((^(^(((^(^(^(Int))))[])[])))[])[]' type can't be desreferenced.
+  Error: '((^(^(((^(^(^(Int))))[])[])))[])[]' type can't be accessed.
+  Error: 'F' isn't a variable.
+  Error: 'R' has no member 'o'.
+}$

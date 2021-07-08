@@ -13,3 +13,22 @@ a = 'o';
 forget a;
 let ^Float p = new Float;
 forget p;
+
+# Error: Can't assign a 'Char' to a 'Int'.
+# Error: 'A' wasn't declared.
+# Error: 'i' isn't a type.
+# Error: Redefinition of 'a'.
+# Error: Can't assign a 'Int' to a 'Char'.
+# Error: Can't assign a '(Char)[]' to a 'Char'.
+# Error: Expected a pointer but 'Char' found.
+
+${
+  Error: Can't assign a 'Char' to a 'Int'.
+  Error: 'A' wasn't declared.
+  Error: 'i' isn't a type.
+  Error: Redefinition of 'a'. 
+  Error: Can't assign a 'Int' to a 'Char'.
+  Error: Can't assign a '(Char)[]' to a 'Char'.
+  Error: Expected a pointer but 'Char' found.
+}$
+

@@ -1,0 +1,116 @@
+# Comentario de linea.
+${
+  Comentario
+  multi
+  linea
+}$
+
+
+# tipos primitivos
+let Int j = 1;                    
+let Char c = 'A';                     
+let Bool b;                          
+let Float f = 1.5;                    
+let Int x;                  
+let Int[10] y = [x+1,3, x---0];         
+let Float q4 = -(x ** x + 1.0);
+
+# tipos complejos
+## arreglos
+let Bool[4] array;
+let Int[6][x] integers = [[1, 1], [90], [42], [x, x, x]];
+
+## strings
+let String hello = "world";
+let String aja = ['a', 'y', ' ', 'n', 'o'];
+let Char[4] ohno = "ohwell";
+let Char[3] press = ['F'];
+
+## registros
+register registro {
+  Int numero = 15;
+  Int numero2;
+  Int numero3 = 42;
+  Int numero4;
+}
+
+# uniones
+union unio {
+  Int entero;
+  Bool booleano;
+  registro r;
+  ^^(^registro[3])[10] rpp;
+}
+
+def myfunction(unio U) => Int {
+  let Int myInt;
+}
+
+if ! True && (42**6 >= 0/0) && (1/1 < integers[ y[y[y[x]]] ** 4][0]) || (False == (array[-1] != !!!!!!! (0/0 < 0/0))) then 
+  def a() {}              
+  register registro {
+    Int numero = 15;
+  }
+done
+
+register Y {
+  Int z;
+}
+union X {
+  Y y;
+}
+register P {
+  ^Int p;
+}
+
+let Int ppp; 
+
+def myfunc(^(^Bool[5]) @ khe, Bool ok, Int a = 1, Char c = '2') => Int { 
+  let X x;
+  let ^(X[1]) xs;
+  let ^^^^^Int ref;
+  let ^Int y;
+  let P p;
+  for (i; -100; 0++100; 4) do   
+
+    let ^Int z = new Int;                     
+    let Int k;                            
+    x.y.z = (((((x))))).y.z + 1 + (x.y).z + ppp;    
+    ^xs[^y**4] = x;                            
+    ^xs[^(p.p) + ^(p.p) * ^(p.p)].y.z = 0;  
+    ^^^^(((((((((ref))))))))) = y;    
+
+    if (x.y.z > 0) then 
+      ^y = 1;
+    elsif (x.y.z < -50) then 
+      ^(p.p) = 0;
+    elsif False then 
+      let Int a = -1;                                 
+    else 
+      x = x;
+    done 
+
+    while i < 100 do i = i+++1; done
+  done
+
+  forget ref;
+}
+
+if True then 
+  let Int a = 1;                            
+  register registro {
+    Int numero = 15;
+  }
+done
+
+myfunc(new ^Bool[5], c = 'c', ok = False); 
+
+def A() => Int {
+  while True do # do
+    for (i; 0; 100; 0.1) do
+      if 1 < 2 then 
+        x = A() + A() * A() % A();
+      done 
+    done 
+  done
+} 

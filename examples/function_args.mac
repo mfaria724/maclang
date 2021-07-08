@@ -1,8 +1,0 @@
-def A(Int a, Int b, Int c = 1, Int d = 3) => Int {
-  return 1;
-  return a+b+c+d;
-  return 'a';
-  return;
-}
-
-let Int x = 1 + A(1, new Int, d = 5, c = 0);

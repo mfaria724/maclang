@@ -32,7 +32,7 @@
 %}
 
 %%
-\$\{[^(\$\})]*\}\$        { /* ignore multiline line comment */ }
+\$\{[^\$]*\}\$        { /* ignore multiline line comment */ }
 #.*\n                     { yycolumn = 1; /* ignore single line comment */ }
 #.*                       { yycolumn = 1; /* ignore single line comment */ }
 ";"      		              { return SEMICOLON; }

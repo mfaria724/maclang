@@ -18,3 +18,17 @@ g();
 
 F('a', a=4, a=2, ola="nada", z=1);
 F(0, c='c', b=[True]);
+
+${
+  Error: Redefinition of 'a'.
+  Error: Redefinition of 'a'.
+  Error: Can't assign a 'Int' to a '^(Int)'.
+  Error: Expected return type 'Int' but 'Char' found.
+  Error: Expected return type 'Int' but 'Unit' found .
+  Error: Can't assign a 'Char' to a 'Int'.
+  Error: Expected return type 'Unit' but 'Int' found.
+  Error: Redefinition of 'F'.
+  Error: 'g' wasn't declared.
+  Error: 'g' isn't a function.
+  Error: Got multiple values of 'a'.
+}$

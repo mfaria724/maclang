@@ -1,5 +1,3 @@
-# este archivo contiene tokens no identificados
-
 def F(Int a, Int b, Int c = 0) => Float {
     let Int a = 1;
     let Float b = -2.0 + F();

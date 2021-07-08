@@ -14,3 +14,11 @@ let Float w = (1 + i) --^(f[0]) ** F();
 
 let Char[5] hello = ['W', 0, 'r', 'l', 'd'];
 let String[5] lorem = ["Ipsu", "No ", ['S', 'e', ' ', 'q', 'u', 'e'], "poner"];
+
+${
+  Error: Operator '+' don't matches with operand types: 'Int' and '(^(Float))[]'.
+  Error: Can't assign a 'Int' to a 'Float'.
+  Error: Operator '<=' don't matches with operand types: 'Bool' and 'Int'.
+  Error: Can't assign a 'Float' to a 'Char'.
+  Error: All elements of an array must have the same type, but found 'Char' and 'Int'.
+}$

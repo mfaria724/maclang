@@ -221,9 +221,9 @@
 
 %type <ast>           I Inst Action VarInst VarDef Assign UnionDef UnionBody 
 %type <ast>           RegBody Conditional OptElsif Elsifs OptElse Def RegDef
-%type <ast>           LoopWhile LoopFor OptStep RoutDef Actions RoutSign
+%type <ast>           LoopWhile LoopFor RoutDef Actions RoutSign
 %type <expr>          Exp LValue RValue FuncCall Array ArrExp ArrElems
-%type <expr>          OptAssign Cond
+%type <expr>          OptAssign Cond OptStep
 %type <routArgs>      RoutArgs
 %type <routArgsDef>   OptArgs MandArgs
 %type <fcArgs>        ArgsExp
@@ -240,9 +240,8 @@
 
 /* =================== GLOBAL RULES =================== */
 S       : I                   { $$ = new NodeS($1); ast = $$;  }
-        | /* lambda */        { $$ = NULL; }
         ;
-I       : Inst                { $$ = new NodeI(NULL, $1); }
+I       : /* lambda */        { $$ = NULL; }
         | I Inst              { $$ = new NodeI($1, $2); }
         ;
 Inst    : Action              { $$ = $1; }
@@ -1163,7 +1162,7 @@ Conditional : If Cond THEN I OptElsif OptElse DONE  {
                                                       table.exitScope(); 
                                                     }
             ;
-Cond        : Exp                                   {
+Cond        : RValue                                {
                                                       if ($1->type_str != "$ExpressionError" && $1->type_str != "Bool") {
                                                         addError(
                                                           "Condition must be a '\e[1;3mBool\e[0m' but '\e[1;3m" +
@@ -1203,8 +1202,45 @@ LoopWhile : While Cond DO I DONE                       {
           ; 
 While     : WHILE                                     { table.newScope(); }
           ;
-LoopFor   : For OPEN_PAR IdFor SEMICOLON Exp SEMICOLON   
-            Exp OptStep CLOSE_PAR DO I DONE           { 
+LoopFor   : For OPEN_PAR IdFor SEMICOLON RValue SEMICOLON   
+            RValue OptStep CLOSE_PAR DO I DONE        { 
+                                                        if (
+                                                          $5->type_str != "$ExpressionError" &&
+                                                          $5->type_str != "Float" && 
+                                                          $5->type_str != "Int"
+                                                        ) {
+                                                          addError(
+                                                            "Initial value in a for loop must be "
+                                                            "'\e[1;3mInt\e[0m' or '\e[1;3mFloat\e[0m' "
+                                                            "but '\e[1;3m" + $5->type_str + "\e[0m' found."
+                                                          );
+                                                        }
+
+                                                        if (
+                                                          $7->type_str != "$ExpressionError" &&
+                                                          $7->type_str != "Float" && 
+                                                          $7->type_str != "Int"
+                                                        ) {
+                                                          addError(
+                                                            "End value in a for loop must be "
+                                                            "'\e[1;3mInt\e[0m' or '\e[1;3mFloat\e[0m' "
+                                                            "but '\e[1;3m" + $7->type_str + "\e[0m' found."
+                                                          );
+                                                        }
+
+                                                        if (
+                                                          $8 != NULL &&
+                                                          $8->type_str != "$ExpressionError" &&
+                                                          $8->type_str != "Float" && 
+                                                          $8->type_str != "Int"
+                                                        ) {
+                                                          addError(
+                                                            "Step value in a for loop must be "
+                                                            "'\e[1;3mInt\e[0m' or '\e[1;3mFloat\e[0m' "
+                                                            "but '\e[1;3m" + $8->type_str + "\e[0m' found."
+                                                          );
+                                                        }
+
                                                         $$ = new NodeFor($3, $5, $7, $8, $11);
                                                         table.exitScope();
                                                       }
@@ -1220,7 +1256,7 @@ IdFor     : IdDef                                     {
 For       : FOR                                       { table.newScope(); }
           ;
 OptStep   : /* lambda */                              { $$ = NULL; }
-				  | SEMICOLON Exp                             { $$ = $2; }
+				  | SEMICOLON RValue                          { $$ = $2; }
           ;
 
 /* =============== SUBROUTINES DEFINITION =============== */

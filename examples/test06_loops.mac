@@ -1,0 +1,23 @@
+while [True, 1] do done
+
+while "True" do done
+
+while True do 
+    let Float a = 0 / 0;
+done
+
+for (A; '0'; new Int; [-1]) do done
+
+let Char a;
+let Float b = 0.0;
+for (a; 0; -100.0; -5) do 
+    b = b + a;
+done
+
+${
+  Error: All elements of an array must have the same type, but found 'Bool' and 'Int'.
+  Error: Condition must be a 'Bool' but '(Char)[]' found.
+  Error: Initial value in a for loop must be 'Int' or 'Float' but 'Char' found.
+  Error: End value in a for loop must be 'Int' or 'Float' but '^(Int)' found.
+  Error: Step value in a for loop must be 'Int' or 'Float' but '(Int)[]' found.
+}$
