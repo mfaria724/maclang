@@ -6,6 +6,11 @@ let ^^(i[1]) a;
 let Char a;
 let Int a;
 
+let Int x;
+let Int y;
+let Int z;
+x = (y = (z = [^(new Char)][0]));
+
 a = 1;
 a = "ok";
 a = 'o';
@@ -14,21 +19,43 @@ forget a;
 let ^Float p = new Float;
 forget p;
 
-# Error: Can't assign a 'Char' to a 'Int'.
-# Error: 'A' wasn't declared.
-# Error: 'i' isn't a type.
-# Error: Redefinition of 'a'.
-# Error: Can't assign a 'Int' to a 'Char'.
-# Error: Can't assign a '(Char)[]' to a 'Char'.
-# Error: Expected a pointer but 'Char' found.
+^(new String) = "mmm ok";
+
+# Que inutilidad lmao
+forget new Int;
+
+let ^^(^^(^Int)[6][4])[9][2] wtf;
+
+let Int w = wtf[0][0][0];
+let Int w = wtf[0]['a'];
+let Int w = ^wtf;
+let Int w = wtf.a;
+
+def F() {}
+let Int w = ^F;
+
+register R {
+  Int ok = 0;
+}
+let R r;
+
+let Int w = r.o;
+let Int w = r.ok;
 
 ${
-  Error: Can't assign a 'Char' to a 'Int'.
-  Error: 'A' wasn't declared.
-  Error: 'i' isn't a type.
-  Error: Redefinition of 'a'. 
-  Error: Can't assign a 'Int' to a 'Char'.
-  Error: Can't assign a '(Char)[]' to a 'Char'.
-  Error: Expected a pointer but 'Char' found.
+  (3, 17): Error: Can't assign a 'Char' to a 'Int'.
+  (4, 9): Error: 'A' wasn't declared.
+  (5, 9): Error: 'i' isn't a type.
+  (7, 10): Error: Redefinition of 'a'.
+  (12, 32): Error: Can't assign a 'Char' to a 'Int'.
+  (14, 7): Error: Can't assign a 'Int' to a 'Char'.
+  (15, 10): Error: Can't assign a '(Char)[]' to a 'Char'.
+  (18, 10): Error: Expected a pointer but 'Char' found.
+  (29, 25): Error: '^(^(((^(^(^(Int))))[])[]))' type can't be indexed.
+  (30, 24): Error: Expected a 'Int' but 'Char' found.
+  (31, 18): Error: '((^(^(((^(^(^(Int))))[])[])))[])[]' type can't be desreferenced.
+  (32, 18): Error: '((^(^(((^(^(^(Int))))[])[])))[])[]' type can't be accessed.
+  (35, 16): Error: 'F' isn't a variable.
+  (42, 16): Error: 'R' has no member 'o'.
 }$
 

@@ -25,7 +25,7 @@ let ^R r;
 (^r).f = "uaaaaaa";
 
 ${
-  Error: Can't assign a 'Char' to a 'Float'.
-  Error: Can't assign a '(Char)[]' to a 'Float'.
-  Error: 'R' wasn't declared.
+  (8, 11): Error: Can't assign a 'Char' to a 'Float'.
+  (12, 18): Error: Can't assign a '(Char)[]' to a 'Float'.
+  (16, 6): Error: 'R' wasn't declared.
 }$

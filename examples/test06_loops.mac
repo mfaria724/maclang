@@ -15,9 +15,9 @@ for (a; 0; -100.0; -5) do
 done
 
 ${
-  Error: All elements of an array must have the same type, but found 'Bool' and 'Int'.
-  Error: Condition must be a 'Bool' but '(Char)[]' found.
-  Error: Initial value in a for loop must be 'Int' or 'Float' but 'Char' found.
-  Error: End value in a for loop must be 'Int' or 'Float' but '^(Int)' found.
-  Error: Step value in a for loop must be 'Int' or 'Float' but '(Int)[]' found.
+  (1, 16): Error: All elements of an array must have the same type, but found 'Bool' and 'Int'.
+  (3, 16): Error: Condition must be a 'Bool' but '(Char)[]' found.
+  (9, 36): Error: Initial value in a for loop must be 'Int' or 'Float' but 'Char' found.
+  (9, 36): Error: End value in a for loop must be 'Int' or 'Float' but '^(Int)' found.
+  (9, 36): Error: Step value in a for loop must be 'Int' or 'Float' but '(Int)[]' found.
 }$

@@ -40,8 +40,8 @@ class Type {
 class ExpressionNode : public Node {
 
   public: 
-    string type_str;
     Type *type;
+    bool is_lvalue;
 
     ExpressionNode(void) {};
 
@@ -132,7 +132,7 @@ class NodeBinaryOperator : public ExpressionNode {
     Node *right;
 
   public:
-    NodeBinaryOperator(Node *left, string op, Node *rigth, string type);
+    NodeBinaryOperator(Node *left, string op, Node *rigth, Type *type);
 
     void print(void);
 
@@ -148,7 +148,65 @@ class NodeUnaryOperator : public ExpressionNode {
     Node *exp;
 
   public:
-    NodeUnaryOperator(string op, Node *exp, string type);
+    NodeUnaryOperator(string op, Node *exp, Type *type);
+
+    void print(void);
+
+    string toString(void);
+
+    void printTree(vector<bool> *identation);
+};
+
+class NodeID : public ExpressionNode {
+  protected:
+    string id;
+
+  public:
+    NodeID(string id, Type *type);
+
+    void print(void);
+
+    string toString(void);
+
+    void printTree(vector<bool> *identation);
+};
+
+class NodeDot : public ExpressionNode {
+  protected:
+    Node *structure;
+    string id;
+
+  public:
+    NodeDot(Node *structure, string id, Type *type);
+
+    void print(void);
+
+    string toString(void);
+
+    void printTree(vector<bool> *identation);
+};
+
+class NodePointer : public ExpressionNode {
+  protected:
+    Node *pointer;
+
+  public:
+    NodePointer(Node *pointer, Type *type);
+
+    void print(void);
+
+    string toString(void);
+
+    void printTree(vector<bool> *identation);
+};
+
+class NodeArrayAccess : public ExpressionNode {
+  protected:
+    Node *array;
+    Node *index;
+
+  public:
+    NodeArrayAccess(Node *array, Node *index, Type *type);
 
     void print(void);
 
@@ -161,10 +219,10 @@ class NodeUnaryOperator : public ExpressionNode {
 /* Representation of  -> new Type. */
 class NodeNew : public ExpressionNode {
   protected:
-    Type *type;
+    Type *type_pointer;
 
   public:
-    NodeNew(Type *type);
+    NodeNew(Type *type_pointer);
 
     void print(void);
 
@@ -206,68 +264,6 @@ class NodeVarDef : public Node {
     void printTree(vector<bool> *identation);
 };
 
-/* ======================= LVALUE NODES =======================  */
-/* Class for defined id lvalues. */
-class NodeIDLValue : public ExpressionNode {
-  protected:
-    string id;
-
-  public:
-    NodeIDLValue(string id, Type *type);
-
-    void print(void);
-
-    string toString(void);
-
-    void printTree(vector<bool> *identation);
-};
-
-/* Representation of  -> LValue . ID. */
-class NodeDotLValue : public ExpressionNode {
-  protected:
-    Node *lvalue;
-    string id;
-
-  public:
-    NodeDotLValue(Node *lvalue, string id, Type *type);
-
-    void print(void);
-
-    string toString(void);
-
-    void printTree(vector<bool> *identation);
-};
-
-/* Representation of  -> ^ LValue. */
-class NodePointerLValue : public ExpressionNode {
-  protected:
-    Node *lvalue;
-
-  public:
-    NodePointerLValue(Node *lvalue, Type *type);
-
-    void print(void);
-
-    string toString(void);
-
-    void printTree(vector<bool> *identation);
-};
-
-/* Representation of  -> LValue [ Exp ]. */
-class NodeArrayLValue : public ExpressionNode {
-  protected:
-    Node *lvalue;
-    Node *size;
-
-  public:
-    NodeArrayLValue(Node *lvalue, Node *size, Type *type);
-
-    void print(void);
-
-    string toString(void);
-
-    void printTree(vector<bool> *identation);
-};
 
 /* ======================= ARRAY NODES =======================  */
 /* Representation of arrays. */
@@ -276,7 +272,7 @@ class NodeArray : public ExpressionNode {
     Node *elems;
 
   public:
-    NodeArray(Node *elems, string type_str);
+    NodeArray(Node *elems, Type *type);
 
     void print(void);
 
@@ -292,7 +288,9 @@ class NodeArrayElems : public ExpressionNode {
     Node *head;
 
   public:
-    NodeArrayElems(Node *rvalue, string type_str, Node *head);
+    int current_size;
+
+    NodeArrayElems(Node *rvalue, Type *type, Node *head, int current_size);
 
     void print(void);
 
@@ -310,7 +308,7 @@ class NodeFunctionCall : public ExpressionNode {
     bool bEndInst;
 
   public:
-    NodeFunctionCall(string id, Node *args, bool bEndInst, string type);
+    NodeFunctionCall(string id, Node *args, bool bEndInst, Type *type);
 
     void print(void);
 
@@ -635,7 +633,7 @@ class NodeReturn : public Node {
 };
 
 /* ======================= INSTRUCTION NODES =======================  */
-class NodeAssign : public Node {
+class NodeAssign : public ExpressionNode {
   protected:
     Node *lvalue;
     Node *rvalue;
