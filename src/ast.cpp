@@ -574,29 +574,30 @@ void NodeFunctionCallArgs::printTree(vector<bool> *identation) {
   if ((this->positional != NULL) && (this->named != NULL)) {
     printIdentation(identation);
     identation->push_back(true);
-    cout << "├── \e[1;Positional Parameters: \e[0m";
+    cout << "├── ";
     this->positional->printTree(identation);
     identation->pop_back();
 
     printIdentation(identation);
     identation->push_back(false);
-    cout << "└── \e[1;34mNamed Parameters: \e[0m";
+    cout << "└── ";
     this->named->printTree(identation);
     identation->pop_back();
 
   } else if (this->positional != NULL){
     printIdentation(identation);
     identation->push_back(false);
-    cout << "└── \e[1;Positional Parameters: \e[0m";
+    cout << "└── ";
     this->positional->printTree(identation);
     identation->pop_back(); 
 
-  } else {
+  } else if (this->named != NULL){
     printIdentation(identation);
     identation->push_back(false);
-    cout << "└── \e[1;34mNamed Parameters: \e[0m";
+    cout << "└── ";
     this->named->printTree(identation);
     identation->pop_back(); 
+
   }
 }
 
@@ -623,7 +624,7 @@ string NodeFunctionCallPositionalArgs::toString(void) {
 }
 
 void NodeFunctionCallPositionalArgs::printTree(vector<bool> *identation) {
-  cout << "\e[1;34mFunction Call Positional Argument\e[0m\n";
+  cout << "\e[1;34mPositional Parameter\e[0m\n";
 
   if (this->head != NULL) {
     printIdentation(identation);
@@ -670,7 +671,7 @@ string NodeFunctionCallNamedArgs::toString(void) {
 }
 
 void NodeFunctionCallNamedArgs::printTree(vector<bool> *identation) {
-  cout << "\e[1;34mFunction Call Named Argument\e[0m\n";
+  cout << "\e[1;34mNamed Parameter\e[0m\n";
 
   if (this->head != NULL) {
     printIdentation(identation);
@@ -1006,8 +1007,6 @@ void NodeElsif::printTree(vector<bool> *identation) {
   } else {
     printIdentation(identation);
     cout << "└── \e[1;34mBody: \e[0mNULL\n";
-    this->cond->printTree(identation);
-    identation->pop_back();
   }
 }
 
@@ -1255,7 +1254,6 @@ void NodeRoutineSign::printTree(vector<bool> *identation) {
   if (this->args != NULL) {
     printIdentation(identation);
     identation->push_back(true);
-    cout << "├── \e[1;34mParameters: \e[0m";
     this->args->printTree(identation);
     identation->pop_back();
   } else {
@@ -1331,7 +1329,7 @@ void NodeRoutArgs::printTree(vector<bool> *identation) {
     this->oblArgs->printTree(identation);
     identation->pop_back(); 
 
-  } else {
+  } else if (this->optArgs != NULL){
     printIdentation(identation);
     identation->push_back(false);
     cout << "└── \e[1;34mOptional Parameters: \e[0m";

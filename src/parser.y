@@ -245,7 +245,15 @@
 S       : I                   { $$ = new NodeS($1); ast = $$;  }
         ;
 I       : /* lambda */        { $$ = NULL; }
-        | I Inst              { $$ = new NodeI($1, $2); }
+        | I Inst              { 
+                                if ($1 == NULL && $2 == NULL) {
+                                  $$ = NULL;
+                                } else if ($2 == NULL) {
+                                  $$ = $1;
+                                } else {
+                                  $$ = new NodeI($1, $2); 
+                                }
+                              }
         ;
 Inst    : Action              { $$ = $1; }
 				| Def                 { $$ = $1; }
@@ -310,29 +318,25 @@ VarInst     : VarDef                    { $$ = $1; }
             ;
 VarDef      : LET Type IdDef OptAssign  { 
                                           string ltype = $2->toString();
+                                          string rtype = $4 == NULL ? "" : $4->type->toString();
 
-                                          if (
-                                            ltype == "$Error" || 
-                                            $3 == "" ||
-                                            ($4 != NULL && $4->type->toString() == "$Error") 
-                                          ) {
-                                            $$ = new NodeError();
-                                          } 
+                                          if (ltype == "$Error" || $3 == "" || rtype == "$Error") {
+                                            /* ignore */;
+                                          }
                                           
-                                          else if ($4 != NULL && ltype != $4->type->toString()) {
+                                          else if ($4 != NULL && ltype != rtype) {
                                             addError(
-                                              "Can't assign a '\e[1;3m" + $4->type->toString() +
+                                              "Can't assign a '\e[1;3m" + rtype +
                                               "\e[0m' to a '\e[1;3m" + ltype + "\e[0m'."
                                             );
-                                            $$ = new NodeError();
                                           } 
                                           
                                           else {
-                                            $$ = new NodeVarDef($2, $3, $4);
                                             int s = table.currentScope();
                                             Entry *e = new VarEntry($3, s, "Var", $2);
                                             table.insert(e);
                                           }
+                                          $$ = NULL;
                                         }
             ;   
 IdDef       : ID                        {
@@ -684,7 +688,7 @@ Exp   : Exp EQUIV Exp               {
                                       }
                                       
                                     }
-				|	POINTER Exp               { 
+			|	POINTER Exp                 { 
                                       if ($2->type->toString() == "$Error") {
                                         $$ = new NodePointer($2, typeError);
                                       } 
@@ -702,7 +706,7 @@ Exp   : Exp EQUIV Exp               {
                                         $$ = new NodePointer($2, type); 
                                       }
                                     }
-				|	Exp DOT ID                { 
+			|	Exp DOT ID                  { 
                                       Type *type;
                                       if ($1->type->toString() == "$Error") {
                                         type = typeError;
@@ -748,7 +752,7 @@ Exp   : Exp EQUIV Exp               {
 
                                       $$ = new NodeDot($1, $3, type); 
                                     }
-				|	ID                        { 
+			|	ID                          { 
                                       Entry *e;
                                       if ((e = table.lookup($1)) == NULL) {
                                         addError((string) "'\e[1;3m" + $1 + "\e[0m' wasn't declared.");
@@ -879,7 +883,7 @@ ArrElems	: /* lambda */                        { $$ = NULL; }
                                                     addError(
                                                       (string) "All elements of an array must have the same type" +
                                                       ", but found '\e[1;3m" + type1 + "\e[0m' and " +
-                                                      "'\e[1;3m" + type2 + "'."
+                                                      "'\e[1;3m" + type2 + "\e[0m'."
                                                     );
                                                     type = typeError;
                                                     size = 0;
@@ -1078,11 +1082,7 @@ NamedArgs       : ID ASSIGNMENT Exp                           {
 
 /* ================= UNION DEFINITION ================= */
 UnionDef  : UnionId OPEN_C_BRACE UnionBody CLOSE_C_BRACE  { 
-                                                            if ($1 == "" || $3 == NULL) {
-                                                              $$ = new NodeError();
-                                                            } else {
-                                                              $$ = new NodeUnionDef($1, $3);
-
+                                                            if ($1 != "" && $3 != NULL) {
                                                               int def_s = table.currentScope();
                                                               table.exitScope(); 
                                                               int s = table.currentScope();
@@ -1090,6 +1090,8 @@ UnionDef  : UnionId OPEN_C_BRACE UnionBody CLOSE_C_BRACE  {
                                                               Entry *e = new StructureEntry($1, s, "Structure", def_s);
                                                               table.insert(e);
                                                             }
+
+                                                            $$ = NULL;
                                                           }
           ;
 UnionId   : UNION IdDef                                   { table.newScope(); $$ = $2; }
@@ -1118,11 +1120,7 @@ UnionBody	: Type IdDef SEMICOLON                          {
 
 /* ================ REGISTER DEFINITION ================ */
 RegDef    : RegId OPEN_C_BRACE RegBody CLOSE_C_BRACE  { 
-                                                        if ($1 == "" || $3 == NULL) {
-                                                          $$ = new NodeError();
-                                                        } else {
-                                                          $$ = new NodeRegDef($1, $3);
-
+                                                        if ($1 != "" && $3 != NULL) {
                                                           int def_s = table.currentScope();
                                                           table.exitScope();
                                                           int s = table.currentScope();
@@ -1130,6 +1128,8 @@ RegDef    : RegId OPEN_C_BRACE RegBody CLOSE_C_BRACE  {
                                                           Entry *e = new StructureEntry($1, s, "Structure", def_s);
                                                           table.insert(e);
                                                         }
+
+                                                        $$ = NULL;
                                                       }
           ;   
 RegId     : REGISTER IdDef                            { table.newScope(); $$ = $2; }
@@ -1469,7 +1469,15 @@ OptReturn : /* lambda */                                  { $$ = new PrimitiveTy
 				  | RIGHT_ARROW Type                              { $$ = $2; }
           ; 
 Actions   : /* lambda */                                  { $$ = NULL; }
-				  | Actions Action                                { $$ = new NodeActions($1, $2); }
+				  | Actions Action                                { 
+                                                            if ($1 == NULL && $2 == NULL) {
+                                                              $$ = NULL;
+                                                            } else if ($2 == NULL) {
+                                                              $$ = $1;
+                                                            } else {
+                                                              $$ = new NodeActions($1, $2); 
+                                                            }
+                                                          }
           | Actions RETURN Exp SEMICOLON                  {
                                                             if (table.ret_type != "" && $3->type->toString() != table.ret_type) {
                                                               addError(
