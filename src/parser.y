@@ -145,6 +145,7 @@
   NodeFunctionCallArgs *fcArgs;
   NodeFunctionCallPositionalArgs *fcpArgs;
   NodeFunctionCallNamedArgs *fcnArgs;
+  vector<pair<string, ExpressionNode*>> *varList;
 }
 
 %locations
@@ -238,6 +239,7 @@
 %type <boolean>       OptRef
 %type <str>           IdDef IdFor UnionId RegId RoutId
 %type <nS>            S
+%type <varList>       VarDefList
 
 %%
 
@@ -270,85 +272,106 @@ Def     : UnionDef            { $$ = $1; }
         ;
 
 /* ============ VARIABLES DEFINITION ============ */
-VarInst     : VarDef                    { $$ = $1; }
-            | FORGET Exp                { 
-                                          if ($2->type->toString() == "$Error") {
-                                            $$ = new NodeError();
-                                          } 
+VarInst     : VarDef                      { $$ = $1; }
+            | FORGET Exp                  { 
+                                            if ($2->type->toString() == "$Error") {
+                                              $$ = new NodeError();
+                                            } 
 
-                                          else if ($2->type->category != "Pointer") {
-                                            addError(
-                                              "Expected a pointer but '\e[1;3m" +
-                                              $2->type->toString() + "\e[0m' found."
-                                            );
-                                            $$ = new NodeError();
-                                          }
-                                          
-                                          else {
-                                            $$ = new NodeForget($2);
-                                          }
-                                        }
-              | Exp ASSIGNMENT Exp      { 
-                                          string ltype = $1->type->toString();
-                                          string rtype = $3->type->toString();
+                                            else if ($2->type->category != "Pointer") {
+                                              addError(
+                                                "Expected a pointer but '\e[1;3m" +
+                                                $2->type->toString() + "\e[0m' found."
+                                              );
+                                              $$ = new NodeError();
+                                            }
 
-                                          if (ltype == "$Error" || rtype == "$Error") {
-                                            $$ = new ExpressionNode();
-                                          } 
+                                            else {
+                                              $$ = new NodeForget($2);
+                                            }
+                                          }
+              | Exp ASSIGNMENT Exp        { 
+                                            string ltype = $1->type->toString();
+                                            string rtype = $3->type->toString();
 
-                                          else if (! $1->is_lvalue) {
-                                            addError(
-                                              "Can't assign to a R-Value."
-                                            );
-                                            $$ = new ExpressionNode();
+                                            if (ltype == "$Error" || rtype == "$Error") {
+                                              $$ = new ExpressionNode();
+                                            } 
+
+                                            else if (! $1->is_lvalue) {
+                                              addError(
+                                                "Can't assign to a R-Value."
+                                              );
+                                              $$ = new ExpressionNode();
+                                            }
+
+                                            else if (ltype != rtype) {
+                                              addError(
+                                                "Can't assign a '\e[1;3m" + rtype +
+                                                "\e[0m' to a '\e[1;3m" + ltype + "\e[0m'."
+                                              );
+                                              $$ = new ExpressionNode();
+                                            } 
+
+                                            else {
+                                              $$ = new NodeAssign($1, $3); 
+                                            }
                                           }
-                                          
-                                          else if (ltype != rtype) {
-                                            addError(
-                                              "Can't assign a '\e[1;3m" + rtype +
-                                              "\e[0m' to a '\e[1;3m" + ltype + "\e[0m'."
-                                            );
-                                            $$ = new ExpressionNode();
-                                          } 
-                                          
-                                          else {
-                                            $$ = new NodeAssign($1, $3); 
-                                          }
-                                        }
             ;
-VarDef      : LET Type IdDef OptAssign  { 
-                                          string ltype = $2->toString();
-                                          string rtype = $4 == NULL ? "" : $4->type->toString();
+VarDef      : LET Type VarDefList         { 
+                                            string type = $2->toString();
+                                            $$ = NULL;
 
-                                          if (ltype == "$Error" || $3 == "" || rtype == "$Error") {
-                                            /* ignore */;
-                                          }
-                                          
-                                          else if ($4 != NULL && ltype != rtype) {
-                                            addError(
-                                              "Can't assign a '\e[1;3m" + rtype +
-                                              "\e[0m' to a '\e[1;3m" + ltype + "\e[0m'."
-                                            );
+                                            if (type != "$Error") {
+                                              for (pair<string, ExpressionNode*> vardef : *$3) {
+                                                string rtype = vardef.second == NULL ?
+                                                  "" : vardef.second->type->toString();
+
+                                                if (vardef.second != NULL && type != rtype) {
+                                                  addError(
+                                                    "Can't assign a '\e[1;3m" + rtype +
+                                                    "\e[0m' to a '\e[1;3m" + type + "\e[0m'."
+                                                  );
+                                                } else {
+                                                  if (vardef.second != NULL) {
+                                                    $$ = new NodeAssignList(
+                                                      $$, 
+                                                      new NodeAssign(new NodeID(vardef.first, $2), vardef.second)
+                                                    );
+                                                  }
+
+                                                  int s = table.currentScope();
+                                                  Entry *e = new VarEntry(vardef.first, s, "Var", $2);
+                                                  table.insert(e);
+                                                }
+                                              }
+                                            }
                                           } 
-                                          
-                                          else {
-                                            int s = table.currentScope();
-                                            Entry *e = new VarEntry($3, s, "Var", $2);
-                                            table.insert(e);
+            ;
+VarDefList  : IdDef OptAssign             {
+                                            $$ = new vector<pair<string, ExpressionNode*>>;
+                                            if ($1 != "" && ($2 == NULL || $2->type->toString() != "$Error")) {
+                                              $$->push_back({$1, $2});
+                                            }
+                                          }         
+            | VarDefList COMMA IdDef OptAssign  
+                                          {
+                                            $$ = $1;
+                                            if ($3 != "" && ($4 == NULL || $4->type->toString() != "$Error")) {
+                                              $$->push_back({$3, $4});
+                                            } 
                                           }
-                                          $$ = NULL;
-                                        }
             ;   
-IdDef       : ID                        {
-                                          if (! table.verifyInsert($1)) {
-                                            addError((string) "Redefinition of '\e[1;3m" + $1 + "\e[0m'.");
-                                            $$ = (char*) "";
-                                          } else {
-                                            $$ = $1; 
+IdDef       : ID                          {
+                                            if (! table.verifyInsert($1)) {
+                                              addError((string) "Redefinition of '\e[1;3m" + $1 + "\e[0m'.");
+                                              $$ = (char*) "";
+                                            } else {
+                                              $$ = $1; 
+                                            }
                                           }
-                                        }
-OptAssign   : /* lambda */              { $$ = NULL; }
-						| ASSIGNMENT Exp            { $$ = $2; }
+OptAssign   : /* lambda */                { $$ = NULL; }
+						| ASSIGNMENT Exp              { $$ = $2; }
             ;
 
 

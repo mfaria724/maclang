@@ -228,64 +228,6 @@ void NodeForget::printTree(vector<bool> *identation) {
   identation->pop_back();
 }
 
-/* ======================= TYPEDEF NODES =======================  */
-NodeVarDef::NodeVarDef(Type *type, string id, Node *rvalue) {
-  this->type = type;
-  this->id = id;
-  this->rvalue = rvalue;
-}
-
-void NodeVarDef::print(void) {
-  cout << "let ";
-  this->type->print();
-  cout << " " << this->id;
-  if (this->rvalue != NULL) {
-    cout << " = ";
-    this->rvalue->print();
-  } 
-  cout << ";\n";
-}
-
-string NodeVarDef::toString(void) {
-  string result = "let " + this->type->toString() + " " + this->id;
-  if (this->rvalue != NULL) {
-    result += " = " + this->rvalue->toString();
-  } 
-  return result + ";";
-}
-
-void NodeVarDef::printTree(vector<bool> *identation) {
-  cout << "\e[1;34mVariable Definition\e[0m\n";
-
-  printIdentation(identation);
-  identation->push_back(true);
-  cout << "├── ";
-  this->type->printTree(identation);
-  identation->pop_back();
-
-  if (this->rvalue != NULL) {
-    printIdentation(identation);
-    identation->push_back(true);
-    cout << "├── ID: " << this->id << "\n";
-    identation->pop_back();
-
-    printIdentation(identation);
-    cout << "├── = \n";
-
-    printIdentation(identation);
-    identation->push_back(false);
-    cout << "└── ";
-    this->rvalue->printTree(identation);
-    identation->pop_back();
-
-  } else {
-    printIdentation(identation);
-    identation->push_back(true);
-    cout << "└── ID: " << this->id << "\n";
-    identation->pop_back();
-  }
-}
-
 /* ======================= LVALUE NODES =======================  */
 NodeID::NodeID(string id, Type *type) {
   this->id = id;
@@ -691,107 +633,11 @@ void NodeFunctionCallNamedArgs::printTree(vector<bool> *identation) {
   identation->pop_back();
 }
 
-/* ======================= UNION DEF NODES ======================= */
-NodeUnionDef::NodeUnionDef(string id, Node *fields) {
-  this->id = id;
-  this->fields = fields;
-}
-
-void NodeUnionDef::print(void) {
-  cout << this->id << " {\n";
-  this->fields->print();
-  cout << "}\n";
-}
-
-string NodeUnionDef::toString(void) {
-  return this->id + " { " + this->fields->toString() + " }";
-}
-
-void NodeUnionDef::printTree(vector<bool> *identation) {
-  cout << "\e[1;34mUnion Definition\e[0m\n";
-
-  printIdentation(identation);
-  cout << "├── ID: " << this->id << "\n";
-
-  printIdentation(identation);
-  identation->push_back(false);
-  cout << "└── ";
-  this->fields->printTree(identation);
-  identation->pop_back();
-}
-
+/* ======================= STRUCTURE DEF NODES ======================= */
 NodeUnionFields::NodeUnionFields(Node *head, Type *type, string id) {
   this->head = head;
   this->type = type;
   this->id = id;
-}
-
-void NodeUnionFields::print(void) {
-  if (this->head != NULL) {
-    this->head->print();
-  }
-  cout << "  ";
-  this->type->print();
-  cout << " " << this->id << ";\n";
-}
-
-string NodeUnionFields::toString(void) {
-
-  string result = "";
-  if (this->head != NULL) {
-    result += this->head->toString();
-  }
-  return result + "  " + this->type->toString() + " " + this->id + ";";
-}
-
-void NodeUnionFields::printTree(vector<bool> *identation) {
-  cout << "\e[1;34mUnion Field\e[0m\n";
-
-  if (this->head != NULL) {
-    printIdentation(identation);
-    identation->push_back(true);
-    cout << "├── ";
-    this->head->printTree(identation);
-    identation->pop_back();
-  }
-
-  printIdentation(identation);
-  identation->push_back(true);
-  cout << "├── ";
-  this->type->printTree(identation);
-  identation->pop_back();
-
-  printIdentation(identation);
-  cout << "└── ID: " << this->id << "\n";
-}
-
-/* ======================= REGISTER DEF NODES ======================= */
-NodeRegDef::NodeRegDef(string id, Node *fields) {
-  this->id = id;
-  this->fields = fields;
-}
-
-void NodeRegDef::print(void) {
-  cout << "register " << this->id << " {\n";
-  this->fields->print();
-  cout << "}\n";
-}
-
-string NodeRegDef::toString(void) {
-  return "register " + this->id + " { " + this->fields->toString() + " }";
-}
-
-void NodeRegDef::printTree(vector<bool> *identation) {
-  cout << "\e[1;34mRegister Definition\e[0m\n";
-
-  printIdentation(identation);
-  cout << "├── ID: " << this->id << "\n";
-
-  printIdentation(identation);
-  identation->push_back(false);
-  cout << "└── ";
-  this->fields->printTree(identation);
-  identation->pop_back();
 }
 
 NodeRegFields::NodeRegFields(Node *head, Type *type, string id, Node *rvalue) {
@@ -799,70 +645,6 @@ NodeRegFields::NodeRegFields(Node *head, Type *type, string id, Node *rvalue) {
   this->type = type;
   this->id = id;
   this->rvalue = rvalue;
-}
-
-void NodeRegFields::print(void) {
-  if (this->head != NULL) {
-    this->head->print();
-  }
-  cout << "  ";
-  this->type->print();
-  cout << " " << this->id;
-  if (this->rvalue != NULL) {
-    cout << " = ";
-    this->rvalue->print();
-  }
-  cout << ";\n";
-}
-
-string NodeRegFields::toString(void) {
-  
-  string result = "";
-  
-  if (this->head != NULL) {
-    result += this->head->toString();
-  }
-  result += "  " + this->type->toString() + " " + this->id;
-  if (this->rvalue != NULL) {
-    result += " = " + this->rvalue->toString();
-  }
-  return result + ";";
-}
-
-void NodeRegFields::printTree(vector<bool> *identation) {
-  cout << "\e[1;34mRegister Field\e[0m\n";
-
-  if (this->head != NULL) {
-    printIdentation(identation);
-    identation->push_back(true);
-    cout << "├── ";
-    this->head->printTree(identation);
-    identation->pop_back();
-  }
-
-  printIdentation(identation);
-  identation->push_back(true);
-  cout << "├── ";
-  this->type->printTree(identation);
-  identation->pop_back();
-
-  if (this->rvalue != NULL) {
-    printIdentation(identation);
-    cout << "├── ID: " << this->id << "\n";
-
-    printIdentation(identation);
-    cout << "├── = \n";
-
-    printIdentation(identation);
-    identation->push_back(false);
-    cout << "└── ";
-    this->rvalue->printTree(identation);
-    identation->pop_back();
-  
-  } else {
-    printIdentation(identation);
-    cout << "└── ID: " << this->id << "\n";
-  }
 }
 
 /* ======================= CONDITIONAL DEF NODES ======================= */
@@ -1533,6 +1315,44 @@ void NodeAssign::printTree(vector<bool> *identation) {
   identation->push_back(false);
   cout << "└── ";
   this->rvalue->printTree(identation);
+  identation->pop_back();
+}
+
+NodeAssignList::NodeAssignList(Node *head, Node *assign) {
+  this->head = head;
+  this->assign = assign;
+}
+
+void NodeAssignList::print(void) {
+  if (this->head != NULL) {
+    this->head->print();
+  }
+  this->assign->print();
+}
+
+string NodeAssignList::toString(void) {
+  
+  string result = "";
+  
+  if (this->head != NULL) {
+    result += this->head->toString();
+  }
+  return result + this->assign->toString();
+}
+
+void NodeAssignList::printTree(vector<bool> *identation) {
+  cout << "\e[1;34mAssignment List\e[0m\n";
+  if (this->head != NULL) {
+    printIdentation(identation);
+    identation->push_back(true);
+    cout << "├── ";
+    this->head->printTree(identation);
+    identation->pop_back();
+  }
+  printIdentation(identation);
+  identation->push_back(false);
+  cout << "└── ";
+  this->assign->printTree(identation);
   identation->pop_back();
 }
 

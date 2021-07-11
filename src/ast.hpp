@@ -246,25 +246,6 @@ class NodeForget : public Node {
     void printTree(vector<bool> *identation);
 };
 
-/* ======================= TYPEDEF NODES =======================  */
-/* Representation of  -> Type ID = RValue. */
-class NodeVarDef : public Node {
-  protected:
-    Type *type;
-    string id;
-    Node *rvalue;
-
-  public:
-    NodeVarDef(Type *type, string id, Node *rvalue = NULL);
-
-    void print(void);
-
-    string toString(void);
-
-    void printTree(vector<bool> *identation);
-};
-
-
 /* ======================= ARRAY NODES =======================  */
 /* Representation of arrays. */
 class NodeArray : public ExpressionNode {
@@ -376,23 +357,7 @@ class NodeFunctionCallNamedArgs : public Node {
     void printTree(vector<bool> *identation);
 };
 
-/* ======================= UNION DEF NODES ======================= */
-/* Representation of union definitions. */
-class NodeUnionDef : public Node {
-  protected:
-    string id;
-    Node *fields;
-
-  public:
-    NodeUnionDef(string id, Node *fields);
-
-    void print(void);
-
-    string toString(void);
-
-    void printTree(vector<bool> *identation);
-};
-
+/* ======================= STRUCTURE DEF NODES ======================= */
 /* Representation of  -> UnionBody Type ID ;  */
 class NodeUnionFields : public Node {
   protected:
@@ -402,29 +367,6 @@ class NodeUnionFields : public Node {
 
   public:
     NodeUnionFields(Node *head, Type *type, string id);
-
-    void print(void);
-
-    string toString(void);
-
-    void printTree(vector<bool> *identation);
-};
-
-/* ======================= REGISTER DEF NODES ======================= */
-/* Representation of register definitions. */
-class NodeRegDef : public Node {
-  protected:
-    string id;
-    Node *fields;
-
-  public:
-    NodeRegDef(string id, Node *fields);
-
-    void print(void);
-
-    string toString(void);
-
-    void printTree(vector<bool> *identation);
 };
 
 /* Representation of  -> RegisterBody VarDefBody;  */
@@ -437,12 +379,6 @@ class NodeRegFields : public Node {
 
   public:
     NodeRegFields(Node *head, Type *type, string id, Node *rvalue);
-
-    void print(void);
-
-    string toString(void);
-
-    void printTree(vector<bool> *identation);
 };
 
 /* ======================= CONDITIONAL DEF NODES ======================= */
@@ -640,6 +576,21 @@ class NodeAssign : public ExpressionNode {
 
   public:
     NodeAssign(Node *lvalue, Node *rvalue);
+
+    void print(void);
+
+    string toString(void);
+
+    void printTree(vector<bool> *identation);
+};
+
+class NodeAssignList : public Node {
+  protected:
+    Node *head;
+    Node *assign;
+
+  public:
+    NodeAssignList(Node *head, Node *assign);
 
     void print(void);
 
