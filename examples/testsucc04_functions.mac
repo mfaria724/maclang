@@ -10,3 +10,7 @@ F(0, c='c', b=[True]);
 
 if (True) then F(0, c='c', b=[True]); 
 elsif (False) then F(0, c='c', b=[True]);  done
+
+for (i; 0; 100) do 
+    print(read());
+done

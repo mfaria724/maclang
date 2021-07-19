@@ -12,7 +12,7 @@ let Int z;
 x = (y = (z = [^(new Char)][0]));
 
 a = 1;
-a = "ok";
+a = read();
 a = 'o';
 
 forget a;

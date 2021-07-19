@@ -14,4 +14,4 @@ register R {
 }
 
 let ^R r;
-(^r).f = "uaaaaaa";
+(^r).f = read();

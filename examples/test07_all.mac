@@ -22,7 +22,7 @@ let Int[6][x] integers = [[1, 1], [90], [42], [x, x, x]];
 
 ## strings
 let String hello = "world", aja = ['a', 'y', ' ', 'n', 'o'];
-let Char[4] ohno = "ohwell";
+let Char[4] ohno = read();
 let Char[3] press = ['F'];
 
 ## registros
@@ -113,6 +113,7 @@ def A() => Int {
     for (i; 0; 100; 0.1) do
       if 1 < 2 then 
         x = A() + B() * A() % B();
+        print("Otra iteracion");
       done 
     done 
   done

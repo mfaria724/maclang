@@ -1683,6 +1683,16 @@ int main(int argc, char **argv)
   for (string t : primitives) {
     table.insert(new PrimitiveEntry(t));
   }
+  FunctionEntry *fe = new FunctionEntry("read", 0, "Function");
+  fe->return_type = new ArrayType(new PrimitiveType("Char"), new NodeINT(1));
+  fe->def_scope = 0;
+  table.insert(fe);
+
+  fe = new FunctionEntry("print", 0, "Function");
+  fe->args.push_back({"text", "(Char)[]", false, true});
+  fe->return_type = new PrimitiveType("Unit");
+  fe->def_scope = 0;
+  table.insert(fe);
 
   // Booleans for options
   bool bLexOpt = false;
