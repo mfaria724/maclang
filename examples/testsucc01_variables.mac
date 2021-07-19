@@ -1,0 +1,35 @@
+let Int i = 0;
+
+let Int a = 0;
+let Char a2;
+let String a3;
+
+let Int x;
+let Int y;
+let Int z;
+x = (y = (z = [^(new Int)][0]));
+
+a = 1;
+a3 = "ok";
+a2 = 'o';
+
+let ^Float p = new Float;
+forget p;
+
+^(new String) = "mmm ok";
+
+# Que inutilidad lmao
+forget new Int;
+
+let ^^(^^(^Int)[6][4])[9][2] wtf;
+
+let Int w = ^^^(^^(wtf[0][0])[0][0]);
+
+def F() {}
+
+register R {
+  Int ok = 0;
+}
+let R r;
+
+let Int w2 = r.ok;

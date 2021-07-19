@@ -1,0 +1,12 @@
+def F(Int a, Char @c, ^Int khe = new Int, String ola = "k ase?", Bool[10] b = [False]) {
+    let Int a = 0;
+}
+
+def g() => Int {}
+g();
+
+F(1, khe=new Int, b=[False], ola="nada", c='a');
+F(0, c='c', b=[True]);
+
+if (True) then F(0, c='c', b=[True]); 
+elsif (False) then F(0, c='c', b=[True]);  done

@@ -1,0 +1,15 @@
+while [True, False][0] do done
+
+while True do done
+
+while True do 
+    let Float a = 0 / 0;
+done
+
+for (A; 0; ^(new Int); [-1][0]) do done
+
+let Char a;
+let Float b = 0.0;
+for (a; 0; -100.0; -5) do 
+    b = b + a;
+done
