@@ -1,0 +1,36 @@
+dec F(Int a, Char @c, ^Int khe = new Int, String ola = "k ase?", Bool[10] b = [False]);
+
+dec F();
+
+if (True) then 
+  def F(Int a, Char @c, ^Int khe = new Int, String ola = 1, Bool[10] b = [False]) { }
+
+elsif (True) then
+  def F(Int a, Char @c, String ola = "k ase?", ^Int khe = new Int, Bool[10] b = [False]) { }
+
+elsif (True) then
+  def F(Int a, Char @c, ^Int khe = new Int, String ola = "k ase?", Bool[10] b = [False]) { }
+
+elsif (True) then
+  def F(Int a, Char @c, ^Int khe, String ola, Bool[10] b) => Int { }
+
+else 
+  def g() {
+      F(1, '0');
+      return;
+  }
+  def F(Int a, Char @c, ^Int khe, String ola, Bool[10] b) {
+      g();
+      F(1, '0', ola = "ke no ase?");
+  }
+done
+
+def F(Int a, Char @c, ^Int khe, String ola, Bool[10] b) { }
+
+${
+    (3, 6): Error: Redefinition of 'F'.
+    (6, 60): Error: Can't assign a 'Int' to a '(Char)[]'.
+    (9, 91): Error: Sign of function dont match with the declaration.
+    (12, 91): Error: Default values must be in declaration.
+    (15, 69): Error: Sign of function dont match with the declaration.
+}$

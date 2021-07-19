@@ -91,6 +91,7 @@
     "FOR",
     "LET",
     "DEF",
+    "DEC",
     "AT",
     "RIGHT_ARROW",
     "RETURN",
@@ -146,6 +147,7 @@
   NodeFunctionCallPositionalArgs *fcpArgs;
   NodeFunctionCallNamedArgs *fcnArgs;
   vector<pair<string, ExpressionNode*>> *varList;
+  tuple<string, int, int> *scopeid;
 }
 
 %locations
@@ -195,6 +197,7 @@
 %token AT 26
 %token RIGHT_ARROW 27
 %token RETURN 56
+%token DEC 57
 
 %token <integer>  INT 28
 %token <flot>     FLOAT 29
@@ -227,7 +230,7 @@
 
 %type <ast>           I Inst Action VarInst VarDef UnionDef UnionBody 
 %type <ast>           RegBody Conditional OptElsif Elsifs OptElse Def RegDef
-%type <ast>           LoopWhile LoopFor RoutDef Actions RoutSign
+%type <ast>           LoopWhile LoopFor RoutDef Actions RoutSign RoutDec
 %type <expr>          Exp FuncCall Array ArrExp ArrElems
 %type <expr>          OptAssign Cond OptStep
 %type <routArgs>      RoutArgs
@@ -237,9 +240,10 @@
 %type <fcnArgs>       NamedArgs
 %type <t>             Type OptReturn
 %type <boolean>       OptRef
-%type <str>           IdDef IdFor UnionId RegId RoutId
+%type <str>           IdDef IdFor UnionId RegId DecId
 %type <nS>            S
 %type <varList>       VarDefList
+%type <scopeid>       RoutId
 
 %%
 
@@ -269,6 +273,7 @@ Action  : Exp SEMICOLON       { $$ = $1; }
 Def     : UnionDef            { $$ = $1; }
 				| RegDef              { $$ = $1; }
 				| RoutDef             { $$ = $1; }
+        | RoutDec SEMICOLON   { $$ = $1; }
         ;
 
 /* ============ VARIABLES DEFINITION ============ */
@@ -935,7 +940,7 @@ FuncCall  : ID OPEN_PAR ArgsExp CLOSE_PAR   {
                                                   type = typeError;
                                                 } 
                                                 
-                                                else if (e->category != "Function") {
+                                                else if (e->category != "Function" && e->category != "Declaration") {
                                                   addError((string) "'\e[1;3m" + $1 + "\e[0m' isn't a function.");
                                                   type = typeError;
                                                 } 
@@ -946,7 +951,7 @@ FuncCall  : ID OPEN_PAR ArgsExp CLOSE_PAR   {
 
                                                   int numPositional = $3->positionalArgs.size(), i = 0;
   
-                                                  for (tuple<string, string, bool> arg : fe->args) {
+                                                  for (tuple<string, string, bool, bool> arg : fe->args) {
                                                     if (i < numPositional) {
                                                       if (get<1>(arg) != $3->positionalArgs[i]) {
                                                         addError(
@@ -977,7 +982,7 @@ FuncCall  : ID OPEN_PAR ArgsExp CLOSE_PAR   {
                                                       $3->keywords.erase(get<0>(arg));
                                                     } 
                                                     
-                                                    else if (get<2>(arg) && allMand) {
+                                                    else if (get<3>(arg) && allMand) {
                                                       addError(
                                                         (string) "Missing required positional arguments."
                                                       );
@@ -1306,7 +1311,8 @@ RoutDef   : RoutSign OPEN_C_BRACE Actions CLOSE_C_BRACE   {
                                                               NodeError *err = (NodeError*) $1;
                                                               table.exitScope();
                                                               table.exitScope();
-                                                              table.erase(err->errInfo, table.currentScope());
+                                                              if (err->errInfo != "")
+                                                                table.erase(err->errInfo, table.currentScope());
 
                                                               $$ = new NodeError();
 
@@ -1321,34 +1327,129 @@ RoutDef   : RoutSign OPEN_C_BRACE Actions CLOSE_C_BRACE   {
                                                           }
           ;  
 RoutSign  : RoutId OPEN_PAR RoutArgs CLOSE_PAR OptReturn  {
-                                                            if ($3 == NULL || $5->toString() == "$Error") {
+                                                            if (
+                                                              $3 == NULL || 
+                                                              get<0>(*$1) == "" ||
+                                                              $5->toString() == "$Error"
+                                                            ) {
                                                               NodeError *err = new NodeError();
-                                                              err->errInfo = $1;
+                                                              if (get<1>(*$1) == -1)
+                                                                err->errInfo = get<0>(*$1);
+                                                              else 
+                                                                err->errInfo = "";
                                                               $$ = err;
+                                                            } 
+                                                            
+                                                            else if (get<1>(*$1) != -1) {
+                                                              bool error = false;
+                                                              FunctionEntry *fe;
+                                                              fe = (FunctionEntry*) table.lookup(get<0>(*$1), get<1>(*$1));
 
-                                                            } else {
+                                                              for (int i = 0; i < $3->params.size(); i++) {
+                                                                if (
+                                                                  i == fe->args.size() ||
+                                                                  get<0>($3->params[i]) != get<0>(fe->args[i]) ||
+                                                                  get<1>($3->params[i]) != get<1>(fe->args[i]) ||
+                                                                  get<2>($3->params[i]) != get<2>(fe->args[i])
+                                                                ) {
+                                                                  addError(
+                                                                    (string) "Sign of function dont match with "
+                                                                    "the declaration."
+                                                                  );
+                                                                  error = true;
+                                                                  break;
+                                                                }
+
+                                                                if (! get<3>($3->params[i])) {
+                                                                  addError(
+                                                                    (string) "Default values must be in declaration."
+                                                                  );
+                                                                  error = true;
+                                                                  break;
+                                                                }
+                                                              }
+
+                                                              if ($5->toString() != fe->return_type->toString()) {
+                                                                addError(
+                                                                  (string) "Sign of function dont match with "
+                                                                  "the declaration."
+                                                                );
+                                                                error = true;
+                                                              }
+
+                                                              if (error) {
+                                                                NodeError *err = new NodeError();
+                                                                err->errInfo = "";
+                                                                $$ = err;
+                                                              }
+
+                                                              else if (get<1>(*$1) == get<2>(*$1)) {
+                                                                fe->category = "Function";
+                                                                fe->def_scope = table.currentScope();
+                                                                $3->params.clear();
+
+                                                                $$ = new NodeRoutineSign(get<0>(*$1), $3, $5);
+                                                              }
+
+                                                              else {
+                                                                FunctionEntry *e;
+                                                                e = (FunctionEntry*) table.lookup(get<0>(*$1));
+                                                                e->return_type = $5;
+                                                                e->def_scope = table.currentScope();                                                              
+                                                                e->args = fe->args;
+                                                                $3->params.clear();
+                                                                
+                                                                $$ = new NodeRoutineSign(get<0>(*$1), $3, $5);
+                                                              }
+                                                            }
+                                                            
+                                                            else {
                                                               FunctionEntry *e;
-                                                              e = (FunctionEntry*) table.lookup($1);
+                                                              e = (FunctionEntry*) table.lookup(get<0>(*$1));
                                                               e->return_type = $5;
                                                               e->def_scope = table.currentScope();                                                              
                                                               e->args = $3->params;
                                                               $3->params.clear();
                                                               
-                                                              table.newScope();
-                                                              $$ = new NodeRoutineSign($1, $3, $5);
+                                                              $$ = new NodeRoutineSign(get<0>(*$1), $3, $5);
                                                             }
 
                                                             if ($5->toString() != "$Error") {
                                                               table.ret_type = $5->toString();
                                                             }
+
+                                                            table.newScope();
                                                           }
           ;
-RoutId    : DEF IdDef                                     {
-                                                            int s = table.currentScope();
-                                                            Entry *e = new FunctionEntry($2, s, "Function");
-                                                            table.insert(e);
+RoutId    : DEF ID                                        {
+                                                            Entry *e = table.lookup($2);
+
+                                                            if (
+                                                              e != NULL &&
+                                                              e->scope == table.currentScope() &&
+                                                              e->category != "Declaration"
+                                                            ) {
+                                                              addError(
+                                                                (string) "Redefinition of '\e[1;3m" 
+                                                                + $2 + "\e[0m'."
+                                                              );
+                                                              $$ = new tuple<string, int, int>("", -1, -1);
+                                                            } 
+                                                            
+                                                            else if (e != NULL && e->category == "Declaration") {
+                                                              $$ = new tuple<string, int, int>(
+                                                                $2, e->scope, table.currentScope()
+                                                              ); 
+                                                            }
+
+                                                            else {
+                                                              int s = table.currentScope();
+                                                              Entry *e = new FunctionEntry($2, s, "Function");
+                                                              table.insert(e);
+                                                              $$ = new tuple<string, int, int>((string) $2, -1, -1);
+                                                            }
+                                                            
                                                             table.newScope();
-                                                            $$ = $2;
                                                           }
           ;    
 RoutArgs  : /* lambda */                                  { $$ = new NodeRoutArgs(NULL, NULL); }
@@ -1393,7 +1494,12 @@ MandArgs  : Type OptRef IdDef                             {
                                                               $$ = new NodeRoutArgDef(
                                                                 NULL, $1, $2, $3, NULL
                                                               );
-                                                              $$->currentParams.push_back({$3, $1->toString(), true});
+                                                              $$->currentParams.push_back({
+                                                                $3, 
+                                                                $1->toString(), 
+                                                                $2,
+                                                                true
+                                                              });
 
                                                               int s = table.currentScope();
                                                               Entry *e = new VarEntry($3, s, "Var", $1);
@@ -1409,7 +1515,12 @@ MandArgs  : Type OptRef IdDef                             {
                                                               );
                                                               $$->currentParams = $1->currentParams;
                                                               $1->currentParams.clear();
-                                                              $$->currentParams.push_back({$5, $3->toString(), true});
+                                                              $$->currentParams.push_back({
+                                                                $5, 
+                                                                $3->toString(), 
+                                                                $4,
+                                                                true
+                                                              });
 
                                                               int s = table.currentScope();
                                                               Entry *e = new VarEntry($5, s, "Var", $3);
@@ -1442,7 +1553,12 @@ OptArgs   : Type OptRef IdDef ASSIGNMENT Exp              {
                                                                 NULL, $1, $2, $3, $5
                                                               );
 
-                                                              $$->currentParams.push_back({$3, type, false});
+                                                              $$->currentParams.push_back({
+                                                                $3, 
+                                                                type, 
+                                                                $2,
+                                                                false
+                                                              });
 
                                                               int s = table.currentScope();
                                                               Entry *e = new VarEntry($3, s, "Var", $1);
@@ -1476,8 +1592,12 @@ OptArgs   : Type OptRef IdDef ASSIGNMENT Exp              {
 
                                                               $$->currentParams = $1->currentParams;
                                                               $1->currentParams.clear();
-                                                              $$->currentParams.push_back({$5, type, false});
-
+                                                              $$->currentParams.push_back({
+                                                                $5, 
+                                                                type, 
+                                                                $4,
+                                                                false
+                                                              });
           
                                                               int s = table.currentScope();
                                                               Entry *e = new VarEntry($5, s, "Var", $3);
@@ -1527,6 +1647,33 @@ Actions   : /* lambda */                                  { $$ = NULL; }
                                                           }
           ;
 
+/* =============== SUBROUTINES DECLARATION =============== */
+RoutDec   : DecId OPEN_PAR RoutArgs CLOSE_PAR OptReturn {
+                                                          table.exitScope();
+
+                                                          if (
+                                                            $3 != NULL &&
+                                                            $1 != "" &&
+                                                            $5->toString() != "$Error"
+                                                          ) {
+                                                            int s = table.currentScope();
+                                                            Entry *e = new FunctionDeclarationEntry(
+                                                              $1, 
+                                                              s,
+                                                              "Declaration",
+                                                              $3->params,
+                                                              $5
+                                                            );
+                                                            table.insert(e);
+                                                          }
+                                                          
+                                                          $$ = NULL;
+                                                        }
+          ;
+DecId     : DEC IdDef                                   {
+                                                          table.newScope();
+                                                          $$ = $2;
+                                                        }
 %%
 
 int main(int argc, char **argv)

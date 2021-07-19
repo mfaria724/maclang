@@ -980,7 +980,7 @@ void NodeRoutineDef::printTree(vector<bool> *identation) {
 
   printIdentation(identation);
   identation->push_back(true);
-  cout << "└── ";
+  cout << "├── ";
   this->sign->printTree(identation);
   identation->pop_back();
 
@@ -1036,6 +1036,7 @@ void NodeRoutineSign::printTree(vector<bool> *identation) {
   if (this->args != NULL) {
     printIdentation(identation);
     identation->push_back(true);
+    cout << "├── ";
     this->args->printTree(identation);
     identation->pop_back();
   } else {

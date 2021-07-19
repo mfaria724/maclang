@@ -19,6 +19,9 @@ g();
 F('a', a=4, a=2, ola="nada", z=1);
 F(0, c='c', b=[True]);
 
+if (True) then F(0, c='c', b=[True]); 
+elsif (False) then F(0, c='c', b=[True]);  done
+
 ${
   (1, 20): Error: Redefinition of 'a'.
   (1, 43): Error: Redefinition of 'a'.

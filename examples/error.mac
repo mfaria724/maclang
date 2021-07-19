@@ -1,3 +1,5 @@
-let Int a=-1, b = 0, c='a', d= 1;
+def F() {}
 
-b = (d = a);
+def F(Int a=1) {}
+
+F(0);

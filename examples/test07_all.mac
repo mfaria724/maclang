@@ -21,8 +21,7 @@ let Bool[4] array;
 let Int[6][x] integers = [[1, 1], [90], [42], [x, x, x]];
 
 ## strings
-let String hello = "world";
-let String aja = ['a', 'y', ' ', 'n', 'o'];
+let String hello = "world", aja = ['a', 'y', ' ', 'n', 'o'];
 let Char[4] ohno = "ohwell";
 let Char[3] press = ['F'];
 
@@ -42,9 +41,7 @@ union unio {
   ^^(^registro[3])[10] rpp;
 }
 
-def myfunction(unio U) => Int {
-  let Int myInt;
-}
+dec myfunction(unio U) => Int;
 
 if ! True && (42**6 >= 0/0) && (1/1 < integers[ y[y[y[x]]] ** 4][0]) || (False == (array[-1] != !!!!!!! (0/0 < 0/0))) then 
   def a() {}              
@@ -103,14 +100,24 @@ if True then
   }
 done
 
+def myfunction(unio U) => Int {
+  let Int myInt;
+}
+
 myfunc(new ^Bool[5], c = 'c', ok = False); 
+
+dec B() => Int;
 
 def A() => Int {
   while True do # do
     for (i; 0; 100; 0.1) do
       if 1 < 2 then 
-        x = A() + A() * A() % A();
+        x = A() + B() * A() % B();
       done 
     done 
   done
 } 
+
+def B() => Int {
+  return 1;
+}

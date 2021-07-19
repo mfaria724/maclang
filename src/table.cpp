@@ -111,6 +111,8 @@ void SymbolsTable::erase(string id, int scope) {
 
     if ((e->id != id) || (e->scope != scope)) {
       newQueue.push_front(e);
+    } else {
+      cout << e->id << " " << e->scope << "\n";
     }
   }
 
@@ -250,6 +252,33 @@ FunctionEntry::FunctionEntry(
   Prints a representation of the table entry.
 */
 void FunctionEntry::print(void) {
+  cout << "\e[1;31m(\e[1;34mScope:\e[0m " << this->scope;
+  cout << ", \e[1;34mID:\e[0m " << this->id;
+  cout << ", \e[1;34mCategory:\e[0m " << this->category;
+  if (this->return_type) {
+    cout << ", \e[1;34mReturn Type:\e[0m " << this->return_type->toString();
+  }
+  cout << "\e[1;31m)\e[0m";
+}
+
+FunctionDeclarationEntry::FunctionDeclarationEntry(
+  string id, 
+  int scope,
+  string category, 
+  vector<tuple<string, string, bool, bool>> args, 
+  Type *return_type
+) {
+  this->id = id;
+  this->scope = scope;
+  this->category = category;
+  this->args = args;
+  this->return_type = return_type;
+}
+
+/*
+  Prints a representation of the table entry.
+*/
+void FunctionDeclarationEntry::print(void) {
   cout << "\e[1;31m(\e[1;34mScope:\e[0m " << this->scope;
   cout << ", \e[1;34mID:\e[0m " << this->id;
   cout << ", \e[1;34mCategory:\e[0m " << this->category;
