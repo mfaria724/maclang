@@ -1,0 +1,18 @@
+${
+  Comentario
+  multi
+  linea
+}$
+
+let Int a;
+
+${   } $ }$
+
+${
+  Este
+  es
+  otro
+  Comentario
+  multi
+  linea
+}$
