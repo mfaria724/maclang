@@ -23,8 +23,8 @@
   queue<string> tokens;
   extern queue<string> errors;
 
-  // Type error 
-  Type *typeError = new PrimitiveType("$Error");
+  // Predefined Types 
+  extern map<string, Type*> predefinedTypes;
 
   // Leblanc-Cook's Symbols Table
   SymbolsTable table;
@@ -346,8 +346,20 @@ VarDef      : LET Type VarDefList         {
                                                   }
 
                                                   int s = table.currentScope();
-                                                  Entry *e = new VarEntry(vardef.first, s, "Var", $2);
+                                                  Entry *e = new VarEntry(
+                                                    vardef.first, 
+                                                    s, 
+                                                    "Var", 
+                                                    $2, 
+                                                    table.offsets.back()
+                                                  );
                                                   table.insert(e);
+                                                  table.offsets.back() = new NodeBinaryOperator(
+                                                    table.offsets.back(), 
+                                                    "+", 
+                                                    $2->width, 
+                                                    predefinedTypes["Int"]
+                                                  );
                                                 }
                                               }
                                             }
@@ -385,14 +397,14 @@ Type	: Type OPEN_BRACKET Exp CLOSE_BRACKET {
                                               if ($1->toString() != "$Error" && $3->type->toString() != "$Error") {
                                                 $$ = new ArrayType($1, $3);
                                               } else {
-                                                $$ = typeError;
+                                                $$ = predefinedTypes["$Error"];
                                               }
                                             }
 			| POINTER Type 	                      { 
                                               if ($2->toString() != "$Error") {
                                                 $$ = new PointerType($2); 
                                               } else {
-                                                $$ = typeError;
+                                                $$ = predefinedTypes["$Error"];
                                               }
                                             }
 			| OPEN_PAR Type CLOSE_PAR             { $$ = $2; }
@@ -400,24 +412,25 @@ Type	: Type OPEN_BRACKET Exp CLOSE_BRACKET {
                                               Entry *e;
                                               if ((e = table.lookup($1)) == NULL) {
                                                 addError((string) "'\e[1;3m" + $1 + "\e[0m' wasn't declared.");
-                                                $$ = typeError;
+                                                $$ = predefinedTypes["$Error"];
                                               } 
                                               
                                               else if (e->category != "Type" && e->category != "Structure") {
                                                 addError((string) "'\e[1;3m" + $1 + "\e[0m' isn't a type.");
-                                                $$ = typeError;
+                                                $$ = predefinedTypes["$Error"];
                                               } 
                                               
                                               else {
                                                 $$ = new PrimitiveType($1);
+                                                $$->width = ((StructureEntry*) e)->width;
                                               }
                                             }
-      | T_UNIT                              { $$ = new PrimitiveType($1); }
-			| T_BOOL                              { $$ = new PrimitiveType($1); }
-      | T_CHAR                              { $$ = new PrimitiveType($1); }
-      | T_INT                               { $$ = new PrimitiveType($1); }
-      | T_FLOAT                             { $$ = new PrimitiveType($1); }
-      | T_STRING                            { $$ = new ArrayType(new PrimitiveType("Char"), new NodeINT(1)); }
+      | T_UNIT                              { $$ = predefinedTypes["Unit"]; }
+			| T_BOOL                              { $$ = predefinedTypes["Bool"]; }
+      | T_CHAR                              { $$ = predefinedTypes["Char"]; }
+      | T_INT                               { $$ = predefinedTypes["Int"]; }
+      | T_FLOAT                             { $$ = predefinedTypes["Float"]; }
+      | T_STRING                            { $$ = new ArrayType(predefinedTypes["Char"], new NodeINT(1)); }
       ;
 
 /* ======================= EXPRESSIONS ======================= */
@@ -435,7 +448,7 @@ Exp   : Exp EQUIV Exp               {
                                       Type *t1 = $1->type;
                                       Type *t2 = $3->type;
 
-                                      Type *type = verifyBinayOpType(tuples, types, types, t1, t2, "==", new PrimitiveType("Bool"));
+                                      Type *type = verifyBinayOpType(tuples, types, types, t1, t2, "==", predefinedTypes["Bool"]);
                                       $$ = new NodeBinaryOperator($1, $2, $3, type); 
                                     }
       | Exp NOT_EQUIV Exp           { 
@@ -452,7 +465,7 @@ Exp   : Exp EQUIV Exp               {
                                       Type *t1 = $1->type;
                                       Type *t2 = $3->type;
 
-                                      Type *type = verifyBinayOpType(tuples, types, types, t1, t2, "!=", new PrimitiveType("Bool"));                                      
+                                      Type *type = verifyBinayOpType(tuples, types, types, t1, t2, "!=", predefinedTypes["Bool"]);                                      
                                       $$ = new NodeBinaryOperator($1, $2, $3, type); 
                                     }
       | Exp OR Exp                  { 
@@ -462,7 +475,7 @@ Exp   : Exp EQUIV Exp               {
                                       Type *t1 = $1->type;
                                       Type *t2 = $3->type;
 
-                                      Type *type = verifyBinayOpType(tuples, types, types, t1, t2, "||", new PrimitiveType("Bool"));
+                                      Type *type = verifyBinayOpType(tuples, types, types, t1, t2, "||", predefinedTypes["Bool"]);
                                       $$ = new NodeBinaryOperator($1, $2, $3, type); 
                                     }
       | Exp AND Exp                 { 
@@ -472,11 +485,11 @@ Exp   : Exp EQUIV Exp               {
                                       Type *t1 = $1->type;
                                       Type *t2 = $3->type;
 
-                                      Type *type = verifyBinayOpType(tuples, types, types, t1, t2, "&&", new PrimitiveType("Bool"));
+                                      Type *type = verifyBinayOpType(tuples, types, types, t1, t2, "&&", predefinedTypes["Bool"]);
                                       $$ = new NodeBinaryOperator($1, $2, $3, type); 
                                     }
       | NOT Exp                     { 
-                                      Type *type = verifyUnaryOpType({"Bool"}, $2->type, "!", new PrimitiveType("Bool"));
+                                      Type *type = verifyUnaryOpType({"Bool"}, $2->type, "!", predefinedTypes["Bool"]);
                                       $$ = new NodeUnaryOperator($1, $2, type); 
                                     }
       | Exp LESS_THAN Exp           { 
@@ -491,7 +504,7 @@ Exp   : Exp EQUIV Exp               {
                                       Type *t1 = $1->type;
                                       Type *t2 = $3->type;
 
-                                      Type *type = verifyBinayOpType(tuples, types, types, t1, t2, "<", new PrimitiveType("Bool"));
+                                      Type *type = verifyBinayOpType(tuples, types, types, t1, t2, "<", predefinedTypes["Bool"]);
                                       $$ = new NodeBinaryOperator($1, $2, $3, type); 
                                     }
       | Exp LESS_EQUAL_THAN Exp     { 
@@ -506,7 +519,7 @@ Exp   : Exp EQUIV Exp               {
                                       Type *t1 = $1->type;
                                       Type *t2 = $3->type;
 
-                                      Type *type = verifyBinayOpType(tuples, types, types, t1, t2, "<=", new PrimitiveType("Bool"));
+                                      Type *type = verifyBinayOpType(tuples, types, types, t1, t2, "<=", predefinedTypes["Bool"]);
                                       $$ = new NodeBinaryOperator($1, $2, $3, type); 
                                     }
       | Exp GREATER_THAN Exp        { 
@@ -521,7 +534,7 @@ Exp   : Exp EQUIV Exp               {
                                       Type *t1 = $1->type;
                                       Type *t2 = $3->type;
 
-                                      Type *type = verifyBinayOpType(tuples, types, types, t1, t2, ">", new PrimitiveType("Bool"));
+                                      Type *type = verifyBinayOpType(tuples, types, types, t1, t2, ">", predefinedTypes["Bool"]);
                                       $$ = new NodeBinaryOperator($1, $2, $3, type); 
                                     }
       | Exp GREATER_EQUAL_THAN Exp  { 
@@ -536,7 +549,7 @@ Exp   : Exp EQUIV Exp               {
                                       Type *t1 = $1->type;
                                       Type *t2 = $3->type;
 
-                                      Type *type = verifyBinayOpType(tuples, types, types, t1, t2, ">=", new PrimitiveType("Bool"));
+                                      Type *type = verifyBinayOpType(tuples, types, types, t1, t2, ">=", predefinedTypes["Bool"]);
                                       $$ = new NodeBinaryOperator($1, $2, $3, type); 
                                     }
       | Exp PLUS Exp                { 
@@ -553,9 +566,9 @@ Exp   : Exp EQUIV Exp               {
 
                                       Type *return_type;
                                       if (t1->toString() == "Float" || t2->toString() == "Float") {
-                                        return_type = new PrimitiveType("Float");
+                                        return_type = predefinedTypes["Float"];
                                       } else {
-                                        return_type = new PrimitiveType("Int");
+                                        return_type = predefinedTypes["Int"];
                                       }
                                       Type *type = verifyBinayOpType(tuples, types, types, t1, t2, "+", return_type);
                                       $$ = new NodeBinaryOperator($1, $2, $3, type); 
@@ -574,9 +587,9 @@ Exp   : Exp EQUIV Exp               {
 
                                       Type *return_type;
                                       if ((t1->toString() == "Float") || (t2->toString() == "Float")) {
-                                        return_type = new PrimitiveType("Float");
+                                        return_type = predefinedTypes["Float"];
                                       } else {
-                                        return_type = new PrimitiveType("Int");
+                                        return_type = predefinedTypes["Int"];
                                       }
                                       Type *type = verifyBinayOpType(tuples, types, types, t1, t2, "-", return_type);
                                       $$ = new NodeBinaryOperator($1, $2, $3, type); 
@@ -595,9 +608,9 @@ Exp   : Exp EQUIV Exp               {
 
                                       Type *return_type;
                                       if ((t1->toString() == "Float") || (t2->toString() == "Float")) {
-                                        return_type = new PrimitiveType("Float");
+                                        return_type = predefinedTypes["Float"];
                                       } else {
-                                        return_type = new PrimitiveType("Int");
+                                        return_type = predefinedTypes["Int"];
                                       }
                                       Type *type = verifyBinayOpType(tuples, types, types, t1, t2, "*", return_type);
                                       $$ = new NodeBinaryOperator($1, $2, $3, type); 
@@ -614,7 +627,7 @@ Exp   : Exp EQUIV Exp               {
                                       Type *t1 = $1->type;
                                       Type *t2 = $3->type;
 
-                                      Type *type = verifyBinayOpType(tuples, types, types, t1, t2, "/", new PrimitiveType("Float"));
+                                      Type *type = verifyBinayOpType(tuples, types, types, t1, t2, "/", predefinedTypes["Float"]);
                                       $$ = new NodeBinaryOperator($1, $2, $3, type); 
                                     }
       | Exp MODULE Exp              { 
@@ -631,9 +644,9 @@ Exp   : Exp EQUIV Exp               {
 
                                       Type *return_type;
                                       if ((t1->toString() == "Float") || (t2->toString() == "Float")) {
-                                        return_type = new PrimitiveType("Float");
+                                        return_type = predefinedTypes["Float"];
                                       } else {
-                                        return_type = new PrimitiveType("Int");
+                                        return_type = predefinedTypes["Int"];
                                       }
                                       Type *type = verifyBinayOpType(tuples, types, types, t1, t2, "%", return_type);
                                       $$ = new NodeBinaryOperator($1, $2, $3, type); 
@@ -641,9 +654,9 @@ Exp   : Exp EQUIV Exp               {
       | MINUS Exp                   { 
                                       Type *return_type;
                                       if ($2->type->toString() == "Int") {
-                                        return_type = new PrimitiveType("Int");
+                                        return_type = predefinedTypes["Int"];
                                       } else {
-                                        return_type = new PrimitiveType("Float");
+                                        return_type = predefinedTypes["Float"];
                                       }
 
                                       Type *type = verifyUnaryOpType({"Int", "Float"}, $2->type, "-", return_type);
@@ -652,9 +665,9 @@ Exp   : Exp EQUIV Exp               {
       | PLUS Exp                    { 
                                       Type *return_type;
                                       if ($2->type->toString() == "Int") {
-                                        return_type = new PrimitiveType("Int");
+                                        return_type = predefinedTypes["Int"];
                                       } else {
-                                        return_type = new PrimitiveType("Float");
+                                        return_type = predefinedTypes["Float"];
                                       }
 
                                       Type *type = verifyUnaryOpType({"Int", "Float"}, $2->type, "+", return_type);
@@ -674,9 +687,9 @@ Exp   : Exp EQUIV Exp               {
 
                                       Type *return_type;
                                       if ((t1->toString() == "Float") || (t2->toString() == "Float")) {
-                                        return_type = new PrimitiveType("Float");
+                                        return_type = predefinedTypes["Float"];
                                       } else {
-                                        return_type = new PrimitiveType("Int");
+                                        return_type = predefinedTypes["Int"];
                                       }
                                       Type *type = verifyBinayOpType(tuples, types, types, t1, t2, "**", return_type);
                                       $$ = new NodeBinaryOperator($1, $2, $3, type); 
@@ -687,7 +700,7 @@ Exp   : Exp EQUIV Exp               {
                                       string itype = $3->type->toString();
 
                                       if (ltype == "$Error") {
-                                        $$ = new NodeArrayAccess($1, $3, typeError);
+                                        $$ = new NodeArrayAccess($1, $3, predefinedTypes["$Error"]);
                                       }
                                         
                                       else if ($1->type->category != "Array") {
@@ -695,7 +708,7 @@ Exp   : Exp EQUIV Exp               {
                                           "'\e[1;3m" + ltype + 
                                           "\e[0m' type can't be indexed."
                                         );
-                                        $$ = new NodeArrayAccess($1, $3, typeError); 
+                                        $$ = new NodeArrayAccess($1, $3, predefinedTypes["$Error"]); 
                                       } 
 
                                       else if (itype != "$Error" && itype != "Int") {
@@ -703,11 +716,11 @@ Exp   : Exp EQUIV Exp               {
                                           "Expected a '\e[1;3mInt\e[0m' but '\e[1;3m" +
                                           itype + "\e[0m' found."
                                         );
-                                        $$ = new NodeArrayAccess($1, $3, typeError); 
+                                        $$ = new NodeArrayAccess($1, $3, predefinedTypes["$Error"]); 
                                       }
 
                                       else if (itype == "$Error") {
-                                        $$ = new NodeArrayAccess($1, $3, typeError);
+                                        $$ = new NodeArrayAccess($1, $3, predefinedTypes["$Error"]);
                                       }
                                       
                                       else {
@@ -718,7 +731,7 @@ Exp   : Exp EQUIV Exp               {
                                     }
 			|	POINTER Exp                 { 
                                       if ($2->type->toString() == "$Error") {
-                                        $$ = new NodePointer($2, typeError);
+                                        $$ = new NodePointer($2, predefinedTypes["$Error"]);
                                       } 
                                       
                                       else if ($2->type->category != "Pointer") {
@@ -726,7 +739,7 @@ Exp   : Exp EQUIV Exp               {
                                           "'\e[1;3m" + $2->type->toString() + 
                                           "\e[0m' type can't be desreferenced."
                                         );
-                                        $$ = new NodePointer($2, typeError); 
+                                        $$ = new NodePointer($2, predefinedTypes["$Error"]); 
                                       } 
                                       
                                       else {
@@ -737,7 +750,7 @@ Exp   : Exp EQUIV Exp               {
 			|	Exp DOT ID                  { 
                                       Type *type;
                                       if ($1->type->toString() == "$Error") {
-                                        type = typeError;
+                                        type = predefinedTypes["$Error"];
                                       } 
                                       
                                       else if ($1->type->category != "Primitive") {
@@ -745,7 +758,7 @@ Exp   : Exp EQUIV Exp               {
                                           "'\e[1;3m" + $1->type->toString() + 
                                           "\e[0m' type can't be accessed."
                                         );
-                                        type = typeError;
+                                        type = predefinedTypes["$Error"];
                                       } 
                                       
                                       else {
@@ -756,7 +769,7 @@ Exp   : Exp EQUIV Exp               {
                                             "'\e[1;3m" + $1->type->toString() + 
                                             "\e[0m' type can't be accessed."
                                           );
-                                          type = typeError;
+                                          type = predefinedTypes["$Error"];
                                         } 
                                         
                                         else {
@@ -769,7 +782,7 @@ Exp   : Exp EQUIV Exp               {
                                               "\e[0m' has no member '\e[1;3m" + 
                                               $3 + "\e[0m'."
                                             );
-                                            type = typeError;
+                                            type = predefinedTypes["$Error"];
                                           } 
 
                                           else {
@@ -784,12 +797,12 @@ Exp   : Exp EQUIV Exp               {
                                       Entry *e;
                                       if ((e = table.lookup($1)) == NULL) {
                                         addError((string) "'\e[1;3m" + $1 + "\e[0m' wasn't declared.");
-                                        $$ = new NodeID($1, typeError);
+                                        $$ = new NodeID($1, predefinedTypes["$Error"]);
                                       } 
                                       
                                       else if (e->category != "Var") {
                                         addError((string) "'\e[1;3m" + $1 + "\e[0m' isn't a variable.");
-                                        $$ = new NodeID($1, typeError);
+                                        $$ = new NodeID($1, predefinedTypes["$Error"]);
                                       } 
                                       
                                       else {
@@ -804,7 +817,7 @@ Exp   : Exp EQUIV Exp               {
 
                                       else {
                                         $$ = new ExpressionNode();
-                                        $$->type = typeError;
+                                        $$->type = predefinedTypes["$Error"];
                                       }
                                     }
       | OPEN_PAR Exp ASSIGNMENT Exp CLOSE_PAR         
@@ -814,7 +827,7 @@ Exp   : Exp EQUIV Exp               {
 
                                       if (ltype == "$Error" || rtype == "$Error") {
                                         $$ = new ExpressionNode();
-                                        $$->type = typeError;
+                                        $$->type = predefinedTypes["$Error"];
                                       } 
 
                                       else if (! $2->is_lvalue) {
@@ -822,7 +835,7 @@ Exp   : Exp EQUIV Exp               {
                                           "Can't assign to a R-Value."
                                         );
                                         $$ = new ExpressionNode();
-                                        $$->type = typeError;
+                                        $$->type = predefinedTypes["$Error"];
                                       }
                                       
                                       else if (ltype != rtype) {
@@ -831,7 +844,7 @@ Exp   : Exp EQUIV Exp               {
                                           "\e[0m' to a '\e[1;3m" + ltype + "\e[0m'."
                                         );
                                         $$ = new ExpressionNode();
-                                        $$->type = typeError;
+                                        $$->type = predefinedTypes["$Error"];
                                       } 
                                       
                                       else {
@@ -856,7 +869,7 @@ Array     : OPEN_BRACKET ArrExp CLOSE_BRACKET   {
                                                     int size = size = ((NodeArrayElems*) $2)->current_size;
                                                     $$ = new NodeArray($2, new ArrayType($2->type, new NodeINT(size))); 
                                                   } else {
-                                                    $$ = new NodeArray($2, typeError); 
+                                                    $$ = new NodeArray($2, predefinedTypes["$Error"]); 
                                                   }
                                                 }
           ;
@@ -872,7 +885,7 @@ ArrExp    : ArrElems Exp                        {
                                                   } 
                                                   
                                                   else if (type1 == "$Error" || type2 == "$Error") {
-                                                    type = typeError;
+                                                    type = predefinedTypes["$Error"];
                                                     size = 0;
                                                   } 
                                                   
@@ -882,7 +895,7 @@ ArrExp    : ArrElems Exp                        {
                                                       ", but found '\e[1;3m" + type1 + "\e[0m' and " +
                                                       "'\e[1;3m" + type2 + "\e[0m'."
                                                     );
-                                                    type = typeError;
+                                                    type = predefinedTypes["$Error"];
                                                     size = 0;
 
                                                   } else {
@@ -904,7 +917,7 @@ ArrElems	: /* lambda */                        { $$ = NULL; }
                                                     size = 1;
 
                                                   } else if (type1 == "$Error" || type2 == "$Error") {
-                                                    type = typeError;
+                                                    type = predefinedTypes["$Error"];
                                                     size = 0;
 
                                                   } else if (type1 != type2) {
@@ -913,7 +926,7 @@ ArrElems	: /* lambda */                        { $$ = NULL; }
                                                       ", but found '\e[1;3m" + type1 + "\e[0m' and " +
                                                       "'\e[1;3m" + type2 + "\e[0m'."
                                                     );
-                                                    type = typeError;
+                                                    type = predefinedTypes["$Error"];
                                                     size = 0;
 
                                                   } else {
@@ -929,7 +942,7 @@ ArrElems	: /* lambda */                        { $$ = NULL; }
 FuncCall  : ID OPEN_PAR ArgsExp CLOSE_PAR   { 
                                               if ($3 == NULL) {
                                                 $$ = new ExpressionNode();
-                                                $$->type = typeError;
+                                                $$->type = predefinedTypes["$Error"];
                                               } 
                                               
                                               else {
@@ -937,12 +950,12 @@ FuncCall  : ID OPEN_PAR ArgsExp CLOSE_PAR   {
                                                 Entry *e;
                                                 if ((e = table.lookup($1)) == NULL) {
                                                   addError((string) "'\e[1;3m" + $1 + "\e[0m' wasn't declared.");
-                                                  type = typeError;
+                                                  type = predefinedTypes["$Error"];
                                                 } 
                                                 
                                                 else if (e->category != "Function" && e->category != "Declaration") {
                                                   addError((string) "'\e[1;3m" + $1 + "\e[0m' isn't a function.");
-                                                  type = typeError;
+                                                  type = predefinedTypes["$Error"];
                                                 } 
                                                 
                                                 else {
@@ -1003,7 +1016,7 @@ FuncCall  : ID OPEN_PAR ArgsExp CLOSE_PAR   {
                                                   }
 
                                                   if (! correctTypes) {
-                                                    type = typeError;
+                                                    type = predefinedTypes["$Error"];
                                                   }
                                                 }
 
@@ -1115,14 +1128,25 @@ UnionDef  : UnionId OPEN_C_BRACE UnionBody CLOSE_C_BRACE  {
                                                               table.exitScope(); 
                                                               int s = table.currentScope();
 
-                                                              Entry *e = new StructureEntry($1, s, "Structure", def_s);
+                                                              Entry *e = new StructureEntry(
+                                                                $1, 
+                                                                s, 
+                                                                "Structure", 
+                                                                def_s,
+                                                                table.offsets.back()
+                                                              );
                                                               table.insert(e);
                                                             }
 
                                                             $$ = NULL;
+                                                            table.offsets.pop_back();
                                                           }
           ;
-UnionId   : UNION IdDef                                   { table.newScope(); $$ = $2; }
+UnionId   : UNION IdDef                                   { 
+                                                            table.newScope(); 
+                                                            $$ = $2; 
+                                                            table.offsets.push_back(new NodeINT(0));
+                                                          }
           ;  
 UnionBody	: Type IdDef SEMICOLON                          { 
                                                             if ($2 == "" || $1->toString() == "$Error") {
@@ -1130,8 +1154,20 @@ UnionBody	: Type IdDef SEMICOLON                          {
                                                             } else {
                                                               $$ = new NodeUnionFields(NULL, $1, $2); 
                                                               int s = table.currentScope();
-                                                              Entry *e = new VarEntry($2, s, "Field", $1);
+                                                              Entry *e = new VarEntry(
+                                                                $2, 
+                                                                s, 
+                                                                "Field", 
+                                                                $1, 
+                                                                table.offsets.back()
+                                                              );
                                                               table.insert(e);
+                                                              table.offsets.back() = new NodeBinaryOperator(
+                                                                table.offsets.back(), 
+                                                                "+", 
+                                                                $1->width, 
+                                                                predefinedTypes["Int"]
+                                                              );
                                                             }
                                                           }
 					| UnionBody Type IdDef SEMICOLON                { 
@@ -1140,8 +1176,20 @@ UnionBody	: Type IdDef SEMICOLON                          {
                                                             } else {
                                                               $$ = new NodeUnionFields($1, $2, $3); 
                                                               int s = table.currentScope();
-                                                              Entry *e = new VarEntry($3, s, "Field", $2);
+                                                              Entry *e = new VarEntry(
+                                                                $3, 
+                                                                s, 
+                                                                "Field", 
+                                                                $2, 
+                                                                table.offsets.back()
+                                                              );
                                                               table.insert(e);
+                                                              table.offsets.back() = new NodeBinaryOperator(
+                                                                table.offsets.back(), 
+                                                                "+", 
+                                                                $2->width, 
+                                                                predefinedTypes["Int"]
+                                                              );
                                                             }
                                                           }
           ;
@@ -1153,14 +1201,25 @@ RegDef    : RegId OPEN_C_BRACE RegBody CLOSE_C_BRACE  {
                                                           table.exitScope();
                                                           int s = table.currentScope();
 
-                                                          Entry *e = new StructureEntry($1, s, "Structure", def_s);
+                                                          Entry *e = new StructureEntry(
+                                                            $1, 
+                                                            s, 
+                                                            "Structure", 
+                                                            def_s,
+                                                            table.offsets.back()
+                                                          );
                                                           table.insert(e);
                                                         }
 
                                                         $$ = NULL;
+                                                        table.offsets.pop_back();
                                                       }
           ;   
-RegId     : REGISTER IdDef                            { table.newScope(); $$ = $2; }
+RegId     : REGISTER IdDef                            { 
+                                                        table.newScope(); 
+                                                        $$ = $2; 
+                                                        table.offsets.push_back(new NodeINT(0));
+                                                      }
           ; 
 RegBody	  : Type IdDef OptAssign SEMICOLON            { 
                                                         if (
@@ -1181,8 +1240,20 @@ RegBody	  : Type IdDef OptAssign SEMICOLON            {
                                                         else {
                                                           $$ = new NodeRegFields(NULL, $1, $2, $3);
                                                           int s = table.currentScope();
-                                                          Entry *e = new VarEntry($2, s, "Field", $1);
+                                                          Entry *e = new VarEntry(
+                                                            $2, 
+                                                            s, 
+                                                            "Field", 
+                                                            $1, 
+                                                            table.offsets.back()
+                                                          );
                                                           table.insert(e);
+                                                          table.offsets.back() = new NodeBinaryOperator(
+                                                            table.offsets.back(), 
+                                                            "+", 
+                                                            $1->width, 
+                                                            predefinedTypes["Int"]
+                                                          );
                                                         }
                                                       }
 				  |	RegBody Type IdDef OptAssign SEMICOLON    { 
@@ -1205,8 +1276,20 @@ RegBody	  : Type IdDef OptAssign SEMICOLON            {
                                                         else {
                                                           $$ = new NodeRegFields($1, $2, $3, $4);
                                                           int s = table.currentScope();
-                                                          Entry *e = new VarEntry($3, s, "Field", $2);
+                                                          Entry *e = new VarEntry(
+                                                            $3, 
+                                                            s, 
+                                                            "Field", 
+                                                            $2, 
+                                                            table.offsets.back()
+                                                          );
                                                           table.insert(e);
+                                                          table.offsets.back() = new NodeBinaryOperator(
+                                                            table.offsets.back(), 
+                                                            "+", 
+                                                            $2->width, 
+                                                            predefinedTypes["Int"]
+                                                          );
                                                         }
                                                       }
           ;
@@ -1293,9 +1376,15 @@ LoopFor   : For OPEN_PAR IdFor SEMICOLON Exp SEMICOLON
           ;
 IdFor     : IdDef                                     { 
                                                         int s = table.currentScope();
-                                                        Type *t = new PrimitiveType("Float");
-                                                        Entry *e = new VarEntry($1, s, "Var", t);
+                                                        Type *t = predefinedTypes["Float"];
+                                                        Entry *e = new VarEntry($1, s, "Var", t, table.offsets.back());
                                                         table.insert(e); 
+                                                        table.offsets.back() = new NodeBinaryOperator(
+                                                          table.offsets.back(), 
+                                                          "+", 
+                                                          predefinedTypes["Float"]->width, 
+                                                          predefinedTypes["Int"]
+                                                        );
                                                         $$ = $1; 
                                                       }
           ;
@@ -1502,8 +1591,20 @@ MandArgs  : Type OptRef IdDef                             {
                                                               });
 
                                                               int s = table.currentScope();
-                                                              Entry *e = new VarEntry($3, s, "Var", $1);
+                                                              Entry *e = new VarEntry(
+                                                                $3, 
+                                                                s, 
+                                                                "Var", 
+                                                                $1, 
+                                                                table.offsets.back()
+                                                              );
                                                               table.insert(e);
+                                                              table.offsets.back() = new NodeBinaryOperator(
+                                                                table.offsets.back(), 
+                                                                "+", 
+                                                                $1->width, 
+                                                                predefinedTypes["Int"]
+                                                              );
                                                             }
                                                           }
           | MandArgs COMMA Type OptRef IdDef              { 
@@ -1523,8 +1624,20 @@ MandArgs  : Type OptRef IdDef                             {
                                                               });
 
                                                               int s = table.currentScope();
-                                                              Entry *e = new VarEntry($5, s, "Var", $3);
+                                                              Entry *e = new VarEntry(
+                                                                $5, 
+                                                                s, 
+                                                                "Var", 
+                                                                $3, 
+                                                                table.offsets.back()
+                                                              );
                                                               table.insert(e);
+                                                              table.offsets.back() = new NodeBinaryOperator(
+                                                                table.offsets.back(), 
+                                                                "+", 
+                                                                $3->width, 
+                                                                predefinedTypes["Int"]
+                                                              );
                                                             }
                                                           }
           ;   
@@ -1561,8 +1674,20 @@ OptArgs   : Type OptRef IdDef ASSIGNMENT Exp              {
                                                               });
 
                                                               int s = table.currentScope();
-                                                              Entry *e = new VarEntry($3, s, "Var", $1);
+                                                              Entry *e = new VarEntry(
+                                                                $3, 
+                                                                s, 
+                                                                "Var",
+                                                                $1, 
+                                                                table.offsets.back()
+                                                              );
                                                               table.insert(e);
+                                                              table.offsets.back() = new NodeBinaryOperator(
+                                                                table.offsets.back(), 
+                                                                "+", 
+                                                                $1->width, 
+                                                                predefinedTypes["Int"]
+                                                              );
                                                             }
                                                           }
           | OptArgs COMMA Type OptRef IdDef 
@@ -1600,15 +1725,27 @@ OptArgs   : Type OptRef IdDef ASSIGNMENT Exp              {
                                                               });
           
                                                               int s = table.currentScope();
-                                                              Entry *e = new VarEntry($5, s, "Var", $3);
+                                                              Entry *e = new VarEntry(
+                                                                $5, 
+                                                                s, 
+                                                                "Var", 
+                                                                $3, 
+                                                                table.offsets.back()
+                                                              );
                                                               table.insert(e);
+                                                              table.offsets.back() = new NodeBinaryOperator(
+                                                                table.offsets.back(), 
+                                                                "+", 
+                                                                $3->width, 
+                                                                predefinedTypes["Int"]
+                                                              );
                                                             }
                                                           }
           ;
 OptRef    : /* lambda */                                  { $$ = false; }
 					| AT                                            { $$ = true; }
           ; 
-OptReturn : /* lambda */                                  { $$ = new PrimitiveType("Unit"); }
+OptReturn : /* lambda */                                  { $$ = predefinedTypes["Unit"]; }
 				  | RIGHT_ARROW Type                              { $$ = $2; }
           ; 
 Actions   : /* lambda */                                  { $$ = NULL; }
@@ -1684,13 +1821,13 @@ int main(int argc, char **argv)
     table.insert(new PrimitiveEntry(t));
   }
   FunctionEntry *fe = new FunctionEntry("read", 0, "Function");
-  fe->return_type = new ArrayType(new PrimitiveType("Char"), new NodeINT(1));
+  fe->return_type = new ArrayType(predefinedTypes["Char"], new NodeINT(1));
   fe->def_scope = 0;
   table.insert(fe);
 
   fe = new FunctionEntry("print", 0, "Function");
   fe->args.push_back({"text", "(Char)[]", false, true});
-  fe->return_type = new PrimitiveType("Unit");
+  fe->return_type = predefinedTypes["Unit"];
   fe->def_scope = 0;
   table.insert(fe);
 
@@ -1894,7 +2031,7 @@ Type *verifyUnaryOpType(
   Type *return_type
 ) {
   if (type->toString() == "$Error") {
-    return typeError;
+    return predefinedTypes["$Error"];
 
   } else if (verify(accepted_types, type)) {
     return return_type;
@@ -1904,7 +2041,7 @@ Type *verifyUnaryOpType(
       (string) "Operator '\e[1;3m" + op + "\e[0m' can't be applied with operand type " +
       "'\e[1;3m" + type->toString() + "\e[0m'."
     );
-    return typeError;
+    return predefinedTypes["$Error"];
   }
 
 }
@@ -1923,7 +2060,7 @@ Type *verifyBinayOpType(
 ) {
   // Verifies if one of the operands has error type.
   if (type1->toString() == "$Error" || type2->toString() == "$Error") {
-    return typeError;
+    return predefinedTypes["$Error"];
 
   // If there are no errors in the operands.
   } else {
@@ -1940,7 +2077,7 @@ Type *verifyBinayOpType(
         "Operator '\e[1;3m" + op + "\e[0m' don't matches with operand types: '\e[1;3m" +
         type1->toString() + "\e[0m' and '\e[1;3m" + type2->toString() + "\e[0m'."
       );
-      return typeError;
+      return predefinedTypes["$Error"];
     }
   }
 }

@@ -1,9 +1,10 @@
 #include "table.hpp"
 
-using namespace std;
+extern map<string, Type*> predefinedTypes;
 
 SymbolsTable::SymbolsTable() {
   this->lastScope = 1;
+  this->offsets = {new NodeINT(0)};
   this->scopeStack.push_back(this->lastScope);
 }
 
@@ -183,24 +184,32 @@ void SymbolsTable::printScopeStack() {
   cout << "\e[1;31m<== Top\e[0m\n";
 }
 
+
+
 PrimitiveEntry::PrimitiveEntry(string id) {
   this->id = id;
   this->scope = 0;
   this->category = "Primitive";
+  if (id != "String") this->type = predefinedTypes[id];
 }
 
 void PrimitiveEntry::print(void) {
   cout << "\e[1;31m(\e[1;34mScope:\e[0m " << this->scope;
   cout << ", \e[1;34mID:\e[0m " << this->id;
   cout << ", \e[1;34mCategory:\e[0m " << this->category;
+  if (this->id != "String") {
+    cout << ", \e[1;34mWidth:\e[0m ";
+    this->type->width->print();
+  }
   cout << "\e[1;31m)\e[0m";
 }
 
-VarEntry::VarEntry(string id, int scope, string category, Type *type) {
+VarEntry::VarEntry(string id, int scope, string category, Type *type, Node *offset) {
   this->id = id;
   this->type = type;
   this->scope = scope;
   this->category = category;
+  this->offset = offset;
 }
 
 /*
@@ -211,7 +220,9 @@ void VarEntry::print(void) {
   cout << ", \e[1;34mID:\e[0m " << this->id;
   cout << ", \e[1;34mCategory:\e[0m " << this->category;
   cout << ", \e[1;34mType: \e[0m";
-  this->type->print(); 
+  cout << this->type->toString(); 
+  cout << ", \e[1;34mOffset: \e[0m";
+  cout << this->offset->toString(); 
   cout << "\e[1;31m)\e[0m";
 }
 
@@ -219,12 +230,14 @@ StructureEntry::StructureEntry(
   string id, 
   int scope, 
   string category, 
-  int def_scope
+  int def_scope,
+  Node *width
 ) {
   this->id = id;
   this->scope = scope;
   this->category = category;
   this->def_scope = def_scope;
+  this->width = width;
 }
 
 /*
@@ -235,6 +248,8 @@ void StructureEntry::print(void) {
   cout << ", \e[1;34mID:\e[0m " << this->id;
   cout << ", \e[1;34mCategory:\e[0m " << this->category;
   cout << ", \e[1;34mDef Scope:\e[0m " << this->def_scope; 
+  cout << ", \e[1;34mWidth: \e[0m";
+  cout << this->width->toString(); 
   cout << "\e[1;31m)\e[0m";
 }
 

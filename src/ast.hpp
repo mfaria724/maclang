@@ -21,6 +21,7 @@ class Node {
     virtual void printTree(vector<bool> *identation) {};
 };
 
+
 /*
   "Abstract" class that is parent of all type classes.
 */
@@ -29,6 +30,8 @@ class Type {
     Type(void) {};
 
     string category;
+    Node *width;
+
     // Print a node representation.
     virtual void print(void) {};
     // Returns a string representation of the sub ast.
@@ -86,7 +89,7 @@ class NodeINT : public ExpressionNode {
     int value;
 
   public:
-    NodeINT(int value);
+    NodeINT(int value, bool defineType=true);
 
     void print(void);
 

@@ -9,10 +9,30 @@ void printIdentation(vector<bool> *identation) {
   }
 }
 
+map<string, Node*> primitiveWidths = {
+  {"Unit",    new NodeINT(1, false)},
+  {"Bool",    new NodeINT(1, false)},
+  {"Char",    new NodeINT(1, false)},
+  {"Int",     new NodeINT(4, false)},
+  {"Float",   new NodeINT(8, false)},
+  {"Pointer", new NodeINT(8, false)},
+  {"$Error",  new NodeINT(0, false)}
+};
+
+// Predefined Types 
+map<string, Type*> predefinedTypes = {
+  {"Unit",    new PrimitiveType("Unit")},
+  {"Bool",    new PrimitiveType("Bool")},
+  {"Char",    new PrimitiveType("Char")},
+  {"Int",     new PrimitiveType("Int")},
+  {"Float",   new PrimitiveType("Float")},
+  {"$Error",  new PrimitiveType("$Error")}
+};
+
 /* ======================= DATA NODES =======================  */
 NodeBOOL::NodeBOOL(bool value) {
   this->value = value;
-  this->type = new PrimitiveType("Bool");
+  this->type = predefinedTypes["Bool"];
   this->is_lvalue = false;
 }
 
@@ -31,7 +51,7 @@ void NodeBOOL::printTree(vector<bool> *identation) {
 
 NodeCHAR::NodeCHAR(char value) {
   this->value = value;
-  this->type = new PrimitiveType("Char");
+  this->type = predefinedTypes["Char"];
   this->is_lvalue = false;
 }
 
@@ -48,9 +68,9 @@ void NodeCHAR::printTree(vector<bool> *identation) {
   cout << "CHAR: " << this->value << "\n";
 }
 
-NodeINT::NodeINT(int value) {
+NodeINT::NodeINT(int value, bool defineType) {
   this->value = value;
-  this->type = new PrimitiveType("Int");
+  if (defineType) this->type = predefinedTypes["Int"];
   this->is_lvalue = false;
 }
 
@@ -68,7 +88,7 @@ void NodeINT::printTree(vector<bool> *identation) {
 
 NodeFLOAT::NodeFLOAT(float value) {
   this->value = value;
-  this->type = new PrimitiveType("Float");
+  this->type = predefinedTypes["Float"];
   this->is_lvalue = false;
 }
 
@@ -86,7 +106,7 @@ void NodeFLOAT::printTree(vector<bool> *identation) {
 
 NodeSTRING::NodeSTRING(string value) {
   this->value = value;
-  this->type = new ArrayType(new PrimitiveType("Char"), new NodeINT(value.size()));
+  this->type = new ArrayType(predefinedTypes["Char"], new NodeINT(value.size()));
   this->is_lvalue = false;
 }
 
@@ -1429,6 +1449,7 @@ void NodeS::printTree(vector<bool> *identation) {
 /* ======================= TYPE NODES =======================  */
 PrimitiveType::PrimitiveType(string id) {
   this->id = id;
+  this->width = primitiveWidths[id];
   this->category = "Primitive";
 }
 
@@ -1446,6 +1467,7 @@ void PrimitiveType::printTree(vector<bool> *identation) {
 
 PointerType::PointerType(Type *type) {
   this->type = type;
+  this->width = primitiveWidths["Pointer"];
   this->category = "Pointer";
 }
 
@@ -1475,6 +1497,8 @@ void PointerType::printTree(vector<bool> *identation) {
 ArrayType::ArrayType(Type *type, Node *size) {
   this->type = type;
   this->size = size;
+  string t_size = type->toString();
+  this->width = new NodeBinaryOperator(type->width, "*", size, predefinedTypes["Int"]);
   this->category = "Array";
 }
 

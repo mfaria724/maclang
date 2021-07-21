@@ -1,0 +1,30 @@
+let Int a00;
+let Char a01;
+let Float a02;
+
+for (a03; 0; 0) do 
+    let String a04;
+    while True do
+        let Int[100] a05;
+    done
+done 
+
+register a10 {
+    Char a06;
+    String[10] a07;
+    Int a08;
+    Bool a09;
+}
+
+let a10[7] a11;
+
+union a15 {
+    Bool a12;
+    Char a13;
+    Int a14;
+}
+
+while True do 
+    let Int a16;
+    let a15 a17;
+done

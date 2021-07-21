@@ -4,6 +4,8 @@
 #include <iostream>
 #include "ast.hpp"
 
+#define WORD_SIZE 4
+
 using namespace std;
 
 /*
@@ -15,6 +17,7 @@ class Entry {
     string id;
     // Scope where variable was defined.
     int scope;
+    Node *offset;
     // Category of the entry
     string category;
   
@@ -38,6 +41,7 @@ class SymbolsTable {
   public:
     // Return type in a function definition.
     string ret_type;
+    vector<Node*> offsets;
 
     SymbolsTable(void);
 
@@ -75,6 +79,8 @@ class PrimitiveEntry : public Entry {
   public:
     PrimitiveEntry(string id);
 
+    Type *type;
+
     void print(void);
 };
 
@@ -83,7 +89,7 @@ class VarEntry : public Entry {
     // Variable type
     Type *type;
   
-    VarEntry(string id, int scope, string category, Type *type);
+    VarEntry(string id, int scope, string category, Type *type, Node *offset);
 
     // Prints the variable information
     void print(void);
@@ -93,8 +99,9 @@ class StructureEntry : public Entry {
   public:
     // scope where the entry was defined.
     int def_scope;  
+    Node *width;
 
-    StructureEntry(string id, int scope, string category, int def_scope);
+    StructureEntry(string id, int scope, string category, int def_scope, Node *width);
 
     // Prints the structure information
     void print(void);
@@ -129,3 +136,4 @@ class FunctionDeclarationEntry : public FunctionEntry {
     // Prints the function information
     void print(void);
 };
+

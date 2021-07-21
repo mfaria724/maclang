@@ -43,7 +43,11 @@ union unio {
 
 dec myfunction(unio U) => Int;
 
-if ! True && (42**6 >= 0/0) && (1/1 < integers[ y[y[y[x]]] ** 4][0]) || (False == (array[-1] != !!!!!!! (0/0 < 0/0))) then 
+if ! True && 
+    (42**6 >= 0/0) && 
+    (1/1 < integers[ y[y[y[x]]] ** 4][0]) || 
+    (False == (array[-1] != !!!!!!! (0/0 < 0/0))) 
+then 
   def a() {}              
   register registro {
     Int numero = 15;
