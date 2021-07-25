@@ -16,7 +16,7 @@ register a10 {
     Bool a09;
 }
 
-let a10[7] a11;
+let a10[a00 * 6 * 45 - a00] a11;
 
 union a15 {
     Bool a12;
