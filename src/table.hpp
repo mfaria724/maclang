@@ -17,7 +17,7 @@ class Entry {
     string id;
     // Scope where variable was defined.
     int scope;
-    Node *offset;
+    int offset;
     // Category of the entry
     string category;
   
@@ -41,7 +41,7 @@ class SymbolsTable {
   public:
     // Return type in a function definition.
     string ret_type;
-    vector<Node*> offsets;
+    vector<int> offsets;
 
     SymbolsTable(void);
 
@@ -89,7 +89,7 @@ class VarEntry : public Entry {
     // Variable type
     Type *type;
   
-    VarEntry(string id, int scope, string category, Type *type, Node *offset);
+    VarEntry(string id, int scope, string category, Type *type, int offset);
 
     // Prints the variable information
     void print(void);
@@ -99,9 +99,9 @@ class StructureEntry : public Entry {
   public:
     // scope where the entry was defined.
     int def_scope;  
-    Node *width;
+    int width;
 
-    StructureEntry(string id, int scope, string category, int def_scope, Node *width);
+    StructureEntry(string id, int scope, string category, int def_scope, int width);
 
     // Prints the structure information
     void print(void);

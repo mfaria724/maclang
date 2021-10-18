@@ -4,7 +4,7 @@ extern map<string, Type*> predefinedTypes;
 
 SymbolsTable::SymbolsTable() {
   this->lastScope = 1;
-  this->offsets = {new NodeINT(0)};
+  this->offsets = {0};
   this->scopeStack.push_back(this->lastScope);
 }
 
@@ -29,7 +29,7 @@ int SymbolsTable::currentScope(void) {
 }
 
 /*
-  Verify if it is possibke to insert a new entry in the table.
+  Verify if it is possible to insert a new entry in the table.
 */
 bool SymbolsTable::verifyInsert(string id) {
   Entry *look = this->lookup(id);
@@ -198,13 +198,12 @@ void PrimitiveEntry::print(void) {
   cout << ", \e[1;34mID:\e[0m " << this->id;
   cout << ", \e[1;34mCategory:\e[0m " << this->category;
   if (this->id != "String") {
-    cout << ", \e[1;34mWidth:\e[0m ";
-    this->type->width->print();
+    cout << ", \e[1;34mWidth:\e[0m " << this->type->width;
   }
   cout << "\e[1;31m)\e[0m";
 }
 
-VarEntry::VarEntry(string id, int scope, string category, Type *type, Node *offset) {
+VarEntry::VarEntry(string id, int scope, string category, Type *type, int offset) {
   this->id = id;
   this->type = type;
   this->scope = scope;
@@ -221,8 +220,7 @@ void VarEntry::print(void) {
   cout << ", \e[1;34mCategory:\e[0m " << this->category;
   cout << ", \e[1;34mType: \e[0m";
   cout << this->type->toString(); 
-  cout << ", \e[1;34mOffset: \e[0m";
-  cout << this->offset->toString(); 
+  cout << ", \e[1;34mOffset: \e[0m" << this->offset; 
   cout << "\e[1;31m)\e[0m";
 }
 
@@ -231,7 +229,7 @@ StructureEntry::StructureEntry(
   int scope, 
   string category, 
   int def_scope,
-  Node *width
+  int width
 ) {
   this->id = id;
   this->scope = scope;
@@ -248,8 +246,7 @@ void StructureEntry::print(void) {
   cout << ", \e[1;34mID:\e[0m " << this->id;
   cout << ", \e[1;34mCategory:\e[0m " << this->category;
   cout << ", \e[1;34mDef Scope:\e[0m " << this->def_scope; 
-  cout << ", \e[1;34mWidth: \e[0m";
-  cout << this->width->toString(); 
+  cout << ", \e[1;34mWidth: \e[0m" << this->width; 
   cout << "\e[1;31m)\e[0m";
 }
 

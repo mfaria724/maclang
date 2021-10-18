@@ -1,5 +1,13 @@
+${
+    Comentario 1
+}$
+
 def F() {}
 
 def F(Int a=1) {}
 
 F(0);
+
+${
+    Comentario 2
+}$

@@ -1,11 +1,11 @@
 let Int a00;
-let Char a01;
+let Bool a01;
 let Float a02;
 
 for (a03; 0; 0) do 
     let String a04;
     while True do
-        let Int[100] a05;
+        let Int[100 + a00*3] a05;
     done
 done 
 
@@ -25,6 +25,6 @@ union a15 {
 }
 
 while True do 
-    let Int a16;
+    let Int[a00 * a11[0].a08 % 1] a16;
     let a15 a17;
 done

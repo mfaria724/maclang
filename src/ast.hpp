@@ -22,669 +22,674 @@ class Node {
 };
 
 
-/*
-  "Abstract" class that is parent of all type classes.
-*/
-class Type {
-  public:
-    Type(void) {};
+/* ======================= TYPES ===================================== */
+  /* "Abstract" class that is parent of all type classes. */
+  class Type {
+    public:
+      Type(void) {};
 
-    string category;
-    Node *width;
+      string category;
+      int width;
 
-    // Print a node representation.
-    virtual void print(void) {};
-    // Returns a string representation of the sub ast.
-    virtual string toString(void) { return ""; };
-    // Print a tree representation of the sub-ast.
-    virtual void printTree(vector<bool> *identation) {};
-};
+      // Print a node representation.
+      virtual void print(void) {};
+      // Returns a string representation of the sub ast.
+      virtual string toString(void) { return ""; };
+      // Print a tree representation of the sub-ast.
+      virtual void printTree(vector<bool> *identation) {};
+  };
 
-class ExpressionNode : public Node {
+  /* Class for defined types. */
+  class PrimitiveType : public Type {
+    protected:
+      string id;
 
-  public: 
-    Type *type;
-    bool is_lvalue;
+    public:
+      PrimitiveType(string id);
 
-    ExpressionNode(void) {};
+      void print(void);
 
-    virtual void print(void) {};
+      string toString(void);
 
-    virtual string toString(void) { return ""; };
-    
-    virtual void printTree(vector<bool> *identation) {};
-};
+      void printTree(vector<bool> *identation);
+  };
 
-/* ======================= DATA NODES =======================  */
-class NodeBOOL : public ExpressionNode {
-  protected:
-    bool value;
+  /* Representation of  -> ^ Type. */
+  class PointerType : public Type {
+    public:
+      Type *type;
 
-  public:
-    NodeBOOL(bool value);
+      PointerType(Type *type);
 
-    void print(void);
+      void print(void);
 
-    string toString(void);
+      string toString(void);
 
-    void printTree(vector<bool> *identation);
-};
+      void printTree(vector<bool> *identation);
+  };
 
-class NodeCHAR : public ExpressionNode {
-  protected:
-    char value;
+  /* Representation of  -> Type [ Exp ]. */
+  class ArrayType : public Type {
+    protected:
+      Node *size;
 
-  public:
-    NodeCHAR(char value);
+    public: 
+      Type *type;
 
-    void print(void);
+      ArrayType(Type *type, Node *size);
 
-    string toString(void);
+      void print(void);
 
-    void printTree(vector<bool> *identation);
-};
+      string toString(void);
 
-class NodeINT : public ExpressionNode {
-  protected:
-    int value;
+      void printTree(vector<bool> *identation);
+  };
 
-  public:
-    NodeINT(int value, bool defineType=true);
 
-    void print(void);
+/* ======================= BASIC NODES =============================== */
+  class ExpressionNode : public Node {
+    public: 
+      Type *type;
+      bool is_lvalue;
 
-    string toString(void);
+      ExpressionNode(void) {};
 
-    void printTree(vector<bool> *identation);
-};
+      virtual void print(void) {};
 
-class NodeFLOAT : public ExpressionNode {
-  protected:
-    float value;
+      virtual string toString(void) { return ""; };
+      
+      virtual void printTree(vector<bool> *identation) {};
+  };
 
-  public:
-    NodeFLOAT(float value);
+  class NodeAssign : public ExpressionNode {
+    protected:
+      Node *lvalue;
+      Node *rvalue;
 
-    void print(void);
+    public:
+      NodeAssign(Node *lvalue, Node *rvalue);
 
-    string toString(void);
+      void print(void);
 
-    void printTree(vector<bool> *identation);
-};
+      string toString(void);
 
-class NodeSTRING : public ExpressionNode {
-  protected:
-    string value;
+      void printTree(vector<bool> *identation);
+  };
 
-  public:
-    NodeSTRING(string value);
+  class NodeAssignList : public Node {
+    protected:
+      Node *head;
+      Node *assign;
 
-    void print(void);
+    public:
+      NodeAssignList(Node *head, Node *assign);
 
-    string toString(void);
+      void print(void);
 
-    void printTree(vector<bool> *identation);
-};
+      string toString(void);
 
-/* ======================= EXPRESSION NODES =======================  */
-/* Representation o binary operators. */
-class NodeBinaryOperator : public ExpressionNode {
-  protected:
-    Node *left;
-    string op;
-    Node *right;
+      void printTree(vector<bool> *identation);
+  };
 
-  public:
-    NodeBinaryOperator(Node *left, string op, Node *rigth, Type *type);
+  /* Representacion of  -> I Inst */
+  class NodeI : public Node {
+    protected:
+      Node *head;
+      Node *inst;
 
-    void print(void);
+    public:
+      NodeI(Node *head, Node *inst);
 
-    string toString(void);
+      void print(void);
 
-    void printTree(vector<bool> *identation);
-};
+      string toString(void);
 
-/* Representation of unary operations. */
-class NodeUnaryOperator : public ExpressionNode {
-  protected:
-    string op;
-    Node *exp;
+      void printTree(vector<bool> *identation);
+  };
 
-  public:
-    NodeUnaryOperator(string op, Node *exp, Type *type);
+  /* Root node. */
+  class NodeS {
+    protected:
+      Node *inst;
 
-    void print(void);
+    public:
+      NodeS(Node *inst);
 
-    string toString(void);
+      void print(void);
 
-    void printTree(vector<bool> *identation);
-};
+      string toString(void);
 
-class NodeID : public ExpressionNode {
-  protected:
-    string id;
+      void printTree(vector<bool> *identation);
+  };
 
-  public:
-    NodeID(string id, Type *type);
+  class NodeError : public Node {
+    public:
+      string errInfo;
 
-    void print(void);
+      NodeError(void) { }
 
-    string toString(void);
+      string toString(void) { return "Error"; }
+  };
 
-    void printTree(vector<bool> *identation);
-};
 
-class NodeDot : public ExpressionNode {
-  protected:
-    Node *structure;
-    string id;
+/* ======================= DATA NODES ================================ */
+  class NodeBOOL : public ExpressionNode {
+    protected:
+      bool value;
 
-  public:
-    NodeDot(Node *structure, string id, Type *type);
+    public:
+      NodeBOOL(bool value);
 
-    void print(void);
+      void print(void);
 
-    string toString(void);
+      string toString(void);
 
-    void printTree(vector<bool> *identation);
-};
+      void printTree(vector<bool> *identation);
+  };
 
-class NodePointer : public ExpressionNode {
-  protected:
-    Node *pointer;
+  class NodeCHAR : public ExpressionNode {
+    protected:
+      char value;
 
-  public:
-    NodePointer(Node *pointer, Type *type);
+    public:
+      NodeCHAR(char value);
 
-    void print(void);
+      void print(void);
 
-    string toString(void);
+      string toString(void);
 
-    void printTree(vector<bool> *identation);
-};
+      void printTree(vector<bool> *identation);
+  };
 
-class NodeArrayAccess : public ExpressionNode {
-  protected:
-    Node *array;
-    Node *index;
+  class NodeINT : public ExpressionNode {
+    protected:
+      int value;
 
-  public:
-    NodeArrayAccess(Node *array, Node *index, Type *type);
+    public:
+      NodeINT(int value, bool defineType=true);
 
-    void print(void);
+      void print(void);
 
-    string toString(void);
+      string toString(void);
 
-    void printTree(vector<bool> *identation);
-};
+      void printTree(vector<bool> *identation);
+  };
 
-/* ======================= HEAP NODES =======================  */
-/* Representation of  -> new Type. */
-class NodeNew : public ExpressionNode {
-  protected:
-    Type *type_pointer;
+  class NodeFLOAT : public ExpressionNode {
+    protected:
+      float value;
 
-  public:
-    NodeNew(Type *type_pointer);
+    public:
+      NodeFLOAT(float value);
 
-    void print(void);
+      void print(void);
 
-    string toString(void);
+      string toString(void);
 
-    void printTree(vector<bool> *identation);
-};
+      void printTree(vector<bool> *identation);
+  };
 
-/* Representation of  -> forget Type. */
-class NodeForget : public Node {
-  protected:
-    Node *lvalue;
+  class NodeSTRING : public ExpressionNode {
+    protected:
+      string value;
 
-  public:
-    NodeForget(Node *lvalue);
+    public:
+      NodeSTRING(string value);
 
-    void print(void);
+      void print(void);
 
-    string toString(void);
+      string toString(void);
 
-    void printTree(vector<bool> *identation);
-};
+      void printTree(vector<bool> *identation);
+  };
 
-/* ======================= ARRAY NODES =======================  */
-/* Representation of arrays. */
-class NodeArray : public ExpressionNode {
-  protected:
-    Node *elems;
 
-  public:
-    NodeArray(Node *elems, Type *type);
+/* ======================= OPERATION NODES =========================== */
+  class NodeBinaryOperator : public ExpressionNode {
+    protected:
+      Node *left;
+      string op;
+      Node *right;
 
-    void print(void);
+    public:
+      NodeBinaryOperator(Node *left, string op, Node *rigth, Type *type);
 
-    string toString(void);
+      void print(void);
 
-    void printTree(vector<bool> *identation);
-};
+      string toString(void);
 
-/* Representation of  ->  RValue , ArrElems. */
-class NodeArrayElems : public ExpressionNode {
-  protected:
-    Node *rvalue;
-    Node *head;
+      void printTree(vector<bool> *identation);
+  };
 
-  public:
-    int current_size;
+  class NodeUnaryOperator : public ExpressionNode {
+    protected:
+      string op;
+      Node *exp;
 
-    NodeArrayElems(Node *rvalue, Type *type, Node *head, int current_size);
+    public:
+      NodeUnaryOperator(string op, Node *exp, Type *type);
 
-    void print(void);
+      void print(void);
 
-    string toString(void);
+      string toString(void);
 
-    void printTree(vector<bool> *identation);
-};
+      void printTree(vector<bool> *identation);
+  };
+
+  class NodeID : public ExpressionNode {
+    protected:
+      string id;
+
+    public:
+      NodeID(string id, Type *type);
+
+      void print(void);
+
+      string toString(void);
+
+      void printTree(vector<bool> *identation);
+  };
+
+  class NodeDot : public ExpressionNode {
+    protected:
+      Node *structure;
+      string id;
+
+    public:
+      NodeDot(Node *structure, string id, Type *type);
+
+      void print(void);
+
+      string toString(void);
+
+      void printTree(vector<bool> *identation);
+  };
+
+  class NodePointer : public ExpressionNode {
+    protected:
+      Node *pointer;
+
+    public:
+      NodePointer(Node *pointer, Type *type);
+
+      void print(void);
+
+      string toString(void);
+
+      void printTree(vector<bool> *identation);
+  };
+
+  class NodeArrayAccess : public ExpressionNode {
+    protected:
+      Node *array;
+      Node *index;
+
+    public:
+      NodeArrayAccess(Node *array, Node *index, Type *type);
+
+      void print(void);
+
+      string toString(void);
+
+      void printTree(vector<bool> *identation);
+  };
+
+
+/* ======================= HEAP NODES ================================ */
+  /* Representation of  -> new Type. */
+  class NodeNew : public ExpressionNode {
+    protected:
+      Type *type_pointer;
+
+    public:
+      NodeNew(Type *type_pointer);
+
+      void print(void);
+
+      string toString(void);
+
+      void printTree(vector<bool> *identation);
+  };
+
+  /* Representation of  -> forget Type. */
+  class NodeForget : public Node {
+    protected:
+      Node *lvalue;
+
+    public:
+      NodeForget(Node *lvalue);
+
+      void print(void);
+
+      string toString(void);
+
+      void printTree(vector<bool> *identation);
+  };
+
+
+/* ======================= ARRAY NODES =============================== */
+  class NodeArray : public ExpressionNode {
+    protected:
+      Node *elems;
+
+    public:
+      NodeArray(Node *elems, Type *type);
+
+      void print(void);
+
+      string toString(void);
+
+      void printTree(vector<bool> *identation);
+  };
+
+  /* Representation of  ->  RValue , ArrElems. */
+  class NodeArrayElems : public ExpressionNode {
+    protected:
+      Node *rvalue;
+      Node *head;
+
+    public:
+      int current_size;
+
+      NodeArrayElems(Node *rvalue, Type *type, Node *head, int current_size);
+
+      void print(void);
+
+      string toString(void);
+
+      void printTree(vector<bool> *identation);
+  };
+
 
 /* ======================= FUNCTION CALL NODES ======================= */
-/* Representation of function calls. */
-class NodeFunctionCall : public ExpressionNode {
-  protected:
-    string id;
-    Node *args;
-    bool bEndInst;
+  /* Representation of function calls. */
+  class NodeFunctionCall : public ExpressionNode {
+    protected:
+      string id;
+      Node *args;
+      bool bEndInst;
 
-  public:
-    NodeFunctionCall(string id, Node *args, bool bEndInst, Type *type);
+    public:
+      NodeFunctionCall(string id, Node *args, bool bEndInst, Type *type);
 
-    void print(void);
+      void print(void);
 
-    void printTree(vector<bool> *identation);
+      void printTree(vector<bool> *identation);
 
-    string toString(void);
+      string toString(void);
 
-    void setEndInst(void);
-};
+      void setEndInst(void);
+  };
 
-class NodeFunctionCallArgs : public Node {
-  protected:
-    Node* positional;
-    Node* named;
+  class NodeFunctionCallArgs : public Node {
+    protected:
+      Node* positional;
+      Node* named;
 
-  public:
-    vector<string> positionalArgs;
-    map<string, string> namedArgs;
-    set<string> keywords;
+    public:
+      vector<string> positionalArgs;
+      map<string, string> namedArgs;
+      set<string> keywords;
 
-    NodeFunctionCallArgs(Node* positional, Node* named);
+      NodeFunctionCallArgs(Node* positional, Node* named);
 
-    void print(void);
+      void print(void);
 
-    string toString(void);
+      string toString(void);
 
-    void printTree(vector<bool> *identation);
-};
+      void printTree(vector<bool> *identation);
+  };
 
-/* Representation of position arguments when calling a function */
-class NodeFunctionCallPositionalArgs : public Node {
-  protected:
-    Node *head;
-    Node *rvalue;
+  /* Representation of position arguments when calling a function */
+  class NodeFunctionCallPositionalArgs : public Node {
+    protected:
+      Node *head;
+      Node *rvalue;
 
-  public:
-    vector<string> currentArgs;
+    public:
+      vector<string> currentArgs;
 
-    NodeFunctionCallPositionalArgs(Node *head, Node *rvalue);
+      NodeFunctionCallPositionalArgs(Node *head, Node *rvalue);
 
-    void print(void);
+      void print(void);
 
-    string toString(void);
+      string toString(void);
 
-    void printTree(vector<bool> *identation);
-};
+      void printTree(vector<bool> *identation);
+  };
 
-/* Representation of named arguments when calling a function */
-class NodeFunctionCallNamedArgs : public Node {
-  protected:
-    Node *head;
-    string id;
-    Node *rvalue;
+  /* Representation of named arguments when calling a function */
+  class NodeFunctionCallNamedArgs : public Node {
+    protected:
+      Node *head;
+      string id;
+      Node *rvalue;
 
-  public:
-    map<string, string> currentArgs;
-    set<string> keywords;
+    public:
+      map<string, string> currentArgs;
+      set<string> keywords;
 
-    NodeFunctionCallNamedArgs(Node *head, string id, Node *rvalue);
+      NodeFunctionCallNamedArgs(Node *head, string id, Node *rvalue);
 
-    void print(void);
+      void print(void);
 
-    string toString(void);
+      string toString(void);
 
-    void printTree(vector<bool> *identation);
-};
+      void printTree(vector<bool> *identation);
+  };
+
 
 /* ======================= STRUCTURE DEF NODES ======================= */
-/* Representation of  -> UnionBody Type ID ;  */
-class NodeUnionFields : public Node {
-  protected:
-    Node *head;
-    Type *type;
-    string id;
+  /* Representation of  -> UnionBody Type ID ; */
+  class NodeUnionFields : public Node {
+    protected:
+      Node *head;
+      Type *type;
+      string id;
 
-  public:
-    NodeUnionFields(Node *head, Type *type, string id);
-};
+    public:
+      NodeUnionFields(Node *head, Type *type, string id);
+  };
 
-/* Representation of  -> RegisterBody VarDefBody;  */
-class NodeRegFields : public Node {
-  protected:
-    Node *head;
-    Type *type;
-    string id;
-    Node *rvalue;
+  /* Representation of  -> RegisterBody VarDefBody; */
+  class NodeRegFields : public Node {
+    protected:
+      Node *head;
+      Type *type;
+      string id;
+      Node *rvalue;
 
-  public:
-    NodeRegFields(Node *head, Type *type, string id, Node *rvalue);
-};
+    public:
+      NodeRegFields(Node *head, Type *type, string id, Node *rvalue);
+  };
 
-/* ======================= CONDITIONAL DEF NODES ======================= */
-/* Representation of if-elsif-else blocks. */
-class NodeConditional : public Node {
-  protected:
-    Node *cond;
-    Node *body;
-    Node *elsifs;
-    Node *elseDef;
 
-  public:
-    NodeConditional(Node *cond, Node *body, Node *elsifs, Node *elseDef);
+/* ======================= CONDITIONAL DEF NODES ===================== */
+  /* Representation of if-elsif-else blocks. */
+  class NodeConditional : public Node {
+    protected:
+      Node *cond;
+      Node *body;
+      Node *elsifs;
+      Node *elseDef;
 
-    void print(void);
+    public:
+      NodeConditional(Node *cond, Node *body, Node *elsifs, Node *elseDef);
 
-    string toString(void);
+      void print(void);
 
-    void printTree(vector<bool> *identation);
-};
+      string toString(void);
 
-/* Representation of  -> Elsifs elsif Exp then I. */
-class NodeElsif : public Node {
-  protected:
-    Node *head;
-    Node *cond;
-    Node *body;
+      void printTree(vector<bool> *identation);
+  };
 
-  public:
-    NodeElsif(Node *head, Node *cond, Node *body);
+  /* Representation of  -> Elsifs elsif Exp then I. */
+  class NodeElsif : public Node {
+    protected:
+      Node *head;
+      Node *cond;
+      Node *body;
 
-    void print(void);
+    public:
+      NodeElsif(Node *head, Node *cond, Node *body);
 
-    string toString(void);
+      void print(void);
 
-    void printTree(vector<bool> *identation);
-};
+      string toString(void);
 
-/* Representation of  -> else I. */
-class NodeElse : public Node {
-  protected:
-    Node *body;
+      void printTree(vector<bool> *identation);
+  };
 
-  public:
-    NodeElse(Node *body);
+  /* Representation of  -> else I. */
+  class NodeElse : public Node {
+    protected:
+      Node *body;
 
-    void print(void);
+    public:
+      NodeElse(Node *body);
 
-    string toString(void);
+      void print(void);
 
-    void printTree(vector<bool> *identation);
-};
+      string toString(void);
 
-/* ======================= LOOP NODES =======================  */
-/* Representation of while blocks. */
-class NodeWhile : public Node {
-  protected:
-    Node *cond;
-    Node *body;
+      void printTree(vector<bool> *identation);
+  };
 
-  public:
-    NodeWhile(Node *cond, Node *body);
 
-    void print(void);
+/* ======================= LOOP NODES ================================ */
+  /* Representation of while blocks. */
+  class NodeWhile : public Node {
+    protected:
+      Node *cond;
+      Node *body;
 
-    string toString(void);
+    public:
+      NodeWhile(Node *cond, Node *body);
 
-    void printTree(vector<bool> *identation);
-};
+      void print(void);
 
-/* Representation of for blocks. */
-class NodeFor : public Node {
-  protected:
-    string iter;
-    Node *begin;
-    Node *end;
-    Node *step;
-    Node *body;
+      string toString(void);
 
-  public:
-    NodeFor(string iter, Node *begin, Node *end, Node *step, Node *body);
+      void printTree(vector<bool> *identation);
+  };
 
-    void print(void);
+  /* Representation of for blocks. */
+  class NodeFor : public Node {
+    protected:
+      string iter;
+      Node *begin;
+      Node *end;
+      Node *step;
+      Node *body;
 
-    string toString(void);
+    public:
+      NodeFor(string iter, Node *begin, Node *end, Node *step, Node *body);
 
-    void printTree(vector<bool> *identation);
-};
+      void print(void);
 
-/* ======================= SUBROUTINE DEF NODES =======================  */
-/* Representation of routine definitions. */
-class NodeRoutineDef : public Node {
-  protected:
-    Node *sign;
-    Node *body;
+      string toString(void);
 
-  public:
-    NodeRoutineDef(Node *sign, Node *body);
+      void printTree(vector<bool> *identation);
+  };
 
-    void print(void);
 
-    string toString(void);
+/* ======================= SUBROUTINE DEF NODES ====================== */
+  /* Representation of routine definitions. */
+  class NodeRoutineDef : public Node {
+    protected:
+      Node *sign;
+      Node *body;
 
-    void printTree(vector<bool> *identation);
-};
+    public:
+      NodeRoutineDef(Node *sign, Node *body);
 
-class NodeRoutineSign : public Node {
-  protected:
-    string id;
-    Node *args;
-    Type *ret;
+      void print(void);
 
-  public:
-    NodeRoutineSign(string id, Node *args, Type *ret);
+      string toString(void);
 
-    void print(void);
+      void printTree(vector<bool> *identation);
+  };
 
-    string toString(void);
+  class NodeRoutineSign : public Node {
+    protected:
+      string id;
+      Node *args;
+      Type *ret;
 
-    void printTree(vector<bool> *identation);
-};
+    public:
+      NodeRoutineSign(string id, Node *args, Type *ret);
 
-class NodeRoutArgs : public Node {
-  protected:
-    Node *oblArgs;
-    Node *optArgs;
+      void print(void);
 
-  public:
-    vector<tuple<string, string, bool, bool>> params;
+      string toString(void);
 
-    NodeRoutArgs(Node *oblArgs, Node *optArgs);
+      void printTree(vector<bool> *identation);
+  };
 
-    void print(void);
+  class NodeRoutArgs : public Node {
+    protected:
+      Node *oblArgs;
+      Node *optArgs;
 
-    string toString(void);
+    public:
+      vector<tuple<string, string, bool, bool>> params;
 
-    void printTree(vector<bool> *identation);
-};
+      NodeRoutArgs(Node *oblArgs, Node *optArgs);
 
-class NodeRoutArgDef : public Node {
-  protected:
-    Node *head; 
-    Type *type; 
-    bool ref; 
-    string id; 
-    Node *rvalue;
+      void print(void);
 
-  public:
-    vector<tuple<string, string, bool, bool>> currentParams;
-    
-    NodeRoutArgDef(Node *head, Type *type, bool ref, string id, Node *rvalue);
+      string toString(void);
 
-    void print(void);
+      void printTree(vector<bool> *identation);
+  };
 
-    string toString(void);
+  class NodeRoutArgDef : public Node {
+    protected:
+      Node *head; 
+      Type *type; 
+      bool ref; 
+      string id; 
+      Node *rvalue;
 
-    void printTree(vector<bool> *identation);
-};
+    public:
+      vector<tuple<string, string, bool, bool>> currentParams;
+      
+      NodeRoutArgDef(Node *head, Type *type, bool ref, string id, Node *rvalue);
 
-/* Representacion of  -> Actions Action */
-class NodeActions : public Node {
-  protected:
-    Node *head;
-    Node *inst;
+      void print(void);
 
-  public:
-    NodeActions(Node *head, Node *inst);
+      string toString(void);
 
-    void print(void);
+      void printTree(vector<bool> *identation);
+  };
 
-    string toString(void);
+  /* Representacion of  -> Actions Action */
+  class NodeActions : public Node {
+    protected:
+      Node *head;
+      Node *inst;
 
-    void printTree(vector<bool> *identation);
-};
+    public:
+      NodeActions(Node *head, Node *inst);
 
-class NodeReturn : public Node {
-  protected:
-    Node *rvalue;
+      void print(void);
 
-  public:
-    NodeReturn(Node *rvalue = NULL);
+      string toString(void);
 
-    void print(void);
+      void printTree(vector<bool> *identation);
+  };
 
-    string toString(void);
+  class NodeReturn : public Node {
+    protected:
+      Node *rvalue;
 
-    void printTree(vector<bool> *identation);
-};
+    public:
+      NodeReturn(Node *rvalue = NULL);
 
-/* ======================= INSTRUCTION NODES =======================  */
-class NodeAssign : public ExpressionNode {
-  protected:
-    Node *lvalue;
-    Node *rvalue;
+      void print(void);
 
-  public:
-    NodeAssign(Node *lvalue, Node *rvalue);
+      string toString(void);
 
-    void print(void);
+      void printTree(vector<bool> *identation);
+  };
 
-    string toString(void);
-
-    void printTree(vector<bool> *identation);
-};
-
-class NodeAssignList : public Node {
-  protected:
-    Node *head;
-    Node *assign;
-
-  public:
-    NodeAssignList(Node *head, Node *assign);
-
-    void print(void);
-
-    string toString(void);
-
-    void printTree(vector<bool> *identation);
-};
-
-/* Representacion of  -> I Inst */
-class NodeI : public Node {
-  protected:
-    Node *head;
-    Node *inst;
-
-  public:
-    NodeI(Node *head, Node *inst);
-
-    void print(void);
-
-    string toString(void);
-
-    void printTree(vector<bool> *identation);
-};
-
-/* Root node. */
-class NodeS {
-  protected:
-    Node *inst;
-
-  public:
-    NodeS(Node *inst);
-
-    void print(void);
-
-    string toString(void);
-
-    void printTree(vector<bool> *identation);
-};
-
-class NodeError : public Node {
-  public:
-    string errInfo;
-
-    NodeError(void) { }
-
-    string toString(void) { return "Error"; }
-};
-
-/* ======================= TYPE NODES =======================  */
-/* Class for defined types. */
-class PrimitiveType : public Type {
-  protected:
-    string id;
-
-  public:
-    PrimitiveType(string id);
-
-    void print(void);
-
-    string toString(void);
-
-    void printTree(vector<bool> *identation);
-};
-
-/* Representation of  -> ^ Type. */
-class PointerType : public Type {
-  public:
-    Type *type;
-
-    PointerType(Type *type);
-
-    void print(void);
-
-    string toString(void);
-
-    void printTree(vector<bool> *identation);
-};
-
-/* Representation of  -> Type [ Exp ]. */
-class ArrayType : public Type {
-  protected:
-    Node *size;
-
-  public: 
-    Type *type;
-
-    ArrayType(Type *type, Node *size);
-
-    void print(void);
-
-    string toString(void);
-
-    void printTree(vector<bool> *identation);
-};
