@@ -402,7 +402,7 @@
 /* ======================= TYPES ===================================== */
   Type	: Type OPEN_BRACKET Exp CLOSE_BRACKET 
           { 
-            if ($1->toString() != "$Error" && $3->type->toString() != "$Error") {
+            if ($1->toString() != "$Error" && $3->type->toString() == "Int") {
               $$ = new ArrayType($1, $3);
             } else {
               $$ = predefinedTypes["$Error"];
@@ -445,7 +445,7 @@
         | T_FLOAT                             { $$ = predefinedTypes["Float"]; }
         | T_STRING                            
           { 
-            $$ = new ArrayType(predefinedTypes["Char"], new NodeINT(8)); 
+            $$ = new PointerType(predefinedTypes["Char"]); 
           }
         ;
 

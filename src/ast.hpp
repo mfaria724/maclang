@@ -22,6 +22,7 @@ class Node {
 };
 
 
+
 /* ======================= TYPES ===================================== */
   /* "Abstract" class that is parent of all type classes. */
   class Type {
@@ -69,14 +70,15 @@ class Node {
   };
 
   /* Representation of  -> Type [ Exp ]. */
+  class ExpressionNode;
   class ArrayType : public Type {
     protected:
-      Node *size;
+      ExpressionNode *size;
 
     public: 
       Type *type;
 
-      ArrayType(Type *type, Node *size);
+      ArrayType(Type *type, ExpressionNode *size);
 
       void print(void);
 
@@ -91,6 +93,8 @@ class Node {
     public: 
       Type *type;
       bool is_lvalue;
+      // Indica si la expresion es una constante de uno de los tipos basicos.
+      bool is_lit;
 
       ExpressionNode(void) {};
 
@@ -174,10 +178,9 @@ class Node {
 
 /* ======================= DATA NODES ================================ */
   class NodeBOOL : public ExpressionNode {
-    protected:
+    public:
       bool value;
 
-    public:
       NodeBOOL(bool value);
 
       void print(void);
@@ -188,10 +191,9 @@ class Node {
   };
 
   class NodeCHAR : public ExpressionNode {
-    protected:
+    public:
       char value;
 
-    public:
       NodeCHAR(char value);
 
       void print(void);
@@ -202,10 +204,9 @@ class Node {
   };
 
   class NodeINT : public ExpressionNode {
-    protected:
+    public:
       int value;
 
-    public:
       NodeINT(int value, bool defineType=true);
 
       void print(void);
@@ -216,10 +217,9 @@ class Node {
   };
 
   class NodeFLOAT : public ExpressionNode {
-    protected:
+    public:
       float value;
 
-    public:
       NodeFLOAT(float value);
 
       void print(void);
@@ -230,10 +230,9 @@ class Node {
   };
 
   class NodeSTRING : public ExpressionNode {
-    protected:
+    public:
       string value;
 
-    public:
       NodeSTRING(string value);
 
       void print(void);

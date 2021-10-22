@@ -5,7 +5,7 @@ let Float a02;
 for (a03; 0; 0) do 
     let String a04;
     while True do
-        let Int[100 + a00*3] a05;
+        let Int[100] a05;
     done
 done 
 

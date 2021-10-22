@@ -74,13 +74,18 @@
   }
 
 
-  ArrayType::ArrayType(Type *type, Node *size) {
+  ArrayType::ArrayType(Type *type, ExpressionNode *size) {
     this->type = type;
     this->size = size;
     string t_size = type->toString();
-    // Si size es una constante, podemos calcular directamente el desplazamiento.
+    // Si size es un literal, podemos calcular directamente el desplazamiento.
+    if (size->is_lit) {
+      this->width = type->width * ((NodeINT*) size)->value;
+    }
     // En caso contrario, se tomara como un puntero.
-    this->width = primitiveWidths["Pointer"];
+    else {
+      this->width = primitiveWidths["Pointer"];
+    }
     this->category = "Array";
   }
   void ArrayType::print(void) {
@@ -250,6 +255,7 @@
     this->value = value;
     this->type = predefinedTypes["Bool"];
     this->is_lvalue = false;
+    this->is_lit = true;
   }
   void NodeBOOL::print(void) {
     cout << this->toString();
@@ -266,6 +272,7 @@
     this->value = value;
     this->type = predefinedTypes["Char"];
     this->is_lvalue = false;
+    this->is_lit = true;
   }
   void NodeCHAR::print(void) {
     cout << this->toString();
@@ -283,6 +290,7 @@
     this->value = value;
     this->type = predefinedTypes["Int"];
     this->is_lvalue = false;
+    this->is_lit = true;
   }
   void NodeINT::print(void) {
     cout << this->toString();
@@ -299,6 +307,7 @@
     this->value = value;
     this->type = predefinedTypes["Float"];
     this->is_lvalue = false;
+    this->is_lit = true;
   }
   void NodeFLOAT::print(void) {
     cout << this->toString();
@@ -313,8 +322,9 @@
 
   NodeSTRING::NodeSTRING(string value) {
     this->value = value;
-    this->type = new ArrayType(predefinedTypes["Char"], new NodeINT(value.size()));
+    this->type = new PointerType(predefinedTypes["Char"]);
     this->is_lvalue = false;
+    this->is_lit = false;
   }
   void NodeSTRING::print(void) {
     cout << this->toString();
@@ -339,6 +349,7 @@
     this->right = right;
     this->type = type;
     this->is_lvalue = false;
+    this->is_lit = false;
   }
   void NodeBinaryOperator::print(void) {
     cout << "(";
@@ -351,8 +362,6 @@
     return "(" + this->left->toString() + ") " + this->op +
            " (" + this->right->toString() + ")";
   }
-
-
   void NodeBinaryOperator::printTree(vector<bool> *identation) {
     cout << "\e[1;34mBinary Operator\e[0m\n";
 
@@ -371,11 +380,14 @@
     this->right->printTree(identation);
     identation->pop_back();
   }
+
+
   NodeUnaryOperator::NodeUnaryOperator(string op, Node *exp, Type *type) {
     this->op = op;
     this->exp = exp;
     this->type = type;
     this->is_lvalue = false;
+    this->is_lit = false;
   }
   void NodeUnaryOperator::print(void) {
     cout << this->op << "(";
@@ -403,6 +415,7 @@
     this->id = id;
     this->type = type;
     this->is_lvalue = true;
+    this->is_lit = false;
   }
   void NodeID::print(void) {
     cout << this->id;
@@ -420,6 +433,7 @@
     this->id = id;
     this->type = type;
     this->is_lvalue = true;
+    this->is_lit = false;
   }
   void NodeDot::print(void) {
     cout << "(";
@@ -447,6 +461,7 @@
     this->pointer = pointer;
     this->type = type;
     this->is_lvalue = true;
+    this->is_lit = false;
   }
   void NodePointer::print(void) {
     cout << "^(";
@@ -475,6 +490,7 @@
     this->index = index;
     this->type = type;
     this->is_lvalue = true;
+    this->is_lit = false;
   }
   void NodeArrayAccess::print(void) {
     cout << "(";
@@ -508,6 +524,7 @@
     this->type_pointer = type_pointer;
     this->type = new PointerType(type_pointer);
     this->is_lvalue = false;
+    this->is_lit = false;
   }
   void NodeNew::print(void) {
     cout << "new ";
@@ -554,6 +571,7 @@
     this->elems = elems;
     this->type = type;
     this->is_lvalue = false;
+    this->is_lit = false;
   }
   void NodeArray::print(void) {
     cout << "[";
@@ -587,6 +605,7 @@
     this->rvalue = rvalue;
     this->type = type;
     this->current_size = current_size;
+    this->is_lit = false;
   }
   void NodeArrayElems::print(void) {
     if (this->head != NULL) {
@@ -633,6 +652,7 @@
     this->bEndInst = bEndInst;
     this->type = type;
     this->is_lvalue = true;
+    this->is_lit = false;
   }
   void NodeFunctionCall::print(void) {
     cout << this->id << "(";
